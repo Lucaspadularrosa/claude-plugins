@@ -1,0 +1,23 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "dev-toolkit-marketplace",
+  "version": "1.0.0",
+  "description": "Reusable development toolkit for any software project, regardless of language or framework. Includes spec-driven development, best practices, testing, documentation, and API tooling.",
+  "owner": {
+    "name": "lucas_padularrosa",
+    "email": ""
+  },
+  "plugins": [
+    {
+      "name": "dev-toolkit",
+      "description": "SDD, best practices agent, testing agent, technical documentation, and Postman collection generation.",
+      "version": "1.0.0",
+      "author": {
+        "name": "lucas_padularrosa",
+        "email": ""
+      },
+      "source": "./plugins/dev-toolkit",
+      "category": "development"
+    }
+  ]
+}

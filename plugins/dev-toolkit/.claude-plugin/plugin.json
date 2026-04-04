@@ -1,0 +1,9 @@
+{
+  "name": "dev-toolkit",
+  "version": "1.0.0",
+  "description": "Reusable development toolkit: spec-driven development (SDD), best practices agent, testing agent, technical documentation, and Postman collection generation.",
+  "author": {
+    "name": "lucas_padularrosa",
+    "email": ""
+  }
+}
