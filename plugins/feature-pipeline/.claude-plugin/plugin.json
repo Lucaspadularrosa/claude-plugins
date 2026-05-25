@@ -1,0 +1,9 @@
+{
+  "name": "feature-pipeline",
+  "version": "1.0.0",
+  "description": "End-to-end feature development pipeline: spec, branch, implement, document, test, review, and close. Includes a Stack Specialist agent that reads CLAUDE.md and acts as an expert in the project's specific tech stack.",
+  "author": {
+    "name": "lucas_padularrosa",
+    "email": ""
+  }
+}

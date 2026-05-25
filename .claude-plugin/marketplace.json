@@ -1,22 +1,22 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "dev-toolkit-marketplace",
+  "name": "claude-plugins-marketplace",
   "version": "1.0.0",
-  "description": "Reusable development toolkit for any software project, regardless of language or framework. Includes spec-driven development, best practices, testing, documentation, and API tooling.",
+  "description": "Plugins de desarrollo para proyectos Next.js/TypeScript. Incluye pipeline de features end-to-end con Stack Specialist agent.",
   "owner": {
     "name": "lucas_padularrosa",
     "email": ""
   },
   "plugins": [
     {
-      "name": "dev-toolkit",
-      "description": "SDD, best practices agent, testing agent, technical documentation, and Postman collection generation.",
+      "name": "feature-pipeline",
+      "description": "End-to-end feature development pipeline with Stack Specialist agent. Covers spec, branch, implement, docs, tests, code review, and PR — driven by requirements in /features/ and a CLAUDE.md project context file.",
       "version": "1.0.0",
       "author": {
         "name": "lucas_padularrosa",
         "email": ""
       },
-      "source": "./plugins/dev-toolkit",
+      "source": "./plugins/feature-pipeline",
       "category": "development"
     }
   ]
