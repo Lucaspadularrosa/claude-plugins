@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "claude-plugins-marketplace",
+  "name": "lpadularrosa-dev-plugins",
   "version": "1.0.0",
   "description": "Plugins de desarrollo para proyectos Next.js/TypeScript. Incluye pipeline de features end-to-end con Stack Specialist agent.",
   "owner": {
