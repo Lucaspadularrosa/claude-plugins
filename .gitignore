@@ -1,0 +1,13 @@
+# Bytecode de Python (lo genera extract_document.py al correr)
+__pycache__/
+*.pyc
+*.pyo
+
+# Cruft de macOS y editores
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Salidas de pipeline, por si lo corres de prueba desde esta carpeta
+.dev/

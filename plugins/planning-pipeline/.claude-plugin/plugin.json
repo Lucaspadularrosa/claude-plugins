@@ -1,0 +1,19 @@
+{
+  "name": "planning-pipeline",
+  "version": "1.0.0",
+  "displayName": "Planning Pipeline (tareas y sprints)",
+  "description": "Convierte una linea de base de requisitos en un plan de implementacion auditable: deriva tareas trazables a los requisitos, las agrupa en fases y sprints, inspecciona el plan y emite un brief por feature para alimentar un pipeline de build.",
+  "keywords": [
+    "planificacion",
+    "planning",
+    "tareas",
+    "sprints",
+    "backlog",
+    "features"
+  ],
+  "author": {
+    "name": "Lucas Micheli",
+    "email": "lucas.t.micheli@gmail.com"
+  },
+  "license": "MIT"
+}
