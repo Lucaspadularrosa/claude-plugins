@@ -1,0 +1,19 @@
+{
+  "name": "requirements-pipeline",
+  "version": "1.0.0",
+  "displayName": "Requirements Pipeline (LEL y Escenarios)",
+  "description": "Convierte un documento de dominio (Word, PDF o Markdown) en una linea de base de requisitos trazable: LEL, inspeccion, preguntas a stakeholders, escenarios, requisitos funcionales y no funcionales, diseno tecnico e inspeccion del diseno. Aplica el metodo LEL y Escenarios de Leite, Hadad, Kaplan y Doorn.",
+  "keywords": [
+    "requisitos",
+    "requirements",
+    "lel",
+    "escenarios",
+    "diseno",
+    "ingenieria-de-requisitos"
+  ],
+  "author": {
+    "name": "Lucas Micheli",
+    "email": "lucas.t.micheli@gmail.com"
+  },
+  "license": "MIT"
+}
