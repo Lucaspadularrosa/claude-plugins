@@ -45,9 +45,35 @@ Lee:
 ### Otros campos de la tarea
 
 - `type`: `feature` (implementa una capacidad), `data` (esquema o migracion),
-  `integration` (servicio externo), `infra` o `spike` (investigacion).
-- `depends_on`: tareas que deben completarse antes que esta. Deriva las dependencias del
+  `integration` (servicio externo), `infra`, `spike` (investigacion) o `contract`
+  (define una firma publica que otras tareas consumen, ver "Tareas-contrato" mas abajo).
+- `depends_on`: lista de objetos `{"task_id": "T-002", "kind": "hard|contract"}` con las
+  tareas que deben estar listas antes que esta. Deriva las dependencias del
   `depends_on` de los requisitos y de la logica del dominio. Sin ciclos.
+  - `kind: "hard"`: A necesita el comportamiento ejecutable de B en runtime
+    (no alcanza con la firma). Bloquea paralelismo entre features.
+  - `kind: "contract"`: A solo necesita la firma/API/schema/eventos de B para
+    arrancar (puede mockear). No bloquea paralelismo: A y B pueden desarrollarse
+    en paralelo siempre que la tarea-contrato se mergee antes.
+
+### Tareas-contrato (paralelismo entre features)
+
+Cuando una tarea de la feature A dependa de una tarea de la feature B, intenta primero
+**extraer una tarea-contrato** (`type: "contract"`) que defina la firma publica que B
+necesita exponer (API, tipos, schema de datos, eventos). El consumidor de la feature A
+pasa a depender de esa tarea-contrato con `kind: "contract"` en lugar de depender del
+codigo completo de B con `kind: "hard"`. Despues, A y B se pueden desarrollar en
+paralelo contra la firma.
+
+Reglas de la tarea-contrato:
+- Es chica y barata: define la firma, no la implementa.
+- Cita los `requirement_ids` de **ambas** features que une (excepcion a la regla
+  general de "ninguna tarea sin requisito": una tarea-contrato traza a la costura
+  entre features, no a un unico requisito).
+- Pertenece a la feature `feature_group` del lado productor (la feature B que va a
+  exponer la firma). Su `task_ids` queda dentro de B.
+- Reserva `kind: "hard"` solo para cuando la firma no alcanza (necesitas ejecutar la
+  logica real de B). Si dudas, preferi extraer un contrato.
 - `priority` y `estimated_effort`: heredados del requisito de origen; si una tarea cubre
   varios, usa el criterio mas alto.
 - `acceptance_criteria`: criterios en formato Gherkin (`given`/`when`/`then`), derivados
@@ -81,10 +107,10 @@ Escribi `.dev/plan/tasks.json` con este contrato exacto (solo JSON valido, sin c
       "title": "string",
       "description": "string",
       "feature_group": "FG-01",
-      "type": "feature|data|integration|infra|spike",
+      "type": "feature|data|integration|infra|spike|contract",
       "priority": "high|medium|low",
       "estimated_effort": "xs|s|m|l|xl",
-      "depends_on": ["T-002"],
+      "depends_on": [{"task_id": "T-002", "kind": "hard|contract"}],
       "requirement_ids": ["RF-001"],
       "module_ids": ["MOD-001"],
       "entity_ids": ["ENT-001"],
@@ -109,13 +135,22 @@ Tambien escribi `.dev/plan/tasks.md`: un resumen legible con, por cada feature, 
 
 - Verifica que `tasks.json` es JSON valido.
 - Verifica que cada tarea cita al menos un `requirement_ids` existente y pertenece a una
-  feature existente.
+  feature existente. Excepcion: las tareas `type: "contract"` deben citar
+  `requirement_ids` de **al menos dos features distintas** (la costura que unen).
 - Verifica que cada requisito `active` esta cubierto por al menos una tarea, y que
   `covered_requirement_ids` / `uncovered_requirement_ids` reflejan la realidad.
-- Verifica que `depends_on` apunta a tareas existentes y no hay ciclos.
+- Verifica que cada `depends_on[*].task_id` apunta a una tarea existente, que cada
+  `kind` es `hard` o `contract`, y que no hay ciclos.
+- Verifica que toda dependencia con `kind: "contract"` apunta efectivamente a una tarea
+  `type: "contract"`.
+- Si entre dos features quedo una dependencia `kind: "hard"` que se podria haber
+  resuelto con una firma, registralo como pregunta abierta (esa dependencia va a
+  bloquear paralelismo en `parallel-planning`).
 
 ## Barra de calidad
 
 - Cada tarea es una unidad vertical, cohesiva y verificable.
-- Toda tarea traza a un requisito; todo requisito tiene tarea.
-- Las dependencias permiten ordenar las tareas para planificar sprints.
+- Toda tarea traza a un requisito; toda tarea-contrato traza a dos o mas features.
+- Todo requisito `active` tiene tarea.
+- Las dependencias permiten ordenar las tareas para planificar sprints y para detectar
+  oportunidades de paralelismo entre features.

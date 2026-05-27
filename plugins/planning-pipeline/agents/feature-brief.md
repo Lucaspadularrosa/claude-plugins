@@ -17,6 +17,7 @@ entrada y construya esa feature.
 Lee:
 - `.dev/plan/tasks.json` (tareas por feature).
 - `.dev/plan/sprints.json` (en que sprint cae cada tarea).
+- `.dev/plan/parallel-plan.json` (en que lote paralelo cae cada feature).
 - `.dev/requirements/requirements.json` (requisitos y criterios de aceptacion).
 - `.dev/requirements/technical-design.json` (modulos, API, pantallas, decisiones).
 - `.dev/requirements/data-model.json` (entidades).
@@ -49,7 +50,15 @@ Cada brief tiene estas secciones:
 5. **Diseno relevante**: los modulos, contratos de API, pantallas y entidades del diseno
    tecnico que toca esta feature.
 6. **Dependencias entre features**: si alguna tarea depende de tareas de otra feature.
-7. **Trazabilidad**: de que escenarios y simbolos del LEL viene la feature (via los
+   Distingui `hard` (necesita el codigo mergeado) de `contract` (alcanza con la firma
+   ya publicada por una tarea-contrato). Citá los `task_id` de cada dependencia.
+7. **Lote paralelo**: en que `BATCH-...` cae esta feature segun `parallel-plan.json`,
+   con que otras features puede desarrollarse en paralelo (las del mismo lote), y de
+   que lotes anteriores depende para arrancar (`unlocks_after`). Si la feature quedo
+   sola en su lote, deci por que (citar los `task_id` de las dependencias hard que la
+   aislaron) y, si corresponde, sugerir que el lazo de inspeccion considere extraer
+   tareas-contrato.
+8. **Trazabilidad**: de que escenarios y simbolos del LEL viene la feature (via los
    requisitos), y preguntas abiertas que la afectan.
 
 ## Antes de terminar

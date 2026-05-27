@@ -29,8 +29,9 @@ requisitos (`requirements-pipeline`).
 |---|---|---|---|
 | 1 | `task-derivation` | requisitos + diseno | `.dev/plan/tasks.json` (+ `.md`) |
 | 2 | `sprint-planning` | `tasks.json` | `.dev/plan/sprints.json` (+ `.md`) |
-| 3 | `plan-inspection` | `tasks.json`, `sprints.json`, requisitos | `.dev/plan/plan-inspection.json` (+ `.md`) |
-| 4 | `feature-brief` | plan + requisitos + diseno | `.dev/features/{feature}.md` |
+| 3 | `parallel-planning` | `tasks.json`, `sprints.json` | `.dev/plan/parallel-plan.json` (+ `.md`) |
+| 4 | `plan-inspection` | `tasks.json`, `sprints.json`, `parallel-plan.json`, requisitos | `.dev/plan/plan-inspection.json` (+ `.md`) |
+| 5 | `feature-brief` | plan + parallel-plan + requisitos + diseno | `.dev/features/{feature}.md` |
 
 ## Procedimiento
 
@@ -39,26 +40,39 @@ requisitos (`requirements-pipeline`).
 Invoca `task-derivation` y luego `sprint-planning`, en orden y de a una con la herramienta
 Task. Espera a que cada subagente termine antes de lanzar el siguiente.
 
-### Paso 2 - Inspeccionar el plan (con lazo de correccion)
+### Paso 2 - Planificar lotes paralelos
+
+Invoca `parallel-planning`. Lee `tasks.json` y `sprints.json` y emite
+`.dev/plan/parallel-plan.json` (+ `.md`) con, por sprint, los lotes de features que se
+pueden desarrollar en paralelo respetando las dependencias `hard`. Las dependencias
+`contract` no bloquean paralelismo (la tarea-contrato se mergea en sprint anterior).
+
+### Paso 3 - Inspeccionar el plan (con lazo de correccion)
 
 Invoca `plan-inspection`. Es la compuerta de auditoria del plan.
 
 - Si devuelve `passed: true`, el plan cierra.
 - Si reporta defectos `high` o `medium`, volve a invocar la etapa que corresponda en modo
   correccion, indicandole que lea `.dev/plan/plan-inspection.json` y aplique las
-  correcciones propuestas: `task-derivation` para defectos de cobertura, tareas huerfanas
-  o dependencias de tareas; `sprint-planning` para defectos de orden o balance de sprints.
+  correcciones propuestas:
+  - `task-derivation` para defectos de cobertura, tareas huerfanas, dependencias o
+    paralelismo bajo (extraer mas tareas-contrato, partir features acopladas):
+    checks 001, 002, 003, 010, 011, 014.
+  - `sprint-planning` para defectos de orden o balance de sprints, o posicion de
+    tareas-contrato: checks 005, 008, 009, 012.
+  - `parallel-planning` para defectos de coherencia o batching: check 013.
   Despues volve a invocar `plan-inspection`. Repeti hasta que el plan pase.
 
-### Paso 3 - Emitir los briefs de feature
+### Paso 4 - Emitir los briefs de feature
 
 Cuando el plan paso la inspeccion, invoca `feature-brief`. Escribe un documento por
 feature en `.dev/features/`, listo para alimentar un pipeline de desarrollo de features.
 
-### Paso 4 - Cierre
+### Paso 5 - Cierre
 
 Informa al usuario los archivos generados en `.dev/plan/` y `.dev/features/`, y resalta el
-conteo de features, tareas y sprints, el esfuerzo total y las preguntas abiertas.
+conteo de features, tareas y sprints, el esfuerzo total, el grado de paralelismo maximo
+(de `parallel-plan.json`) y las preguntas abiertas.
 
 ## Reglas de orquestacion
 
@@ -78,6 +92,7 @@ conteo de features, tareas y sprints, el esfuerzo total y las preguntas abiertas
 .dev/plan/
   tasks.json / tasks.md           tareas trazables a los requisitos
   sprints.json / sprints.md       fases y sprints
+  parallel-plan.json / .md        lotes paralelos por sprint
   plan-inspection.json / .md      inspeccion del plan (auditoria)
 .dev/features/
   {feature}.md                    un brief por feature para el pipeline de build

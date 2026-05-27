@@ -20,8 +20,9 @@ planning-pipeline/
   agents/
     task-derivation.md       deriva tareas verticales desde los requisitos
     sprint-planning.md       agrupa las tareas en fases y sprints
-    plan-inspection.md       audita el plan (cobertura, huerfanos, ciclos, staleness)
-    feature-brief.md         emite un documento por feature
+    parallel-planning.md     agrupa las features de cada sprint en lotes paralelos
+    plan-inspection.md       audita el plan (cobertura, huerfanos, ciclos, staleness, paralelismo)
+    feature-brief.md         emite un documento por feature (con lote paralelo)
   skills/
     planning-pipeline/
       SKILL.md               orquestacion del pipeline
@@ -83,9 +84,31 @@ verifica todo eso.
 
 | Archivo | Contenido |
 |---|---|
-| `.dev/plan/tasks.json` / `.md` | Tareas trazables a los requisitos, agrupadas por feature |
+| `.dev/plan/tasks.json` / `.md` | Tareas trazables a los requisitos, agrupadas por feature. Las dependencias entre tareas se clasifican en `hard` (necesita el codigo mergeado) o `contract` (alcanza con la firma) |
 | `.dev/plan/sprints.json` / `.md` | Fases y sprints |
+| `.dev/plan/parallel-plan.json` / `.md` | Lotes paralelos por sprint: que features pueden desarrollarse simultaneamente sin esperarse |
 | `.dev/plan/plan-inspection.json` / `.md` | Auditoria del plan |
-| `.dev/features/{feature}.md` | Un brief por feature, para el pipeline de build |
+| `.dev/features/{feature}.md` | Un brief por feature (incluye el lote paralelo asignado), para el pipeline de build |
+
+## Paralelismo entre features
+
+El pipeline esta pensado para que varias instancias de Claude Code (una por PC,
+licencia o desarrollador) puedan trabajar en paralelo, una rama por feature, sin
+esperarse mutuamente. Para lograrlo:
+
+- `task-derivation` extrae **tareas-contrato** (`type: "contract"`) cuando una feature
+  depende de otra: definen la firma publica (API, tipos, schema) que ambas necesitan.
+  Despues de que el contrato se mergea, productor y consumidor desarrollan en paralelo.
+- Las dependencias entre tareas se etiquetan con `kind`: `hard` (necesita el codigo
+  ejecutable) o `contract` (alcanza con la firma). Solo las `hard` bloquean paralelismo.
+- `parallel-planning` emite `.dev/plan/parallel-plan.json` con, por sprint, los **lotes
+  paralelos** de features que pueden arrancar simultaneamente, y cuales esperan al
+  siguiente lote. La metrica `max_parallel_degree` indica cuantas licencias en
+  paralelo saca provecho del plan.
+- Cada `feature-brief` declara en que lote cae y con quien puede correr en paralelo.
+
+Si el plan termina con paralelismo bajo (sprints con un solo lote y varias features),
+`plan-inspection` lo marca y rebota a `task-derivation` para extraer mas contratos o
+partir features densamente acopladas.
 
 Ver `PIPELINE.md` para el diagrama completo y las reglas de orquestacion.

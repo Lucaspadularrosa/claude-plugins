@@ -21,8 +21,16 @@ Lee `.dev/plan/tasks.json` (tareas con `priority`, `estimated_effort`, `depends_
 - Tu output es la secuencia de sprints. No reescribas las tareas; agrupalas y ordenalas.
 - Toda tarea de `tasks.json` debe quedar asignada a exactamente un sprint. Si una tarea no
   se puede ubicar, registrala en `unplanned_task_ids` y explica por que en `warnings`.
-- Una tarea no puede ir en un sprint anterior al de cualquiera de sus `depends_on`: la
-  dependencia va en el mismo sprint o en uno previo. Nunca despues.
+- `depends_on` es una lista de objetos `{"task_id": "T-...", "kind": "hard|contract"}`.
+  Una tarea no puede ir en un sprint anterior al de cualquiera de sus `task_id` de
+  `depends_on`. La regla por `kind`:
+  - `kind: "hard"`: el consumidor va en el **mismo sprint o uno posterior** al de la
+    dependencia. Nunca antes.
+  - `kind: "contract"`: el consumidor va en un sprint **estrictamente posterior** al de
+    la tarea-contrato (no alcanza con el mismo sprint). Esto permite que el contrato se
+    mergee primero y desbloquee el paralelismo entre features.
+- Las tareas `type: "contract"` son chicas; agrupalas temprano para liberar paralelismo
+  cuanto antes.
 - Priorizacion: las tareas `high` van lo antes posible; no dejes prioridades altas para el
   ultimo sprint salvo que una dependencia lo obligue (y entonces dejalo dicho).
 - Reparti el esfuerzo de forma razonablemente pareja entre sprints. Trata el esfuerzo con
@@ -78,7 +86,9 @@ que toca.
 - Verifica que `sprints.json` es JSON valido.
 - Verifica que cada tarea de `tasks.json` esta en exactamente un sprint, o listada en
   `unplanned_task_ids` con su motivo.
-- Verifica que ninguna tarea queda en un sprint anterior al de sus `depends_on`.
+- Verifica que ninguna tarea queda en un sprint anterior al de sus `depends_on[*].task_id`.
+- Verifica que ninguna tarea con `depends_on` de `kind: "contract"` queda en el mismo
+  sprint o anterior al de la tarea-contrato.
 - Verifica que `effort_points` de cada sprint y `total_effort_points` coinciden con los
   pesos por talla.
 
