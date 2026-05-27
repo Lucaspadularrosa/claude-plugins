@@ -18,6 +18,28 @@
       },
       "source": "./plugins/feature-pipeline",
       "category": "development"
+    },
+    {
+      "name": "planning-pipeline",
+      "description": "Convierte una linea de base de requisitos en un plan de implementacion auditable: deriva tareas trazables a los requisitos, las agrupa en fases y sprints, inspecciona el plan y emite un brief por feature para alimentar un pipeline de build.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Lucas Micheli",
+        "email": "lucas.t.micheli@gmail.com"
+      },
+      "source": "./plugins/planning-pipeline",
+      "category": "development"
+    },
+    {
+      "name": "requirements-pipeline",
+      "description": "Convierte un documento de dominio en una linea de base de requisitos trazable: LEL, inspeccion, preguntas a stakeholders, escenarios, requisitos funcionales y no funcionales, diseno tecnico e inspeccion del diseno.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Lucas Micheli",
+        "email": "lucas.t.micheli@gmail.com"
+      },
+      "source": "./plugins/requirements-pipeline",
+      "category": "development"
     }
   ]
 }
