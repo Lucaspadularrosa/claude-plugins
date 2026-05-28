@@ -39,14 +39,16 @@ Lee:
 - `PLAN-CHECK-002`: cada tarea cita al menos un `requirement_ids` y todos existen; no hay
   tareas huerfanas. Excepcion: las tareas `type: "contract"` deben citar
   `requirement_ids` de al menos dos features distintas.
-- `PLAN-CHECK-003`: cada `depends_on[*].task_id` apunta a una tarea existente y no
-  forma ciclos.
+- `PLAN-CHECK-003`: cada entrada de `depends_on` apunta a una tarea existente y no
+  forma ciclos. **Acepta ambos formatos** del campo: array de strings (`["TASK-X"]`) o
+  array de objetos (`[{"task_id": "TASK-X", "kind": "..."}]`); normaliza antes de
+  validar.
 - `PLAN-CHECK-004`: cada tarea esta asignada a exactamente un sprint (o listada en
   `unplanned_task_ids` con motivo).
 - `PLAN-CHECK-005`: el orden de los sprints respeta las dependencias: ninguna tarea esta
-  en un sprint anterior al de alguna de sus `depends_on[*].task_id`. Las dependencias
-  con `kind: "contract"` requieren sprint **estrictamente posterior** al de la
-  tarea-contrato.
+  en un sprint anterior al de alguna de sus predecesoras de `depends_on`. Las
+  dependencias con `kind: "contract"` (efectivo, ver PLAN-CHECK-011) requieren sprint
+  **estrictamente posterior** al de la tarea-contrato.
 - `PLAN-CHECK-006`: cada tarea pertenece a una feature existente y cada feature mapea a un
   `feature_group` de los requisitos.
 - `PLAN-CHECK-007`: desactualizacion. `requirements_version_ref` y
@@ -58,23 +60,46 @@ Lee:
   salvo que una dependencia lo justifique.
 - `PLAN-CHECK-010`: los criterios de aceptacion de cada tarea son coherentes con los de
   los requisitos que cubre; una tarea sin ningun criterio de aceptacion es un defecto.
-- `PLAN-CHECK-011`: cada `depends_on[*].kind` esta presente y vale `hard` o `contract`.
-  Faltante o invalido: defecto `high`. Toda dependencia con `kind: "contract"` apunta
-  efectivamente a una tarea `type: "contract"`.
-- `PLAN-CHECK-012`: cada tarea con `depends_on` de `kind: "contract"` esta en un sprint
-  estrictamente posterior al de la tarea-contrato. Violacion: defecto `high`.
+- `PLAN-CHECK-011`: cada entrada de `depends_on` tiene un `kind` **efectivo** valido
+  (`hard` o `contract`). El `kind` efectivo se determina asi, en orden:
+    1. Si la entrada es un objeto `{task_id, kind}`, el `kind` debe estar presente y ser
+       `hard` o `contract`. Faltante o invalido: defecto `high`.
+    2. Si la entrada es un string, no hay `kind` explicito. En ese caso, **`tasks.json`
+       debe declarar la convencion** en `metadata.depends_on_convention.kind_default`
+       (valor `hard` o `contract`); el `kind` efectivo es ese default. Si no existe esa
+       declaracion: defecto `medium` con correccion propuesta "agregar
+       `metadata.depends_on_convention.kind_default` o migrar `depends_on` al formato
+       objeto". **No es defecto `high`** si el formato es consistente y la convencion
+       esta documentada.
+    3. No se permite mezclar formatos dentro del mismo `tasks.json`: si conviven strings
+       y objetos en distintas tareas, defecto `medium`.
+  Independientemente del formato: toda dependencia con `kind` efectivo `contract` debe
+  apuntar a una tarea `type: "contract"`. Si no: defecto `high`.
+- `PLAN-CHECK-012`: cada tarea con `depends_on` de `kind` efectivo `contract` esta en
+  un sprint estrictamente posterior al de la tarea-contrato. Violacion: defecto `high`.
 - `PLAN-CHECK-013`: existe `.dev/plan/parallel-plan.json` y es coherente con
   `tasks.json` y `sprints.json`:
     - cada feature de un sprint esta en exactamente un lote de ese sprint,
     - la union de `task_ids` de los lotes de un sprint es igual al conjunto de tareas
       asignadas a ese sprint,
-    - `unlocks_after` referencia lotes existentes y no forma ciclos.
+    - `unlocks_after` referencia lotes existentes y no forma ciclos,
+    - `metadata.depends_on_convention_used` del parallel-plan refleja el formato real
+      de `tasks.json` y el `kind_default` aplicado.
   Inconsistencia: defecto `high`.
 - `PLAN-CHECK-014`: el grado de paralelismo por sprint es razonable. Si un sprint con
-  3 o mas features lo resuelve en un solo lote (paralelismo 1), defecto `medium` con
-  propuesta: extraer mas tareas-contrato en `task-derivation` o partir features
-  densamente acopladas. Excluye sprints donde todas las features tocan estado global
-  inevitable (no aplica en Fase 1 hasta que se declare `touches_global_state`).
+  3 o mas features lo resuelve en un solo lote (es decir, `single_batch_sprints` lo
+  incluye **y** el sprint tiene 3+ features que terminaron en el mismo lote por
+  conflictos hard cruzados), defecto `medium` con propuesta: extraer mas tareas-contrato
+  en `task-derivation` o partir features densamente acopladas. **No marques defecto**
+  si el sprint es `truly_serial` (1 lote, 1 sola feature) por diseno del sprint:
+  ese caso lo cubre PLAN-CHECK-015.
+- `PLAN-CHECK-015`: revisa los sprints `truly_serial` (1 lote, 1 feature) reportados
+  por `parallel-plan.json`. Para cada uno, valida que el rationale del lote justifica
+  la singularidad: o bien el sprint fue diseñado dedicado a esa feature
+  (`sprints.json.sprints[].feature_groups` con 1 solo elemento), o bien las
+  dependencias hard intra-sprint forzaron aislarla. Si no se cumple ninguna de las dos
+  condiciones, defecto `low` con propuesta: revisar `sprint-planning` para sumar
+  features compatibles al sprint.
 
 ## Salida
 
