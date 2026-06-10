@@ -1,6 +1,6 @@
 ---
 name: design-inspection
-description: Etapa 8 del pipeline de requisitos. Inspecciona el modelo de datos y el diseno tecnico y produce un reporte de defectos, incluyendo normalizacion en formas normales cuando el stack usa una base de datos relacional. La invoca la skill requirements-pipeline.
+description: Etapa final del pipeline de requisitos. Inspecciona el modelo de datos y el diseno tecnico y produce un reporte de defectos, incluyendo normalizacion en formas normales cuando el stack usa una base de datos relacional. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---
 
@@ -121,6 +121,10 @@ valido, sin cercas de markdown):
   "warnings": ["string"]
 }
 ```
+
+Versionado: si el archivo ya existia, incrementa `version` en cada reescritura. Los
+campos `*_version_ref` citan el numero de `version` actual del archivo referenciado,
+como string (ej. `"3"`).
 
 Tambien escribi `.dev/requirements/design-inspection.md`: un resumen legible con el
 paradigma de base de datos detectado, el conteo de defectos por severidad y, por cada

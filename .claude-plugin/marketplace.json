@@ -32,8 +32,8 @@
     },
     {
       "name": "requirements-pipeline",
-      "description": "Convierte un documento de dominio en una linea de base de requisitos trazable: LEL, inspeccion, preguntas a stakeholders, escenarios, requisitos funcionales y no funcionales, diseno tecnico e inspeccion del diseno.",
-      "version": "1.0.0",
+      "description": "Convierte un documento de dominio en una linea de base de requisitos trazable: LEL, inspeccion, preguntas a stakeholders, escenarios, requisitos funcionales y no funcionales con su inspeccion, diseno tecnico e inspeccion del diseno.",
+      "version": "1.1.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"

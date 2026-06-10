@@ -19,13 +19,14 @@ genera, en `.dev/requirements/`. El plugin en si vive fuera del proyecto.
 requirements-pipeline/
   .claude-plugin/
     plugin.json                  manifiesto del plugin
-  agents/                        los 8 subagentes del pipeline
+  agents/                        los 9 subagentes del pipeline
     requirements-intake.md
     lel-authoring.md
     lel-inspection.md
     stakeholder-questionnaire.md
     scenario-modeling.md
     requirements-specification.md
+    requirements-inspection.md
     technical-design.md
     design-inspection.md
   skills/
@@ -75,16 +76,16 @@ O en lenguaje natural (la skill se activa sola):
 Genera los requisitos a partir de este documento: docs/especificacion.pdf
 ```
 
-El pipeline corre las 8 etapas y tiene tres puntos de interaccion: una **pausa** para que
-respondas el cuestionario al stakeholder, una **consulta** sobre si hay mockups de UI
-antes del diseno, y un **lazo de correccion** del diseno. Todo se escribe en
-`.dev/requirements/` del proyecto.
+El pipeline corre las 9 etapas y tiene cuatro puntos de interaccion o control: una
+**pausa** para que respondas el cuestionario al stakeholder, un **lazo de correccion**
+de los requisitos, una **consulta** sobre si hay mockups de UI antes del diseno, y un
+**lazo de correccion** del diseno. Todo se escribe en `.dev/requirements/` del proyecto.
 
 ## Etapas
 
 ```
 documento -> intake -> LEL -> inspeccion -> preguntas -> [PAUSA] ->
-escenarios -> requisitos -> diseno -> inspeccion de diseno
+escenarios -> requisitos -> inspeccion de requisitos -> diseno -> inspeccion de diseno
 ```
 
 | # | Subagente | Produce |
@@ -95,8 +96,9 @@ escenarios -> requisitos -> diseno -> inspeccion de diseno
 | 4 | `stakeholder-questionnaire` | preguntas para el stakeholder |
 | 5 | `scenario-modeling` | escenarios trazables al LEL |
 | 6 | `requirements-specification` | requisitos funcionales y no funcionales |
-| 7 | `technical-design` | modelo de datos y diseno tecnico |
-| 8 | `design-inspection` | inspeccion del diseno y normalizacion |
+| 7 | `requirements-inspection` | inspeccion de los requisitos (cobertura, trazabilidad, campos para planificar) |
+| 8 | `technical-design` | modelo de datos y diseno tecnico |
+| 9 | `design-inspection` | inspeccion del diseno y normalizacion |
 
 Ver `PIPELINE.md` para el diagrama completo y las reglas de orquestacion.
 
@@ -112,6 +114,7 @@ Ver `PIPELINE.md` para el diagrama completo y las reglas de orquestacion.
 | `stakeholder-questions.json` / `.md` | Cuestionario para el stakeholder |
 | `scenarios.json` / `scenarios.md` | Escenarios trazables al LEL |
 | `requirements.json` / `requirements.md` | Requisitos funcionales y no funcionales |
+| `requirements-inspection.json` / `.md` | Inspeccion de los requisitos |
 | `data-model.json` / `data-model.md` | Modelo de datos: entidades, campos y relaciones |
 | `technical-design.json` / `technical-design.md` | Arquitectura, API, pantallas y decisiones (ADRs) |
 | `design-inspection.json` / `design-inspection.md` | Inspeccion del diseno y normalizacion |

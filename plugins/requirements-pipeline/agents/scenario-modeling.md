@@ -82,6 +82,11 @@ Escribi `.dev/requirements/scenarios.json` con este contrato exacto (solo JSON v
 }
 ```
 
+Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archivo;
+`metadata.updated_at` se actualiza siempre. `lel_version_ref` cita el numero de
+`version` actual de `lel.json`, como string (ej. `"3"`). Las etapas posteriores citan
+la `version` de este archivo en sus `scenario_version_ref`.
+
 Tambien escribi `.dev/requirements/scenarios.md`: un resumen legible con, por cada
 Escenario, su id, titulo, objetivo, contexto, actores, recursos, episodios numerados y
 excepciones.

@@ -113,6 +113,9 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
 
 Devolve solo JSON valido en cada archivo, sin cercas de markdown.
 
+Versionado: `version` empieza en 1; si reescribis un archivo que ya existia, incrementa
+su `version`.
+
 ## Antes de terminar
 
 - Verifica que los tres archivos son JSON valido.

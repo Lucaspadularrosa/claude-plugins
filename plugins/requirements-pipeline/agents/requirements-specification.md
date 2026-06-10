@@ -1,6 +1,6 @@
 ---
 name: requirements-specification
-description: Etapa final del pipeline de requisitos. Deriva una especificacion de requisitos funcionales y no funcionales a partir de los Escenarios, lista para planificar en tareas y sprints. La invoca la skill requirements-pipeline.
+description: Sexta etapa del pipeline de requisitos. Deriva una especificacion de requisitos funcionales y no funcionales a partir de los Escenarios, lista para alimentar la planificacion. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---
 
@@ -18,6 +18,12 @@ planificacion (tareas, fases, sprints).
 Lee:
 - `.dev/requirements/scenarios.json` (fuente principal de comportamiento).
 - `.dev/requirements/lel.json` (fuente de vocabulario).
+
+En modo correccion (lazo de inspeccion de requisitos): el orquestador te puede indicar
+que existe `.dev/requirements/requirements-inspection.json` con defectos a corregir. Si
+te lo indica, leelo y aplica la `proposed_correction` de CADA defecto confirmado,
+preservando los ids existentes (`RF-xxx`, `RNF-xxx`, `FG-xx`, `AC-xxx`). No reconstruyas
+desde cero. Al terminar, incrementa `version` y actualiza `metadata.updated_at`.
 
 ## Reglas
 
@@ -57,6 +63,13 @@ Lee:
   probarse, declaralo en `depends_on` con los ids de esos requisitos.
 - Ejemplo: el requisito de upsert de socios depende del requisito de importar el padron.
 - No declares dependencias circulares. Si dudas, no declares la dependencia.
+- Las dependencias no se declaran gratis: en la planificacion serializan la ejecucion
+  (una feature que depende de otra no puede construirse en paralelo con ella). Por cada
+  dependencia declarada, deja la justificacion rastreable en el `rationale` del
+  requisito: que necesita del otro y por que no alcanza con conocer su interfaz o sus
+  datos. Si solo necesita la forma de los datos o la firma de una API, decilo asi en el
+  `rationale`: la planificacion puede resolver ese caso con una tarea-contrato sin
+  bloquear el paralelismo.
 
 ### Estimacion (`estimated_effort`)
 
@@ -131,6 +144,12 @@ Escribi `.dev/requirements/requirements.json` con este contrato exacto (solo JSO
   "warnings": ["string"]
 }
 ```
+
+Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archivo
+(modo correccion incluido); `metadata.updated_at` se actualiza siempre. Los campos
+`lel_version_ref` y `scenario_version_ref` citan el numero de `version` actual de
+`lel.json` y `scenarios.json`, como string (ej. `"3"`). Las etapas posteriores usan
+estas referencias para detectar cuando la especificacion quedo desactualizada.
 
 Tambien escribi `.dev/requirements/requirements.md`: la especificacion legible con un
 resumen, las features y, por cada requisito, su id, enunciado, feature, prioridad,

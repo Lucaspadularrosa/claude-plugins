@@ -92,6 +92,10 @@ Escribi `.dev/requirements/lel-inspection.json` con este contrato exacto (solo J
 }
 ```
 
+Versionado: si el archivo ya existia, incrementa `version` en cada reescritura.
+`lel_version_ref` cita el numero de `version` actual de `lel.json`, como string
+(ej. `"3"`).
+
 Tambien escribi `.dev/requirements/lel-inspection.md`: un resumen legible con el conteo
 de defectos por severidad y, por cada defecto, su id, check, severidad, descripcion,
 correccion propuesta y pregunta al stakeholder si la hubiera.

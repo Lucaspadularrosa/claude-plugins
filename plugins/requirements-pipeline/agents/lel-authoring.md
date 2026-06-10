@@ -101,6 +101,10 @@ cercas de markdown):
 }
 ```
 
+Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archivo
+(modo actualizacion incluido); `metadata.updated_at` se actualiza siempre. Las etapas
+posteriores citan este numero en sus `lel_version_ref` para detectar desactualizacion.
+
 Tambien escribi `.dev/requirements/lel.md`: un resumen legible con el nombre del proyecto,
 el resumen del dominio y, por cada simbolo, su id, nombre canonico, tipo, nociones e
 impactos; al final, el alias map y las preguntas abiertas.

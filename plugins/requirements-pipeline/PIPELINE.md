@@ -39,6 +39,11 @@ documento de dominio (.docx / .pdf / .md)
         |
         v  [requirements-specification]
 .dev/requirements/requirements.json + requirements.md
+        |
+        v  [requirements-inspection]
+.dev/requirements/requirements-inspection.json + .md (auditoria de los requisitos)
+        -> Si hay defectos high/medium: requirements-specification (correccion)
+           -> requirements-inspection
 
         CONSULTA DE UI
              -> Preguntar al usuario si hay mockups HTML, CSS o
@@ -67,6 +72,7 @@ documento de dominio (.docx / .pdf / .md)
 | `stakeholder-questionnaire` | Arma las preguntas para el stakeholder | Secuencial | `agents/stakeholder-questionnaire.md` |
 | `scenario-modeling` | Deriva los Escenarios desde el LEL | Secuencial | `agents/scenario-modeling.md` |
 | `requirements-specification` | Especifica requisitos funcionales y no funcionales | Secuencial | `agents/requirements-specification.md` |
+| `requirements-inspection` | Inspecciona los requisitos: cobertura de escenarios, trazabilidad, dependencias y campos para la planificacion | Secuencial | `agents/requirements-inspection.md` |
 | `technical-design` | Produce el modelo de datos y el diseno tecnico (arquitectura, API, ADRs) | Secuencial | `agents/technical-design.md` |
 | `design-inspection` | Inspecciona el diseno y la normalizacion del modelo de datos | Secuencial (al final) | `agents/design-inspection.md` |
 
@@ -97,15 +103,26 @@ La orquestacion vive en la skill `skills/requirements-pipeline/SKILL.md` del plu
 - Si los hay, `technical-design` los toma como diseno autoritativo de las pantallas y
   reconcilia mockup contra requisitos. Si no, propone las pantallas de forma abstracta.
 
+### Lazo de correccion de los requisitos - condicional
+- `requirements-inspection` audita la especificacion: cobertura de escenarios,
+  trazabilidad, dependencias sin ciclos, criterios de aceptacion verificables y los
+  campos que la planificacion necesita (`feature_group`, `depends_on`,
+  `estimated_effort`, `priority`).
+- Si reporta defectos `high` o `medium`, volver a `requirements-specification` en modo
+  correccion y luego re-inspeccionar, hasta que la especificacion pase.
+
 ### Lazo de correccion del diseno - condicional
 - `design-inspection` revisa el diseno; cuando el stack es relacional, incluye la
   normalizacion en formas normales (1FN, 2FN, 3FN).
 - Si reporta defectos `high` o `medium`, volver a `technical-design` en modo correccion
   y luego re-inspeccionar, hasta que el diseno pase.
 
-### Trazabilidad
+### Trazabilidad y versionado
 - Ningun paso inventa vocabulario. Los escenarios usan simbolos del LEL; los requisitos
   trazan a escenarios, episodios y simbolos.
+- Toda reescritura de un artefacto incrementa su `version`; los campos `*_version_ref`
+  citan la `version` del archivo referenciado. El pipeline de planificacion usa estas
+  referencias para detectar cuando su plan quedo desactualizado.
 
 ---
 
@@ -129,8 +146,9 @@ El agente principal:
    `stakeholder-questionnaire`.
 3. Presenta el cuestionario y espera (PAUSA).
 4. Aplica respuestas si las hay, continua con `scenario-modeling` ->
-   `requirements-specification`, pregunta si hay mockups de UI, corre `technical-design`
-   y cierra con `design-inspection` (con su lazo de correccion).
+   `requirements-specification` -> `requirements-inspection` (con su lazo de
+   correccion), pregunta si hay mockups de UI, corre `technical-design` y cierra con
+   `design-inspection` (con su lazo de correccion).
 5. Lista los archivos generados.
 
 ---
@@ -139,7 +157,7 @@ El agente principal:
 
 ```
 requirements-pipeline/           (el plugin; se instala una vez)
-  agents/         los 8 subagentes del pipeline
+  agents/         los 9 subagentes del pipeline
   skills/
     requirements-pipeline/   skill de orquestacion + script de extraccion
   commands/

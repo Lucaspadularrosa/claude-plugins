@@ -28,7 +28,8 @@ esta etapa. Usalo.
 En modo correccion (lazo de inspeccion de diseno): el orquestador te puede indicar que
 existe `.dev/requirements/design-inspection.json` con defectos a corregir. Si te lo
 indica, leelo y aplica la `proposed_correction` de cada defecto confirmado, preservando
-los ids del diseno previo.
+los ids del diseno previo. Al terminar, incrementa la `version` de cada archivo que
+reescribiste y actualiza su `metadata.updated_at`.
 
 ### Assets de diseno de UI (opcional)
 
@@ -154,6 +155,16 @@ modelarse como un campo enum de otra entidad o como una entidad propia.
   "warnings": ["string"]
 }
 ```
+
+### Versionado
+
+En ambos archivos: `version` empieza en 1 y se incrementa en cada reescritura (modo
+correccion incluido); `metadata.updated_at` se actualiza siempre. Los campos
+`*_version_ref` citan el numero de `version` actual del archivo referenciado, como
+string (ej. `"3"`): `requirements_version_ref` el de `requirements.json`,
+`lel_version_ref` el de `lel.json`, `data_model_version_ref` el de `data-model.json`.
+El pipeline de planificacion usa estas referencias para detectar cuando el plan quedo
+desactualizado respecto del diseno.
 
 ### 3 y 4. Versiones legibles
 

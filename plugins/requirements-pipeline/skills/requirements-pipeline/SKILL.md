@@ -12,7 +12,7 @@ Vos, el agente principal, sos el orquestador: ejecutas el script de extraccion y
 cada etapa al subagente correspondiente con la herramienta Task. Cada subagente lee y
 escribe archivos; vos encadenas las etapas y manejas la pausa con el stakeholder.
 
-## Subagentes (en `.claude/agents/`)
+## Subagentes (en `agents/` del plugin)
 
 | Orden | Subagente | Lee | Escribe |
 |---|---|---|---|
@@ -22,8 +22,9 @@ escribe archivos; vos encadenas las etapas y manejas la pausa con el stakeholder
 | 4 | `stakeholder-questionnaire` | `lel.json`, `lel-inspection.json` | `stakeholder-questions.json`, `stakeholder-questions.md` |
 | 5 | `scenario-modeling` | `lel.json`, `lel-inspection.json` | `scenarios.json`, `scenarios.md` |
 | 6 | `requirements-specification` | `scenarios.json`, `lel.json` | `requirements.json`, `requirements.md` |
-| 7 | `technical-design` | `requirements.json`, `supporting-context.json`, `lel.json`, mockups de UI (opcional) | `data-model.json`, `technical-design.json` (+ `.md`) |
-| 8 | `design-inspection` | `data-model.json`, `technical-design.json`, `requirements.json` | `design-inspection.json`, `design-inspection.md` |
+| 7 | `requirements-inspection` | `requirements.json`, `scenarios.json`, `lel.json` | `requirements-inspection.json`, `requirements-inspection.md` |
+| 8 | `technical-design` | `requirements.json`, `supporting-context.json`, `lel.json`, mockups de UI (opcional) | `data-model.json`, `technical-design.json` (+ `.md`) |
+| 9 | `design-inspection` | `data-model.json`, `technical-design.json`, `requirements.json` | `design-inspection.json`, `design-inspection.md` |
 
 Todos los archivos se generan en `.dev/requirements/` del proyecto actual.
 
@@ -78,10 +79,21 @@ que lo lleve al stakeholder.
 
 Nunca inventes respuestas del stakeholder.
 
-### Paso 4 - Etapas 5 a 8 (escenarios -> requisitos -> diseno -> inspeccion de diseno)
+### Paso 4 - Etapas 5 a 9 (escenarios -> requisitos -> inspeccion -> diseno -> inspeccion de diseno)
 
 Invoca, en orden y de a una: `scenario-modeling` y luego `requirements-specification`,
 sobre la ultima version de `lel.json`.
+
+Cuando `requirements-specification` termina, invoca `requirements-inspection`. Es la
+compuerta de auditoria de los requisitos: verifica cobertura de escenarios,
+trazabilidad, dependencias sin ciclos, criterios de aceptacion verificables y los campos
+que la planificacion necesita.
+
+- Si la inspeccion devuelve `passed: true`, segui.
+- Si reporta defectos `high` o `medium`, volve a invocar `requirements-specification` en
+  modo correccion, indicandole que lea `requirements-inspection.json` y aplique las
+  correcciones propuestas. Despues volve a invocar `requirements-inspection`. Repeti
+  hasta que la especificacion pase o solo queden defectos `low`.
 
 Antes de invocar `technical-design`, PREGUNTALE al usuario si tiene assets de diseno de
 UI para usar en las pantallas: mockups HTML, wireframes, hojas de estilo CSS o capturas.
@@ -110,8 +122,9 @@ modelo de datos y, cuando el stack es relacional, la normalizacion en formas nor
 ### Paso 5 - Cierre
 
 Informa al usuario los archivos generados en `.dev/requirements/` y resalta el conteo de
-simbolos del LEL, defectos del LEL y del diseno, escenarios, requisitos, entidades del
-modelo de datos y decisiones de diseno, mas las preguntas abiertas que siguen bloqueando.
+simbolos del LEL, defectos del LEL, de los requisitos y del diseno, escenarios,
+requisitos, entidades del modelo de datos y decisiones de diseno, mas las preguntas
+abiertas que siguen bloqueando.
 
 ## Reglas de orquestacion
 
@@ -126,6 +139,9 @@ modelo de datos y decisiones de diseno, mas las preguntas abiertas que siguen bl
   que referencia (simbolos, escenarios, episodios, requisitos) existan. Si hay
   referencias colgadas o el subagente se salteo un paso, volve a invocarlo con el
   detalle del problema antes de continuar.
+- Versionado: toda reescritura de un artefacto incrementa su `version`; los campos
+  `*_version_ref` citan el numero de `version` del archivo referenciado. Asi las etapas
+  posteriores (y el pipeline de planificacion) detectan artefactos desactualizados.
 
 ## Estructura `.dev/requirements/` resultante
 
@@ -141,6 +157,7 @@ modelo de datos y decisiones de diseno, mas las preguntas abiertas que siguen bl
   stakeholder-answers.md        respuestas del stakeholder (si las hubo)
   scenarios.json / scenarios.md Escenarios trazables al LEL
   requirements.json / .md       requisitos funcionales y no funcionales
+  requirements-inspection.json/.md inspeccion de los requisitos
   data-model.json / .md         modelo de datos (entidades y relaciones)
   technical-design.json / .md   arquitectura, API, pantallas y decisiones (ADRs)
   design-inspection.json / .md  inspeccion del diseno y normalizacion

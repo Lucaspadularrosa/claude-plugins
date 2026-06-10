@@ -151,6 +151,12 @@ Escribi `.dev/plan/tasks.json` con este contrato exacto (solo JSON valido, sin c
 }
 ```
 
+Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archivo
+(modo correccion incluido); `metadata.updated_at` se actualiza siempre.
+`requirements_version_ref` y `technical_design_version_ref` citan el numero de
+`version` actual de `requirements.json` y `technical-design.json`, como string
+(ej. `"3"`): son la base de la deteccion de desactualizacion del plan.
+
 Tambien escribi `.dev/plan/tasks.md`: un resumen legible con, por cada feature, sus tareas
 (id, titulo, prioridad, complejidad, dependencias y requisitos que cubre).
 
