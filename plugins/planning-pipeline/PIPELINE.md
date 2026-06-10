@@ -1,10 +1,15 @@
 # Pipeline: Planificacion
 
-Pipeline que convierte una linea de base de requisitos en un plan de implementacion
-auditable: tareas trazables a los requisitos, agrupadas en fases y sprints, con un brief
-por feature para alimentar un pipeline de build.
+Pipeline que convierte una linea de base de requisitos en un plan de ejecucion para una
+flota de agentes IA: tareas trazables a los requisitos y dimensionadas para una pasada de
+agente, lotes de features que pueden construirse en paralelo (una rama por feature) y un
+brief por feature para alimentar un pipeline de build.
 
 Es la continuacion natural del pipeline de requisitos: arranca donde aquel termina.
+
+No hay sprints, fases ni estimaciones en tiempo humano: el orden lo dicta exclusivamente
+el grafo de dependencias, y la metrica central es cuantos agentes pueden trabajar en
+simultaneo.
 
 ---
 
@@ -16,23 +21,23 @@ Es la continuacion natural del pipeline de requisitos: arranca donde aquel termi
 .dev/requirements/data-model.json
         |
         v  [task-derivation]
-.dev/plan/tasks.json + tasks.md               (tareas trazables, agrupadas por feature,
-                                               con dependency_kind y tareas-contrato)
+.dev/plan/tasks.json + tasks.md               (tareas verticales por feature, con
+                                               complexity para agentes, dependency kind
+                                               hard/contract y tareas-contrato)
         |
-        v  [sprint-planning]
-.dev/plan/sprints.json + sprints.md           (fases y sprints; tareas-contrato en
-                                               sprint anterior a sus consumidoras)
-        |
-        v  [parallel-planning]
-.dev/plan/parallel-plan.json + .md            (lotes paralelos por sprint)
+        v  [execution-planning]
+.dev/plan/execution-plan.json + .md           (ronda de contratos + lotes paralelos
+                                               de features, con orden de tareas por
+                                               feature)
         |
         v  [plan-inspection]
 .dev/plan/plan-inspection.json + .md          (auditoria del plan + paralelismo)
         -> Si hay defectos high/medium: corregir (task-derivation /
-           sprint-planning / parallel-planning) -> plan-inspection
+           execution-planning) -> plan-inspection
         |
         v  [feature-brief]
-.dev/features/{feature}.md                    (un brief por feature, con lote paralelo)
+.dev/features/{feature}.md                    (un brief por feature, con su lote,
+                                               su orden de tareas y sus contratos)
         <- FIN (plan auditable + briefs para el pipeline de build)
 ```
 
@@ -42,11 +47,10 @@ Es la continuacion natural del pipeline de requisitos: arranca donde aquel termi
 
 | Agente | Rol | Dispatch | Definicion |
 |---|---|---|---|
-| `task-derivation` | Deriva tareas verticales desde los requisitos, por feature; clasifica dependencias en `hard` / `contract` y extrae tareas-contrato cross-feature | Secuencial | `agents/task-derivation.md` |
-| `sprint-planning` | Agrupa las tareas en fases y sprints; las tareas-contrato van en sprint anterior a sus consumidoras | Secuencial | `agents/sprint-planning.md` |
-| `parallel-planning` | Agrupa las features de cada sprint en lotes paralelos respetando dependencias `hard` | Secuencial | `agents/parallel-planning.md` |
-| `plan-inspection` | Audita el plan: cobertura, huerfanos, ciclos, desactualizacion y coherencia del paralelismo | Secuencial | `agents/plan-inspection.md` |
-| `feature-brief` | Emite un documento por feature en `.dev/features/`, incluyendo el lote paralelo asignado | Secuencial (al final) | `agents/feature-brief.md` |
+| `task-derivation` | Deriva tareas verticales desde los requisitos, dimensionadas para una pasada de agente (`complexity`); clasifica dependencias en `hard` / `contract` y extrae tareas-contrato cross-feature | Secuencial | `agents/task-derivation.md` |
+| `execution-planning` | Calcula la ronda de contratos inicial y los lotes de features que pueden construirse en paralelo, directo del grafo de dependencias `hard` | Secuencial | `agents/execution-planning.md` |
+| `plan-inspection` | Audita el plan: cobertura, huerfanos, ciclos, granularidad para agentes, coherencia de los lotes y desactualizacion | Secuencial | `agents/plan-inspection.md` |
+| `feature-brief` | Emite un documento por feature en `.dev/features/`, con su lote de ejecucion, el orden de sus tareas y sus contratos | Secuencial (al final) | `agents/feature-brief.md` |
 
 La orquestacion vive en la skill `skills/planning-pipeline/SKILL.md`.
 
@@ -55,18 +59,18 @@ La orquestacion vive en la skill `skills/planning-pipeline/SKILL.md`.
 ## Reglas de orquestacion
 
 ### Dispatch secuencial
-- Cada etapa consume el archivo que produjo la anterior. No hay paralelismo.
+- Cada etapa consume el archivo que produjo la anterior. Las etapas del pipeline son
+  secuenciales; el paralelismo es del plan que producen.
 - La precondicion es que exista la linea de base de requisitos en `.dev/requirements/`.
 
 ### Lazo de correccion del plan - condicional
 - `plan-inspection` audita el plan. Si reporta defectos `high` o `medium`, volver a la
   etapa que corresponda en modo correccion y re-inspeccionar, hasta que el plan pase:
-  - `task-derivation` para cobertura, huerfanos, dependencias, kind invalido o
-    paralelismo bajo (checks 001, 002, 003, 010, 011, 014).
-  - `sprint-planning` para orden, balance, prioridades o posicion de tareas-contrato
-    (checks 005, 008, 009, 012).
-  - `parallel-planning` para incoherencia entre `parallel-plan.json` y el resto del
-    plan (check 013).
+  - `task-derivation` para cobertura, huerfanos, dependencias, granularidad y
+    complejidad, criterios de aceptacion, staleness o extraccion de contratos
+    (checks 001, 002, 003, 004, 005, 006, 007, 011).
+  - `execution-planning` para completitud, orden, metricas o lotes seriales sin
+    justificar (checks 008, 009, 010, 012).
 
 ### Trazabilidad y auditoria
 - Toda tarea cita `requirement_ids`; ningun requisito queda sin tarea.
@@ -88,15 +92,16 @@ Con el slash command:
 O en lenguaje natural (la skill se activa sola):
 
 ```
-"Genera el plan de implementacion a partir de los requisitos."
+"Genera el plan de ejecucion a partir de los requisitos."
 ```
 
 El agente principal:
 1. Verifica que exista la linea de base de requisitos en `.dev/requirements/`.
-2. Encadena `task-derivation` -> `sprint-planning` -> `parallel-planning`.
+2. Encadena `task-derivation` -> `execution-planning`.
 3. Corre `plan-inspection` y su lazo de correccion hasta que el plan pase.
 4. Corre `feature-brief` para emitir los `.dev/features/{feature}.md`.
-5. Lista los archivos generados, incluyendo el grado de paralelismo maximo.
+5. Lista los archivos generados, incluyendo el maximo paralelismo (agentes simultaneos)
+   y el critical path en turnos.
 
 ---
 
@@ -104,10 +109,9 @@ El agente principal:
 
 ```
 .dev/plan/
-  tasks.json / tasks.md           tareas trazables a los requisitos
-  sprints.json / sprints.md       fases y sprints
-  parallel-plan.json / .md        lotes paralelos por sprint
-  plan-inspection.json / .md      auditoria del plan
+  tasks.json / tasks.md             tareas trazables a los requisitos
+  execution-plan.json / .md         ronda de contratos + lotes paralelos de features
+  plan-inspection.json / .md        auditoria del plan
 .dev/features/
-  {feature}.md                    un brief por feature para el pipeline de build
+  {feature}.md                      un brief por feature para el pipeline de build
 ```

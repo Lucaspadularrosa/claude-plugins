@@ -61,16 +61,16 @@ documento de dominio (.docx / .pdf / .md)
 
 | Agente | Rol | Dispatch | Definicion |
 |---|---|---|---|
-| `requirements-intake` | Clasifica el documento en inventario, candidatos LEL y contexto | Secuencial | `.claude/agents/requirements-intake.md` |
-| `lel-authoring` | Construye el Lexico Extendido del Lenguaje | Secuencial | `.claude/agents/lel-authoring.md` |
-| `lel-inspection` | Inspecciona el LEL y produce el checklist de defectos | Secuencial | `.claude/agents/lel-inspection.md` |
-| `stakeholder-questionnaire` | Arma las preguntas para el stakeholder | Secuencial | `.claude/agents/stakeholder-questionnaire.md` |
-| `scenario-modeling` | Deriva los Escenarios desde el LEL | Secuencial | `.claude/agents/scenario-modeling.md` |
-| `requirements-specification` | Especifica requisitos funcionales y no funcionales | Secuencial | `.claude/agents/requirements-specification.md` |
-| `technical-design` | Produce el modelo de datos y el diseno tecnico (arquitectura, API, ADRs) | Secuencial | `.claude/agents/technical-design.md` |
-| `design-inspection` | Inspecciona el diseno y la normalizacion del modelo de datos | Secuencial (al final) | `.claude/agents/design-inspection.md` |
+| `requirements-intake` | Clasifica el documento en inventario, candidatos LEL y contexto | Secuencial | `agents/requirements-intake.md` |
+| `lel-authoring` | Construye el Lexico Extendido del Lenguaje | Secuencial | `agents/lel-authoring.md` |
+| `lel-inspection` | Inspecciona el LEL y produce el checklist de defectos | Secuencial | `agents/lel-inspection.md` |
+| `stakeholder-questionnaire` | Arma las preguntas para el stakeholder | Secuencial | `agents/stakeholder-questionnaire.md` |
+| `scenario-modeling` | Deriva los Escenarios desde el LEL | Secuencial | `agents/scenario-modeling.md` |
+| `requirements-specification` | Especifica requisitos funcionales y no funcionales | Secuencial | `agents/requirements-specification.md` |
+| `technical-design` | Produce el modelo de datos y el diseno tecnico (arquitectura, API, ADRs) | Secuencial | `agents/technical-design.md` |
+| `design-inspection` | Inspecciona el diseno y la normalizacion del modelo de datos | Secuencial (al final) | `agents/design-inspection.md` |
 
-La orquestacion vive en la skill `.claude/skills/requirements-pipeline/SKILL.md`.
+La orquestacion vive en la skill `skills/requirements-pipeline/SKILL.md` del plugin.
 
 ---
 
@@ -135,16 +135,16 @@ El agente principal:
 
 ---
 
-## Estructura esperada en cada proyecto
+## Estructura del plugin y salidas
 
 ```
-.claude/
+requirements-pipeline/           (el plugin; se instala una vez)
   agents/         los 8 subagentes del pipeline
   skills/
     requirements-pipeline/   skill de orquestacion + script de extraccion
   commands/
     requerimientos.md        slash command de entrada
 
-.dev/
+.dev/                            (en cada proyecto)
   requirements/   <- salidas generadas por el pipeline
 ```
