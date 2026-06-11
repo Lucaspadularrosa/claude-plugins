@@ -1,164 +1,253 @@
 ---
 name: requirements-pipeline
-description: Genera un flujo completo de ingenieria de requisitos (LEL, inspeccion, preguntas a stakeholders, escenarios, requisitos funcionales y no funcionales, y diseno tecnico con modelo de datos y arquitectura) a partir de un documento de dominio en Word, PDF o Markdown. Usar cuando el usuario quiere convertir documentacion o una especificacion en requisitos estructurados y trazables.
+description: Pipeline iterativo de ingenieria de requisitos con el metodo LEL y Escenarios. Descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; y absorbe cambios sobre lo ya baselineado, todo trazable y auditable. Usar cuando el usuario quiere generar requisitos desde documentacion o una vision, agregar material nuevo, o profundizar features para planificar y construir.
 ---
 
-# Pipeline de Ingenieria de Requisitos (LEL y Escenarios)
+# Pipeline de Ingenieria de Requisitos (LEL y Escenarios, iterativo)
 
-Esta skill orquesta la conversion de un documento de dominio en una linea de base de
-requisitos trazable, aplicando el metodo LEL y Escenarios de Leite, Hadad, Kaplan y Doorn.
+Esta skill convierte material de dominio en una linea de base de requisitos trazable,
+aplicando el metodo LEL y Escenarios de Leite, Hadad, Kaplan y Doorn — pero de forma
+**iterativa e incremental**, no en cascada: la linea de base de Leite es una estructura
+que evoluciona, y este pipeline la hace evolucionar por rebanadas.
 
-Vos, el agente principal, sos el orquestador: ejecutas el script de extraccion y delegas
-cada etapa al subagente correspondiente con la herramienta Task. Cada subagente lee y
-escribe archivos; vos encadenas las etapas y manejas la pausa con el stakeholder.
+El principio: **amplitud temprana y barata, profundidad recien cuando hace falta.**
+Primero se descubre el mapa completo del producto (features y escenarios stub); despues
+se elaboran y baselinean solo las features elegidas, incremento por incremento; el
+material nuevo que llega despues (documentos, charlas) entra al mismo circuito sin
+romper nada de lo construido.
+
+Vos, el agente principal, sos el orquestador: ejecutas la extraccion, delegas cada
+etapa al subagente correspondiente con la herramienta Task, mantenes el changelog y
+manejas las pausas con el usuario.
 
 ## Subagentes (en `agents/` del plugin)
 
-| Orden | Subagente | Lee | Escribe |
-|---|---|---|---|
-| 1 | `requirements-intake` | texto del documento | `source-inventory.json`, `lel-candidates.json`, `supporting-context.json` |
-| 2 | `lel-authoring` | los 3 archivos de intake | `lel.json`, `lel.md` |
-| 3 | `lel-inspection` | `lel.json` | `lel-inspection.json`, `lel-inspection.md` |
-| 4 | `stakeholder-questionnaire` | `lel.json`, `lel-inspection.json` | `stakeholder-questions.json`, `stakeholder-questions.md` |
-| 5 | `scenario-modeling` | `lel.json`, `lel-inspection.json` | `scenarios.json`, `scenarios.md` |
-| 6 | `requirements-specification` | `scenarios.json`, `lel.json` | `requirements.json`, `requirements.md` |
-| 7 | `requirements-inspection` | `requirements.json`, `scenarios.json`, `lel.json` | `requirements-inspection.json`, `requirements-inspection.md` |
-| 8 | `technical-design` | `requirements.json`, `supporting-context.json`, `lel.json`, mockups de UI (opcional) | `data-model.json`, `technical-design.json` (+ `.md`) |
-| 9 | `design-inspection` | `data-model.json`, `technical-design.json`, `requirements.json` | `design-inspection.json`, `design-inspection.md` |
+| Subagente | Rol | Participa en |
+|---|---|---|
+| `requirements-intake` | Clasifica el material en inventario, candidatos LEL y contexto | descubrir, cambio |
+| `lel-authoring` | Construye o actualiza el LEL | descubrir, cambio |
+| `lel-inspection` | Checklist de defectos del LEL | descubrir, cambio |
+| `stakeholder-questionnaire` | Preguntas al stakeholder; en descubrimiento, elicitacion | descubrir, cambio |
+| `product-mapping` | Mapa del producto: features y escenarios stub priorizados | descubrir |
+| `scenario-modeling` | Elabora en profundidad los escenarios de las features del incremento | incremento |
+| `requirements-specification` | Especifica los requisitos de las features del incremento | incremento, cambio |
+| `requirements-inspection` | Audita la especificacion (cobertura de lo elaborado) | incremento, cambio |
+| `technical-design` | Extiende el modelo de datos y el diseno con lo que el incremento necesita | incremento, cambio |
+| `design-inspection` | Audita el diseno y la normalizacion | incremento, cambio |
 
 Todos los archivos se generan en `.dev/requirements/` del proyecto actual.
 
-## Procedimiento
+## Artefactos de control
 
-### Paso 0 - Documento de entrada
+Ademas de los artefactos del metodo (LEL, escenarios, requisitos, diseno), el pipeline
+mantiene dos artefactos de control. **Los escribis vos, el orquestador**, no los
+subagentes:
 
-Identifica la ruta del documento (Word, PDF, Markdown o texto). Si el usuario no la dio,
-preguntala antes de seguir.
+### `product-map.json` (lo escribe `product-mapping`; vos actualizas los estados)
 
-### Paso 1 - Extraer el texto
+El backlog: features `FG-xx` y escenarios `SCN-xx` con `status`
+`stub -> elaborated -> baselined` (o `deprecated`). Los ids nacen en el mapa y son
+estables para siempre. Al cerrar un incremento, actualizas los estados de las features
+elaboradas.
 
-Crea `.dev/requirements/sources/` y extrae el texto con el script de esta skill. El script
-vive en la subcarpeta `scripts/` de la skill; usa la variable `${CLAUDE_SKILL_DIR}`, que
-apunta a la carpeta de la skill tanto si esta instalada como plugin como si esta suelta
-en `.claude/skills/`:
+### `changelog.json` (lo escribis vos)
+
+La historia de la linea de base. Una entrada por corrida:
+
+```json
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "DSC-001 | INC-001 | CR-001",
+      "kind": "discovery|increment|change_request",
+      "date": "YYYY-MM-DD",
+      "status": "in_progress|applied|rejected",
+      "sources": ["sources/vision.txt"],
+      "feature_ids": ["FG-01"],
+      "verdicts": [
+        {"kind": "new|modified|deprecated|already_covered", "target_kind": "requirement|scenario|feature|symbol|entity", "target_id": "RF-007", "covered_by": "RF-012", "confirmed_by_user": true}
+      ],
+      "artifact_versions": {"lel.json": {"before": "2", "after": "3"}},
+      "notes": "string"
+    }
+  ]
+}
+```
+
+Ids consecutivos por tipo: `DSC-001` descubrimientos, `INC-001` incrementos, `CR-001`
+cambios. Registra la entrada con `status: in_progress` al arrancar la corrida y cerrala
+(`applied` o `rejected`) al terminar, con las versiones antes/despues de cada artefacto
+tocado. El changelog es lo que le permite al pipeline de planificacion saber **que**
+cambio, no solo que algo cambio.
+
+## Entradas soportadas
+
+El material de dominio puede llegar como:
+
+- **Uno o varios archivos**: `.docx`, `.pdf`, `.md`, `.txt`.
+- **Una o varias carpetas**: usa Glob para listar dentro de cada carpeta (recursivo)
+  todos los archivos de esos tipos y procesalos todos. Informa cuales encontraste y
+  cuales extensiones ignoraste.
+- **Sin documento**: el usuario arranca solo con una vision conversada. Pedile que la
+  cuente (que problema resuelve, para quien, que se imagina), guarda ese texto como
+  fuente y segui el flujo normal. En este caso el cuestionario de elicitacion va a ser
+  **mas largo** — es esperable y deseable: las respuestas son la fuente.
+
+Extraccion: para cada archivo, crea `.dev/requirements/sources/` y corre:
 
 ```bash
 python3 "${CLAUDE_SKILL_DIR}/scripts/extract_document.py" \
-  "<ruta-del-documento>" ".dev/requirements/sources/<nombre>.txt"
+  "<ruta-del-archivo>" ".dev/requirements/sources/<nombre>.txt"
 ```
 
-Si `${CLAUDE_SKILL_DIR}` no estuviera definida, ubica `extract_document.py` dentro de la
-carpeta `scripts/` de esta skill y ejecutalo igual.
+Si `${CLAUDE_SKILL_DIR}` no estuviera definida, ubica `extract_document.py` en la
+subcarpeta `scripts/` de esta skill. Para PDF puede hacer falta `pip install pypdf`.
+La vision sin documento y las respuestas de entrevistas se guardan tambien en
+`sources/` (`vision-001.txt`, `entrevista-001.txt`): toda fuente queda archivada.
 
-Si el documento es PDF y el script informa que falta una biblioteca, instala una:
-`pip install pypdf`. Para `.md` o `.txt` el script solo copia el texto.
+---
 
-### Paso 2 - Etapas 1 a 4 (intake -> LEL -> inspeccion -> preguntas)
+## Modo DESCUBRIR (`/requerimientos:descubrir [rutas...]`)
 
-Invoca, en orden y de a una, las etapas 1 a 4 con la herramienta Task, delegando al
-subagente por su nombre. A cada subagente pasale: la ruta del archivo de texto extraido
-(solo a `requirements-intake`) y la instruccion de leer sus entradas y escribir sus
-salidas en `.dev/requirements/`. Espera a que cada subagente termine antes de lanzar el
-siguiente: cada etapa consume el archivo de la anterior.
+Cuando: al arrancar el proyecto, y **cada vez que llega material nuevo** (documentos,
+charlas con funcionalidades nuevas). Es siempre seguro: solo agrega al mapa y enriquece
+el vocabulario; nunca modifica lo baselineado (eso queda como propuesta).
 
-### Paso 3 - PAUSA OBLIGATORIA con el stakeholder
+1. Registra `DSC-xxx` en el changelog (`in_progress`). Resolve y extrae las entradas
+   (archivos, carpetas o vision conversada).
+2. Invoca `requirements-intake`: pasale **todas** las rutas de texto extraido. En
+   re-descubrimiento, indicale que es modo incremental (lee lo previo, continua ids,
+   marca candidatos que coinciden con simbolos existentes).
+3. Invoca `lel-authoring` (modo actualizacion si ya hay LEL) y luego `lel-inspection`.
+4. Invoca `stakeholder-questionnaire` en **modo elicitacion**: ademas de los defectos
+   del LEL, genera preguntas para completar el dominio. Cuanto menos material, mas
+   preguntas (sin documento: entrevista completa).
+5. **PAUSA OBLIGATORIA**: presenta `stakeholder-questions.md` al usuario y espera.
+   - Si responde: guarda las respuestas en `.dev/requirements/stakeholder-answers.md`
+     (una respuesta por `QST-xxx`) y archiva una copia en `sources/`
+     (`entrevista-NNN.txt`): las respuestas son una fuente mas. Si las respuestas
+     traen dominio nuevo sustancial (tipico sin documento), pasalas tambien por
+     `requirements-intake` incremental; despues aplica con `lel-authoring` (update) y
+     reinspecciona. Si el dominio sigue fino, podes ofrecer otra ronda de preguntas;
+     no fuerces mas de dos rondas seguidas sin avanzar al mapa.
+   - Si dice que no hay dudas: segui.
+   - Nunca inventes respuestas.
+6. Invoca `product-mapping`: construye o actualiza `product-map.json` (features y stubs
+   nuevos; solapamientos con lo baselineado como `pending_proposals`).
+7. Si hay `pending_proposals`, mostraselas al usuario: las acepta (quedan para resolver
+   en un `/requerimientos:cambio` o en el proximo incremento) o las rechaza.
+8. Cierra la entrada `DSC-xxx` (versiones de artefactos, features descubiertas).
+   Mostrale al usuario el mapa (`product-map.md`) y sugerile el proximo paso:
+   `/requerimientos:incremento <features prioritarias>`.
 
-Cuando `stakeholder-questionnaire` termina, NO sigas automaticamente. Mostrale al usuario
-el contenido de `.dev/requirements/stakeholder-questions.md` y pedile que lo responda o
-que lo lleve al stakeholder.
+## Modo INCREMENTO (`/requerimientos:incremento <FG-xx ...>`)
 
-- Si el usuario aporta respuestas: guardalas en `.dev/requirements/stakeholder-answers.md`
-  (una respuesta por `QST-xxx`). Volve a invocar `lel-authoring` en modo actualizacion,
-  indicandole que lea el `lel.json` previo, el `lel-inspection.json` y el
-  `stakeholder-answers.md`, y que aplique TODAS las respuestas y TODOS los defectos
-  confirmados. Despues volve a invocar `lel-inspection` sobre el LEL actualizado.
-  Verifica el cierre del lazo: si la nueva inspeccion reporta referencias colgadas a
-  preguntas resueltas o respuestas `QST-xxx` sin aplicar, volve a invocar `lel-authoring`
-  con ese detalle hasta que el lazo cierre. Recien entonces segui.
-- Si el usuario dice que no hay dudas o pide continuar: segui sin el lazo de respuestas.
+Cuando: el usuario decide que features elaborar y baselinear. La unidad del incremento
+es la **feature** (calza con los lotes, briefs y ramas del pipeline de planificacion).
+Si el usuario nombra features en lenguaje natural, resolvelas contra el mapa; si una no
+existe o esta `deprecated`, frena y aclaralo.
 
-Nunca inventes respuestas del stakeholder.
+1. Registra `INC-xxx` (`in_progress`) con las `feature_ids`.
+2. Invoca `scenario-modeling` en modo profundizacion: indicale las features y que lea
+   `product-map.json`. Elabora **solo** los escenarios stub de esas features,
+   conservando sus `SCN-xx`; los escenarios nuevos que descubra usan ids que continuan
+   y los reporta para que los sumes al mapa.
+3. Invoca `requirements-specification` en modo incremento: deriva requisitos solo de
+   esas features, conservando los `FG-xx` del mapa. `requirements.json` es acumulativo:
+   lo de incrementos anteriores se preserva intacto. Si la elaboracion implica
+   **modificar o deprecar algo baselineado**, el agente NO lo aplica: lo reporta en
+   `proposed_baseline_changes`.
+4. **PAUSA DE CONFIRMACION** (solo si hay `proposed_baseline_changes` o
+   `pending_proposals` aceptadas que tocan esto): mostra el antes/despues de cada
+   cambio propuesto sobre lo baselineado y espera el OK del usuario por cada uno. Los
+   confirmados se aplican re-invocando al agente que corresponda con la lista exacta;
+   los rechazados quedan `rejected` en el changelog. Lo nuevo no requiere confirmacion.
+5. Invoca `requirements-inspection` (audita todo lo elaborado, no solo este
+   incremento). Lazo de correccion: defectos `high`/`medium` rebotan a
+   `requirements-specification` (modo correccion) y se reinspecciona hasta pasar.
+6. Si alguna feature del incremento tiene pantallas: pregunta al usuario si hay mockups
+   de UI (HTML, CSS, wireframes, capturas) para ellas. Invoca `technical-design` en
+   modo incremental (extiende modelo de datos y diseno solo con lo que estas features
+   necesitan, preservando ids y decisiones previas) y despues `design-inspection`, con
+   su lazo de correccion hasta pasar.
+7. Cierra: marca las features y escenarios del incremento como `baselined` en
+   `product-map.json`, cierra la entrada `INC-xxx` (`applied`, con verdicts y
+   versiones). Informa el resumen y sugeri el paso siguiente: `/planificar` (primera
+   vez) o re-planificar (si ya hay plan, el pipeline de planificacion detecta los
+   incrementos no absorbidos via changelog).
 
-### Paso 4 - Etapas 5 a 9 (escenarios -> requisitos -> inspeccion -> diseno -> inspeccion de diseno)
+## Modo CAMBIO (`/requerimientos:cambio <descripcion-o-ruta>`)
 
-Invoca, en orden y de a una: `scenario-modeling` y luego `requirements-specification`,
-sobre la ultima version de `lel.json`.
+Cuando: un cambio puntual sobre lo ya baselineado, sin material grande de por medio
+("el login ahora necesita 2FA", un mail del stakeholder, un documento corto que
+modifica algo existente).
 
-Cuando `requirements-specification` termina, invoca `requirements-inspection`. Es la
-compuerta de auditoria de los requisitos: verifica cobertura de escenarios,
-trazabilidad, dependencias sin ciclos, criterios de aceptacion verificables y los campos
-que la planificacion necesita.
+1. Registra `CR-xxx` (`in_progress`). Guarda la fuente (texto del usuario o documento
+   extraido) en `sources/cr/`.
+2. Analiza el alcance leyendo lo existente (LEL, mapa, requisitos): para cada pedido
+   del CR determina el veredicto: `new` (no existia: va al mapa o directo al
+   incremento), `modified` (toca algo baselineado), `deprecated` (elimina algo) o
+   `already_covered` (ya estaba cubierto; el CR queda respondido sin tocar nada).
+   Si el alcance amerita vocabulario nuevo, corre `requirements-intake` +
+   `lel-authoring` (update) + `lel-inspection` sobre la fuente del CR.
+3. **PAUSA DE CONFIRMACION**: presenta los veredictos con antes/despues. Nada
+   `modified` ni `deprecated` se aplica sin OK explicito del usuario.
+4. Aplica los confirmados re-invocando los agentes que correspondan en modo
+   actualizacion (`scenario-modeling`, `requirements-specification`,
+   `technical-design`), siempre preservando ids; lo deprecado cambia a
+   `status: deprecated`, **nunca se borra**.
+5. Corre `requirements-inspection` (y `design-inspection` si el diseno cambio), con sus
+   lazos de correccion.
+6. Cierra la entrada `CR-xxx` con los verdicts (incluyendo `confirmed_by_user`) y las
+   versiones. Si el cambio afecta features ya planificadas o construidas, decilo
+   explicito en el resumen: el pipeline de planificacion lo va a levantar del changelog.
 
-- Si la inspeccion devuelve `passed: true`, segui.
-- Si reporta defectos `high` o `medium`, volve a invocar `requirements-specification` en
-  modo correccion, indicandole que lea `requirements-inspection.json` y aplique las
-  correcciones propuestas. Despues volve a invocar `requirements-inspection`. Repeti
-  hasta que la especificacion pase o solo queden defectos `low`.
+## Modo COMPLETO (`/requerimientos <documento>`)
 
-Antes de invocar `technical-design`, PREGUNTALE al usuario si tiene assets de diseno de
-UI para usar en las pantallas: mockups HTML, wireframes, hojas de estilo CSS o capturas.
-Pueden estar en cualquier carpeta; lo mas probable es que esten junto al documento de
-entrada o en una subcarpeta.
+El flujo clasico en cascada, util para proyectos chicos o documentos cerrados:
+equivale a DESCUBRIR + un unico INCREMENTO con **todas** las features del mapa.
+Registra igual su `DSC-xxx` e `INC-xxx` en el changelog: si despues llega material
+nuevo, el proyecto sigue por los modos incrementales sin fricciones.
 
-- Si el usuario indica una ubicacion: pasasela a `technical-design` para que tome esos
-  mockups como diseno autoritativo de las pantallas.
-- Si el usuario dice que no hay: invoca `technical-design` igual, sin assets de UI; las
-  pantallas se proponen de forma abstracta.
-
-`technical-design` lee `requirements.json`, `supporting-context.json`, `lel.json` y, si
-los hay, los assets de UI; reconecta el contexto de soporte que el intake habia separado
-para esta etapa.
-
-Cuando `technical-design` termina, invoca `design-inspection` sobre `data-model.json` y
-`technical-design.json`. Es el segundo par de ojos del diseno: revisa la estructura del
-modelo de datos y, cuando el stack es relacional, la normalizacion en formas normales.
-
-- Si la inspeccion devuelve `passed: true`, el diseno cierra.
-- Si reporta defectos `high` o `medium`, volve a invocar `technical-design` en modo
-  correccion, indicandole que lea `design-inspection.json` y aplique las correcciones
-  propuestas. Despues volve a invocar `design-inspection`. Repeti hasta que el diseno
-  pase o solo queden defectos `low`.
-
-### Paso 5 - Cierre
-
-Informa al usuario los archivos generados en `.dev/requirements/` y resalta el conteo de
-simbolos del LEL, defectos del LEL, de los requisitos y del diseno, escenarios,
-requisitos, entidades del modelo de datos y decisiones de diseno, mas las preguntas
-abiertas que siguen bloqueando.
+---
 
 ## Reglas de orquestacion
 
-- El pipeline es estrictamente secuencial: no lances una etapa sin el archivo de entrada
-  de la anterior.
-- La pausa del Paso 3 nunca se saltea.
-- Ningun paso debe inventar vocabulario: los escenarios usan simbolos del LEL y los
-  requisitos trazan a escenarios.
-- Si un subagente falla o produce un archivo vacio, detene el pipeline e informa al
-  usuario en vez de continuar con datos incompletos.
-- Despues de cada etapa, valida que el archivo de salida sea JSON valido y que los ids
-  que referencia (simbolos, escenarios, episodios, requisitos) existan. Si hay
-  referencias colgadas o el subagente se salteo un paso, volve a invocarlo con el
-  detalle del problema antes de continuar.
-- Versionado: toda reescritura de un artefacto incrementa su `version`; los campos
-  `*_version_ref` citan el numero de `version` del archivo referenciado. Asi las etapas
-  posteriores (y el pipeline de planificacion) detectan artefactos desactualizados.
+- Cada etapa consume el archivo que produjo la anterior; no lances una etapa sin su
+  entrada.
+- Las pausas (elicitacion y confirmacion) nunca se saltean. Nunca inventes respuestas
+  del stakeholder ni confirmaciones del usuario.
+- **Ids estables, siempre**: nada se renumera ni se borra. Lo eliminado se deprecia.
+  Los ids nuevos continuan las secuencias existentes.
+- **Nada baselineado cambia sin confirmacion del usuario.** Lo nuevo fluye directo.
+- Versionado: toda reescritura de un artefacto incrementa su `version`; los
+  `*_version_ref` citan la `version` del archivo referenciado; el changelog registra
+  antes/despues por corrida.
+- Si un subagente falla o produce un archivo vacio, detene el pipeline e informa, no
+  continues con datos incompletos. Despues de cada etapa valida que la salida sea JSON
+  valido y que los ids referenciados existan.
+- El pipeline de planificacion consume lo `baselined` (via `requirements.json` +
+  `technical-design.json` + `data-model.json`) y usa `changelog.json` para detectar que
+  incrementos aun no absorbio.
 
 ## Estructura `.dev/requirements/` resultante
 
 ```
 .dev/requirements/
-  sources/                      texto extraido del documento (entrada)
-  source-inventory.json         inventario de secciones
+  sources/                      toda fuente archivada (documentos, vision, entrevistas, CRs)
+  source-inventory.json         inventario de secciones (acumulativo)
   lel-candidates.json           candidatos a simbolos del LEL
   supporting-context.json       contexto de soporte
-  lel.json / lel.md             Lexico Extendido del Lenguaje
+  lel.json / lel.md             Lexico Extendido del Lenguaje (vivo)
   lel-inspection.json / .md     checklist de defectos del LEL
-  stakeholder-questions.json/.md cuestionario para el stakeholder
-  stakeholder-answers.md        respuestas del stakeholder (si las hubo)
-  scenarios.json / scenarios.md Escenarios trazables al LEL
-  requirements.json / .md       requisitos funcionales y no funcionales
+  stakeholder-questions.json/.md cuestionario (defectos + elicitacion)
+  product-map.json / .md        mapa del producto: features y stubs con estado
+  changelog.json                historia: DSC / INC / CR con veredictos y versiones
+  scenarios.json / scenarios.md Escenarios elaborados (acumulativo)
+  requirements.json / .md       requisitos (acumulativo)
   requirements-inspection.json/.md inspeccion de los requisitos
-  data-model.json / .md         modelo de datos (entidades y relaciones)
-  technical-design.json / .md   arquitectura, API, pantallas y decisiones (ADRs)
-  design-inspection.json / .md  inspeccion del diseno y normalizacion
+  data-model.json / .md         modelo de datos (acumulativo)
+  technical-design.json / .md   arquitectura, API, pantallas, ADRs (acumulativo)
+  design-inspection.json / .md  inspeccion del diseno
 ```

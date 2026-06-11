@@ -1,13 +1,14 @@
 {
   "name": "requirements-pipeline",
-  "version": "1.1.0",
-  "displayName": "Requirements Pipeline (LEL y Escenarios)",
-  "description": "Convierte un documento de dominio (Word, PDF o Markdown) en una linea de base de requisitos trazable: LEL, inspeccion, preguntas a stakeholders, escenarios, requisitos funcionales y no funcionales con su inspeccion, diseno tecnico e inspeccion del diseno. Aplica el metodo LEL y Escenarios de Leite, Hadad, Kaplan y Doorn.",
+  "version": "2.0.0",
+  "displayName": "Requirements Pipeline (LEL y Escenarios, iterativo)",
+  "description": "Pipeline iterativo de ingenieria de requisitos con el metodo LEL y Escenarios de Leite, Hadad, Kaplan y Doorn. Descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; y absorbe cambios sobre lo baselineado con confirmacion y changelog. Todo trazable y auditable.",
   "keywords": [
     "requisitos",
     "requirements",
     "lel",
     "escenarios",
+    "incremental",
     "diseno",
     "ingenieria-de-requisitos"
   ],

@@ -1,6 +1,6 @@
 ---
 name: requirements-intake
-description: Primera etapa del pipeline de requisitos. Clasifica el texto de un documento de dominio en inventario de secciones, candidatos a simbolos del LEL y contexto de soporte. La invoca la skill requirements-pipeline.
+description: Etapa de intake del pipeline de requisitos. Clasifica el material de una o varias fuentes en inventario de secciones, candidatos a simbolos del LEL y contexto de soporte; soporta modo incremental cuando llega material nuevo. La invoca la skill requirements-pipeline.
 tools: Read, Write, Glob
 ---
 
@@ -13,9 +13,24 @@ candidatos a simbolos del LEL y contexto de soporte trazable, sin perder informa
 
 ## Entrada
 
-El orquestador te indica la ruta del texto extraido del documento, en
-`.dev/requirements/sources/`. Lee ese archivo. Si no te pasan la ruta, busca el
-archivo mas reciente dentro de `.dev/requirements/sources/`.
+El orquestador te indica **una o varias rutas** de texto extraido, en
+`.dev/requirements/sources/`. Lee todos los archivos indicados; el inventario es uno
+solo y unificado, y cada seccion registra en `source` de que archivo vino. Si no te
+pasan rutas, busca el archivo mas reciente dentro de `.dev/requirements/sources/`.
+
+### Modo incremental (re-descubrimiento)
+
+Si el orquestador te indica que ya existe material previo (hay `source-inventory.json`,
+`lel-candidates.json` y `supporting-context.json` generados), trabaja incremental:
+
+- Lee los artefactos previos y tambien `.dev/requirements/lel.json` si existe.
+- Procesa **solo las fuentes nuevas** que te indicaron. No re-inventaries fuentes ya
+  inventariadas; agrega las secciones nuevas con ids que continuan la secuencia.
+- Si un candidato del material nuevo coincide con un simbolo ya existente del LEL (por
+  nombre canonico o alias), no emitas un candidato duplicado: emiti la entrada con
+  `matches_existing_symbol_id` apuntando al `SYM-xxx`, para que el authoring enriquezca
+  ese simbolo en vez de crear otro.
+- Conserva intactas las entradas previas de los tres archivos: solo agregas.
 
 ## Reglas
 
@@ -58,6 +73,7 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
     {
       "id": "SRC-SEC-001",
       "title": "string",
+      "source": "sources/nombre-del-archivo.txt",
       "content_type": "domain_language|data_model|business_rules|ui|api|architecture|security|implementation_plan|mixed|unknown",
       "relevance_to_lel": "high|medium|low|none",
       "summary": "string",
@@ -77,7 +93,8 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
       "name": "string",
       "aliases": ["string"],
       "candidate_type": "sujeto|objeto|verbo|estado",
-      "recommended_action": "include_in_lel|ask_stakeholder",
+      "recommended_action": "include_in_lel|ask_stakeholder|enrich_existing",
+      "matches_existing_symbol_id": "SYM-001",
       "rationale": "string",
       "evidence_refs": ["SRC-SEC-001"]
     }

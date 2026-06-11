@@ -32,8 +32,8 @@
     },
     {
       "name": "requirements-pipeline",
-      "description": "Convierte un documento de dominio en una linea de base de requisitos trazable: LEL, inspeccion, preguntas a stakeholders, escenarios, requisitos funcionales y no funcionales con su inspeccion, diseno tecnico e inspeccion del diseno.",
-      "version": "1.1.0",
+      "description": "Pipeline iterativo de ingenieria de requisitos (LEL y Escenarios): descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; y absorbe cambios con confirmacion y changelog, todo trazable.",
+      "version": "2.0.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"

@@ -1,6 +1,6 @@
 ---
 name: requirements-inspection
-description: Septima etapa del pipeline de requisitos. Inspecciona la especificacion de requisitos y produce un reporte de defectos sobre cobertura de escenarios, trazabilidad, dependencias, criterios de aceptacion y campos que necesita la planificacion. La invoca la skill requirements-pipeline.
+description: Etapa de inspeccion de requisitos del pipeline. Inspecciona la especificacion y produce un reporte de defectos sobre cobertura de lo elaborado, trazabilidad, dependencias, criterios de aceptacion y campos que necesita la planificacion. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---
 
@@ -21,6 +21,15 @@ Lee:
 - `.dev/requirements/requirements.json` (el artefacto a inspeccionar).
 - `.dev/requirements/scenarios.json` (para verificar cobertura y trazabilidad).
 - `.dev/requirements/lel.json` (para verificar vocabulario y referencias a simbolos).
+- `.dev/requirements/product-map.json` (los estados de las features, si existe).
+
+### Alcance en pipelines iterativos
+
+El pipeline elabora por incrementos: `scenarios.json` y `requirements.json` contienen
+solo lo elaborado hasta ahora; las features en `stub` viven en el product-map y **no
+son defecto de cobertura**. Tu alcance es todo lo elaborado (de este incremento y los
+anteriores): la cobertura se mide contra los escenarios presentes en `scenarios.json`,
+no contra el mapa completo.
 
 ## Reglas
 
@@ -74,6 +83,12 @@ Lee:
 - `REQ-CHECK-011`: preguntas abiertas. Las preguntas `blocking: true` tienen
   `target_role` y `reason`; ningun requisito afirmado como `active` depende de una
   pregunta bloqueante sin resolver (deberia estar `proposed` o tener la duda registrada).
+- `REQ-CHECK-012`: coherencia con el mapa (solo si existe `product-map.json`). Toda
+  feature `elaborated` o `baselined` del mapa tiene al menos un requisito; todo
+  `feature_group` de `requirements.json` existe en el mapa; ningun requisito pertenece
+  a una feature que el mapa tiene en `stub` o `deprecated`. Ademas, no quedan
+  `proposed_baseline_changes` con `status: pending` (un cambio propuesto sobre lo
+  baselineado sin resolver es defecto `medium`: falta la confirmacion del usuario).
 
 ## Salida
 

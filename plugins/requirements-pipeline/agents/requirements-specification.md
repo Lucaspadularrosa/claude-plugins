@@ -1,6 +1,6 @@
 ---
 name: requirements-specification
-description: Sexta etapa del pipeline de requisitos. Deriva una especificacion de requisitos funcionales y no funcionales a partir de los Escenarios, lista para alimentar la planificacion. La invoca la skill requirements-pipeline.
+description: Etapa de especificacion del pipeline de requisitos. Deriva los requisitos funcionales y no funcionales a partir de los Escenarios, lista para alimentar la planificacion; en modo incremento especifica solo las features elegidas. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---
 
@@ -18,12 +18,32 @@ planificacion (tareas, fases, sprints).
 Lee:
 - `.dev/requirements/scenarios.json` (fuente principal de comportamiento).
 - `.dev/requirements/lel.json` (fuente de vocabulario).
+- `.dev/requirements/product-map.json` (las features y sus estados, si existe).
+- `.dev/requirements/requirements.json` previo (si existe: el archivo es acumulativo).
 
-En modo correccion (lazo de inspeccion de requisitos): el orquestador te puede indicar
-que existe `.dev/requirements/requirements-inspection.json` con defectos a corregir. Si
-te lo indica, leelo y aplica la `proposed_correction` de CADA defecto confirmado,
-preservando los ids existentes (`RF-xxx`, `RNF-xxx`, `FG-xx`, `AC-xxx`). No reconstruyas
-desde cero. Al terminar, incrementa `version` y actualiza `metadata.updated_at`.
+### Modo incremento
+
+Cuando el orquestador te indica las features de un incremento:
+
+- Deriva requisitos **solo** de los escenarios de esas features. **Conserva los ids
+  `FG-xx` del product-map**: no inventes features nuevas; si la elaboracion revela que
+  hace falta una, reportala en `warnings` para que el orquestador la sume al mapa.
+- `requirements.json` es acumulativo: preserva intactos los requisitos de incrementos
+  anteriores; solo agregas los del incremento actual, con ids que continuan la
+  secuencia.
+- Si la elaboracion implica **modificar o deprecar un requisito ya baselineado** de un
+  incremento anterior (lo contradice, lo extiende, lo vuelve obsoleto), **NO lo
+  apliques**: registra la propuesta en `proposed_baseline_changes` (ver el contrato)
+  con el antes/despues. El orquestador la confirma con el usuario y, si la aprueba, te
+  re-invoca con la lista exacta de propuestas a aplicar.
+
+### Modo correccion
+
+El orquestador te puede indicar que existe
+`.dev/requirements/requirements-inspection.json` con defectos a corregir. Si te lo
+indica, leelo y aplica la `proposed_correction` de CADA defecto confirmado, preservando
+los ids existentes (`RF-xxx`, `RNF-xxx`, `FG-xx`, `AC-xxx`). No reconstruyas desde
+cero. Al terminar, incrementa `version` y actualiza `metadata.updated_at`.
 
 ## Reglas
 
@@ -139,6 +159,7 @@ Escribi `.dev/requirements/requirements.json` con este contrato exacto (solo JSO
     }
   ],
   "open_questions": [{"id": "Q-001", "question": "string", "blocking": true, "target_role": "string", "reason": "string", "related_requirement_ids": ["RF-001"], "related_scenario_ids": ["SCN-001"]}],
+  "proposed_baseline_changes": [{"id": "PROP-001", "target_kind": "requirement|feature_group", "target_id": "RF-007", "action": "modify|deprecate", "before_summary": "string", "after_summary": "string", "reason": "string", "evidence_refs": ["SCN-009"], "status": "pending|applied|rejected"}],
   "traceability_links": [{"source": {"kind": "symbol|scenario|episode|requirement|question", "id": "string"}, "target": {"kind": "symbol|scenario|episode|requirement|question", "id": "string"}, "relationship": "derived_from|verifies|covers|uses|questions|relates_to"}],
   "assumptions": ["string"],
   "warnings": ["string"]

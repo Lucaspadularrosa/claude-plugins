@@ -1,80 +1,73 @@
-# Pipeline: Ingenieria de Requisitos
+# Pipeline: Ingenieria de Requisitos (iterativo)
 
-Pipeline para transformar un documento de dominio (Word, PDF o Markdown) en una linea de
-base de requisitos trazable, aplicando el metodo LEL y Escenarios de Leite, Hadad, Kaplan
-y Doorn. Es portable: vive en una carpeta `.claude/` y no depende de ninguna aplicacion.
+Pipeline que transforma material de dominio en una linea de base de requisitos
+trazable, aplicando el metodo LEL y Escenarios de Leite, Hadad, Kaplan y Doorn — de
+forma **iterativa e incremental**: la linea de base evoluciona por rebanadas, en vez de
+cerrarse en una unica pasada en cascada.
+
+El principio: **amplitud temprana y barata, profundidad recien cuando hace falta.**
+Primero se descubre el mapa completo del producto (features y escenarios stub); despues
+se elaboran y baselinean solo las features elegidas, incremento por incremento; el
+material nuevo que llega despues entra al mismo circuito sin romper lo construido.
 
 ---
 
-## Flujo
+## Los cuatro modos
 
 ```
-documento de dominio (.docx / .pdf / .md)
-        |
-        v  [extract_document.py]
-.dev/requirements/sources/{doc}.txt
-        |
-        v  [requirements-intake]
-.dev/requirements/source-inventory.json
-.dev/requirements/lel-candidates.json
-.dev/requirements/supporting-context.json
-        |
-        v  [lel-authoring]
-.dev/requirements/lel.json + lel.md
-        |
-        v  [lel-inspection]
-.dev/requirements/lel-inspection.json + .md      (checklist de defectos)
-        |
-        v  [stakeholder-questionnaire]
-.dev/requirements/stakeholder-questions.json + .md
+                    /requerimientos:descubrir [docs|carpetas|nada]
+                    (re-ejecutable cada vez que llega material)
+documentos ----+
+carpetas ------+--> extraccion -> [requirements-intake] -> [lel-authoring]
+vision sin doc-+        -> [lel-inspection] -> [stakeholder-questionnaire]
+                              (modo elicitacion: sin documento = entrevista completa)
+                        -> PAUSA con el stakeholder -> respuestas = nueva fuente
+                        -> [product-mapping]
+                                |
+                                v
+                .dev/requirements/product-map.json
+                (features FG-xx y escenarios stub SCN-xx, priorizados;
+                 solapamientos con lo baselineado = propuestas, NO se aplican)
+                                |
+                                |   /requerimientos:incremento FG-01 FG-02 ...
+                                v
+                [scenario-modeling]  (profundiza SOLO esas features, ids estables)
+                [requirements-specification]  (requisitos solo de esas features)
+                        -> PAUSA DE CONFIRMACION si algo baselineado cambiaria
+                [requirements-inspection]  -> lazo de correccion hasta pasar
+                consulta de mockups de UI (si las features tienen pantallas)
+                [technical-design] (modo incremental) -> [design-inspection] -> lazo
+                                |
+                                v
+                features marcadas `baselined` + entrada INC-xxx en changelog.json
+                -> listas para /planificar (o re-planificar si ya hay plan)
 
-        PAUSA OBLIGATORIA
-             -> Presentar las preguntas al stakeholder
-             -> Esperar respuestas explicitas
-             -> Si hay respuestas: lel-authoring (update) -> lel-inspection
-             -> Si no hay dudas: continuar
+                    /requerimientos:cambio <descripcion-o-doc>
+                (cambios puntuales sobre lo baselineado: veredictos
+                 new/modified/deprecated/already_covered -> PAUSA DE
+                 CONFIRMACION -> aplicar -> inspecciones -> CR-xxx)
 
-        v  [scenario-modeling]
-.dev/requirements/scenarios.json + scenarios.md
-        |
-        v  [requirements-specification]
-.dev/requirements/requirements.json + requirements.md
-        |
-        v  [requirements-inspection]
-.dev/requirements/requirements-inspection.json + .md (auditoria de los requisitos)
-        -> Si hay defectos high/medium: requirements-specification (correccion)
-           -> requirements-inspection
-
-        CONSULTA DE UI
-             -> Preguntar al usuario si hay mockups HTML, CSS o
-                wireframes para usar en las pantallas
-             -> Si los hay: technical-design los toma como diseno autoritativo
-
-        v  [technical-design]  (+ mockups de UI si existen)
-.dev/requirements/data-model.json + data-model.md
-.dev/requirements/technical-design.json + technical-design.md
-        |
-        v  [design-inspection]
-.dev/requirements/design-inspection.json + .md   (normalizacion + diseno)
-        -> Si hay defectos high/medium: technical-design (correccion) -> design-inspection
-        <- FIN (LEL + inspeccion + escenarios + requisitos + diseno + inspeccion de diseno)
+                    /requerimientos <docs>
+                (modo completo clasico: descubrir + un incremento con todas
+                 las features; util para proyectos chicos)
 ```
 
 ---
 
 ## Agentes del pipeline
 
-| Agente | Rol | Dispatch | Definicion |
+| Agente | Rol | Participa en | Definicion |
 |---|---|---|---|
-| `requirements-intake` | Clasifica el documento en inventario, candidatos LEL y contexto | Secuencial | `agents/requirements-intake.md` |
-| `lel-authoring` | Construye el Lexico Extendido del Lenguaje | Secuencial | `agents/lel-authoring.md` |
-| `lel-inspection` | Inspecciona el LEL y produce el checklist de defectos | Secuencial | `agents/lel-inspection.md` |
-| `stakeholder-questionnaire` | Arma las preguntas para el stakeholder | Secuencial | `agents/stakeholder-questionnaire.md` |
-| `scenario-modeling` | Deriva los Escenarios desde el LEL | Secuencial | `agents/scenario-modeling.md` |
-| `requirements-specification` | Especifica requisitos funcionales y no funcionales | Secuencial | `agents/requirements-specification.md` |
-| `requirements-inspection` | Inspecciona los requisitos: cobertura de escenarios, trazabilidad, dependencias y campos para la planificacion | Secuencial | `agents/requirements-inspection.md` |
-| `technical-design` | Produce el modelo de datos y el diseno tecnico (arquitectura, API, ADRs) | Secuencial | `agents/technical-design.md` |
-| `design-inspection` | Inspecciona el diseno y la normalizacion del modelo de datos | Secuencial (al final) | `agents/design-inspection.md` |
+| `requirements-intake` | Clasifica el material (multi-fuente, incremental) en inventario, candidatos LEL y contexto | descubrir, cambio | `agents/requirements-intake.md` |
+| `lel-authoring` | Construye o actualiza el Lexico Extendido del Lenguaje | descubrir, cambio | `agents/lel-authoring.md` |
+| `lel-inspection` | Inspecciona el LEL y produce el checklist de defectos | descubrir, cambio | `agents/lel-inspection.md` |
+| `stakeholder-questionnaire` | Preguntas al stakeholder; en elicitacion entrevista el dominio | descubrir, cambio | `agents/stakeholder-questionnaire.md` |
+| `product-mapping` | Mapa del producto: features y escenarios stub priorizados, con estados | descubrir | `agents/product-mapping.md` |
+| `scenario-modeling` | Elabora en profundidad los escenarios de las features del incremento | incremento | `agents/scenario-modeling.md` |
+| `requirements-specification` | Especifica los requisitos de las features del incremento | incremento, cambio | `agents/requirements-specification.md` |
+| `requirements-inspection` | Audita la especificacion (cobertura de lo elaborado, trazabilidad, campos para planificar) | incremento, cambio | `agents/requirements-inspection.md` |
+| `technical-design` | Extiende el modelo de datos y el diseno con lo que el incremento necesita | incremento, cambio | `agents/technical-design.md` |
+| `design-inspection` | Inspecciona el diseno y la normalizacion del modelo de datos | incremento, cambio | `agents/design-inspection.md` |
 
 La orquestacion vive en la skill `skills/requirements-pipeline/SKILL.md` del plugin.
 
@@ -82,74 +75,57 @@ La orquestacion vive en la skill `skills/requirements-pipeline/SKILL.md` del plu
 
 ## Reglas de orquestacion
 
-### Dispatch secuencial (todo el pipeline)
-- Cada etapa consume el archivo que produjo la anterior. No hay paralelismo.
-- No invocar una etapa si falta el archivo de entrada que necesita.
+### Estados y baseline
+- Las features y escenarios del mapa tienen estado:
+  `stub -> elaborated -> baselined` (o `deprecated`).
+- El pipeline de planificacion consume lo `baselined`.
+- **Nada baselineado cambia sin confirmacion explicita del usuario.** Las
+  modificaciones propuestas (por material nuevo o por un CR) se presentan con su
+  antes/despues y esperan el OK, una por una.
 
-### Punto de pausa obligatorio - NUNCA saltear
-- Despues de `stakeholder-questionnaire`, SIEMPRE presentar las preguntas al usuario y
-  esperar respuestas explicitas.
-- Esta PROHIBIDO inventar respuestas del stakeholder.
+### Ids estables y auditoria
+- Los ids `FG-xx` y `SCN-xx` nacen en el product-map y nunca se renumeran. Los demas
+  ids continuan sus secuencias. Nada se borra: lo eliminado se deprecia.
+- Toda corrida queda registrada en `changelog.json`: `DSC-xxx` (descubrimientos),
+  `INC-xxx` (incrementos), `CR-xxx` (cambios), con veredictos
+  (`new|modified|deprecated|already_covered`), confirmaciones del usuario y versiones
+  antes/despues de cada artefacto.
+- La cadena de trazabilidad se conserva en ambas direcciones: requisito -> escenario ->
+  simbolo del LEL -> seccion de la fuente (documento, entrevista o CR); y corrida ->
+  que produjo (via changelog).
 
-### Lazo de respuestas - condicional
-- Si no hay preguntas o el stakeholder no responde, saltear el lazo e ir directo a
-  `scenario-modeling`.
-- Si hay respuestas, volver a `lel-authoring` (modo update) y luego `lel-inspection`,
-  antes de modelar los escenarios.
+### Pausas - NUNCA saltear
+- Despues de `stakeholder-questionnaire`: SIEMPRE presentar las preguntas y esperar
+  respuestas explicitas. Sin documento de entrada, el cuestionario es mas largo (las
+  respuestas son la fuente). PROHIBIDO inventar respuestas.
+- Antes de aplicar cualquier `modified`/`deprecated` sobre lo baselineado: SIEMPRE
+  mostrar el antes/despues y esperar la confirmacion del usuario.
 
-### Consulta de mockups de UI - antes del diseno
-- Antes de invocar `technical-design`, el orquestador SIEMPRE le pregunta al usuario si
-  tiene mockups HTML, CSS, wireframes o capturas para las pantallas.
-- Si los hay, `technical-design` los toma como diseno autoritativo de las pantallas y
-  reconcilia mockup contra requisitos. Si no, propone las pantallas de forma abstracta.
+### Lazos de correccion - condicionales
+- `requirements-inspection` y `design-inspection` rebotan defectos `high`/`medium` a
+  `requirements-specification` y `technical-design` respectivamente, en modo
+  correccion, hasta que pasen.
 
-### Lazo de correccion de los requisitos - condicional
-- `requirements-inspection` audita la especificacion: cobertura de escenarios,
-  trazabilidad, dependencias sin ciclos, criterios de aceptacion verificables y los
-  campos que la planificacion necesita (`feature_group`, `depends_on`,
-  `estimated_effort`, `priority`).
-- Si reporta defectos `high` o `medium`, volver a `requirements-specification` en modo
-  correccion y luego re-inspeccionar, hasta que la especificacion pase.
-
-### Lazo de correccion del diseno - condicional
-- `design-inspection` revisa el diseno; cuando el stack es relacional, incluye la
-  normalizacion en formas normales (1FN, 2FN, 3FN).
-- Si reporta defectos `high` o `medium`, volver a `technical-design` en modo correccion
-  y luego re-inspeccionar, hasta que el diseno pase.
-
-### Trazabilidad y versionado
-- Ningun paso inventa vocabulario. Los escenarios usan simbolos del LEL; los requisitos
-  trazan a escenarios, episodios y simbolos.
-- Toda reescritura de un artefacto incrementa su `version`; los campos `*_version_ref`
-  citan la `version` del archivo referenciado. El pipeline de planificacion usa estas
-  referencias para detectar cuando su plan quedo desactualizado.
+### Versionado
+- Toda reescritura de un artefacto incrementa su `version`; los `*_version_ref` citan
+  la `version` del archivo referenciado; el changelog registra antes/despues por
+  corrida. El pipeline de planificacion detecta por el changelog que incrementos aun
+  no absorbio.
 
 ---
 
-## Como iniciar el pipeline
-
-Con el slash command:
+## Como iniciar
 
 ```
-/requerimientos ruta/al/documento.docx
+/requerimientos:descubrir docs/vision.docx docs/anexos/     (archivos y carpetas)
+/requerimientos:descubrir                                   (sin documento: entrevista)
+/requerimientos:incremento FG-01 FG-02                      (elaborar y baselinear)
+/requerimientos:cambio "el login ahora requiere 2FA"        (cambio puntual)
+/requerimientos docs/especificacion.docx                    (modo completo clasico)
 ```
 
-O en lenguaje natural (la skill se activa sola):
-
-```
-"Genera los requisitos a partir de este documento: ruta/al/documento.pdf"
-```
-
-El agente principal:
-1. Extrae el texto del documento a `.dev/requirements/sources/`.
-2. Encadena `requirements-intake` -> `lel-authoring` -> `lel-inspection` ->
-   `stakeholder-questionnaire`.
-3. Presenta el cuestionario y espera (PAUSA).
-4. Aplica respuestas si las hay, continua con `scenario-modeling` ->
-   `requirements-specification` -> `requirements-inspection` (con su lazo de
-   correccion), pregunta si hay mockups de UI, corre `technical-design` y cierra con
-   `design-inspection` (con su lazo de correccion).
-5. Lista los archivos generados.
+O en lenguaje natural: la skill se activa sola ("genera los requisitos a partir de
+estos documentos", "agrega este documento nuevo", "elabora la feature de facturacion").
 
 ---
 
@@ -157,12 +133,15 @@ El agente principal:
 
 ```
 requirements-pipeline/           (el plugin; se instala una vez)
-  agents/         los 9 subagentes del pipeline
+  agents/         los 10 subagentes del pipeline
   skills/
     requirements-pipeline/   skill de orquestacion + script de extraccion
   commands/
-    requerimientos.md        slash command de entrada
+    requerimientos.md        modo completo (clasico)
+    descubrir.md             modo descubrir
+    incremento.md            modo incremento
+    cambio.md                modo cambio
 
 .dev/                            (en cada proyecto)
-  requirements/   <- salidas generadas por el pipeline
+  requirements/   <- salidas: ver SKILL.md (incluye product-map.json y changelog.json)
 ```
