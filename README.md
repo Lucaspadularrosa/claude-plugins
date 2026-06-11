@@ -1,8 +1,11 @@
-# Claude Plugins — Requisitos y Planificación para agentes IA
+# Claude Plugins — Requisitos, Planificación y Build para agentes IA
 
-Marketplace de plugins de Claude Code que cubre el ciclo completo: de la idea (con o
-sin documentación) a un plan de ejecución donde varios agentes construyen features en
-paralelo, con trazabilidad y auditoría de punta a punta.
+Marketplace de plugins de Claude Code que cubre el ciclo completo de un sistema, con
+dos puertas de entrada: **greenfield** (de la idea o los documentos a la app) y
+**brownfield** (de una app existente — incluso vibe-codeada y sin documentación — a
+una línea de base comprensible, auditable y extensible). En el medio: plan de
+ejecución con features en paralelo, build agnóstico de stack y trazabilidad de punta
+a punta.
 
 **→ [Guía de uso completa](GUIA-DE-USO.md)** — instalación, flujos típicos, pausas y
 cómo ejecutar el plan con agentes en paralelo.
@@ -14,6 +17,8 @@ cómo ejecutar el plan con agentes en paralelo.
 | `requirements-pipeline` | Pipeline iterativo de ingeniería de requisitos (método LEL y Escenarios de Leite, Hadad, Kaplan y Doorn). Descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; absorbe cambios con confirmación y changelog. |
 | `planning-pipeline` | Convierte la línea de base de requisitos en un plan de ejecución para agentes IA: tareas dimensionadas para una pasada de agente, lotes de features paralelas (ronda de contratos + lotes), inspección del plan y un brief por feature. `/replanificar` absorbe cambios de requisitos sin tocar lo construido. |
 | `build-pipeline` | Ejecuta el plan en cualquier lenguaje o framework: detecta el stack por evidencia, implementa cada feature en su rama verificando los criterios de aceptación, construye lotes completos en paralelo (un agente por feature en worktrees) y mantiene el progreso para la replanificación. |
+| `recovery-pipeline` | Comprende una app ya desarrollada (aunque no tenga documentación): qué hace, en qué estado está, qué falta y qué hay que decidir. Reconstruye la línea de base de requisitos con evidencia `archivo:línea`, compatible con toda la suite. |
+| `audit-pipeline` | Audita el codebase en tres dimensiones — bugs, seguridad defensiva y mejoras — con verificación adversarial de cada hallazgo antes de reportarlo. Los confirmados se convierten en change requests planificables. |
 | `feature-pipeline` | Pipeline de build end-to-end independiente (spec → branch → código → tests → review → PR) para proyectos con requerimientos en `/features/`. |
 
 ## Instalación
@@ -23,11 +28,15 @@ cómo ejecutar el plan con agentes en paralelo.
 /plugin install requirements-pipeline@lpadularrosa-dev-plugins
 /plugin install planning-pipeline@lpadularrosa-dev-plugins
 /plugin install build-pipeline@lpadularrosa-dev-plugins
+/plugin install recovery-pipeline@lpadularrosa-dev-plugins
+/plugin install audit-pipeline@lpadularrosa-dev-plugins
 ```
 
 Requisitos: Python 3.8+ (extracción de documentos); para PDF, `pip install pypdf`.
 
-## El flujo en cinco líneas
+## Los dos flujos
+
+**Greenfield** — de la idea a la app:
 
 ```
 /requerimientos:descubrir docs/           # mapa del producto (docs, carpetas o nada)
@@ -35,6 +44,16 @@ Requisitos: Python 3.8+ (extracción de documentos); para PDF, `pip install pypd
 /planificar                               # tareas + lotes paralelos + briefs
 /construir-lote                           # construir el lote en paralelo (cualquier stack)
 /replanificar                             # cuando los requisitos cambien
+```
+
+**Brownfield** — de la app existente (vibe-codeada, legacy) al control:
+
+```
+/comprender                               # qué es, qué hace, en qué estado está
+/auditar                                  # bugs, seguridad y mejoras, verificados
+/requerimientos:cambio "fix BUG-003..."   # convertir hallazgos en trabajo trazable
+/requerimientos:incremento FG-07          # completar lo que estaba a medias
+/planificar  +  /construir-lote           # y construir
 ```
 
 Ver la [guía de uso](GUIA-DE-USO.md) para los flujos completos (arrancar sin

@@ -1,14 +1,17 @@
-# Guía de uso — De la idea al plan de ejecución con agentes IA
+# Guía de uso — De la idea (o de la app heredada) al sistema construido
 
-Esta guía explica cómo usar los plugins `requirements-pipeline` y `planning-pipeline`
-juntos: desde un documento de dominio (o ninguna documentación) hasta un plan de
-ejecución donde varios agentes de Claude Code construyen features en paralelo, con
-trazabilidad y auditoría completas en todo el recorrido.
+Esta guía explica cómo usar la suite completa: requisitos, planificación, build,
+comprensión de apps existentes y auditoría. Hay dos puertas de entrada y todo
+converge en los mismos artefactos trazables:
 
 ```
-material de dominio          requisitos auditables           plan para agentes IA
-(docs, carpetas o nada)  →   (LEL, escenarios, requisitos,  →  (tareas, lotes paralelos,
-                              diseño técnico, changelog)        briefs por feature)
+GREENFIELD: material de dominio     →  requisitos auditables  →  plan  →  build en
+            (docs, carpetas o nada)    (LEL, escenarios,         paralelo (cualquier
+                                        changelog)                stack)
+
+BROWNFIELD: app existente           →  línea de base           →  auditoría, cambios,
+            (vibe-coding, legacy)      reconstruida desde         incrementos, plan
+                                       el código                   y build
 ```
 
 ---
@@ -22,6 +25,8 @@ Una sola vez por usuario:
 /plugin install requirements-pipeline@lpadularrosa-dev-plugins
 /plugin install planning-pipeline@lpadularrosa-dev-plugins
 /plugin install build-pipeline@lpadularrosa-dev-plugins
+/plugin install recovery-pipeline@lpadularrosa-dev-plugins
+/plugin install audit-pipeline@lpadularrosa-dev-plugins
 ```
 
 (`lpadularrosa-dev-plugins` es el nombre del marketplace declarado en
@@ -65,6 +70,8 @@ deprecia) y **nada baselineado se modifica sin tu confirmación**.
 | `/replanificar` | planning | Actualiza el plan cuando los requisitos cambiaron, sin tocar lo construido. |
 | `/construir <feature>` | build | Construye una feature en su rama, con tu aprobación del plan de implementación. Cualquier stack. |
 | `/construir-lote [BATCH-n]` | build | Construye un lote completo en paralelo (un agente por feature, en worktrees), sin pausas. |
+| `/comprender [ruta]` | recovery | Comprende una app existente: qué hace, en qué estado está, qué falta. Reconstruye la línea de base con evidencia al código. |
+| `/auditar [alcance]` | audit | Bugs, seguridad y mejoras, con verificación adversarial de cada hallazgo. Funciona en cualquier repo. |
 
 Todos funcionan también en lenguaje natural ("genera los requisitos a partir de estos
 documentos", "los requisitos cambiaron, actualiza el plan").
@@ -157,6 +164,36 @@ El modo completo clásico: descubre y elabora todo en una corrida. Queda registr
 el changelog igual, así que si después llega material nuevo el proyecto sigue por los
 modos incrementales sin fricción.
 
+### Caso F — Heredás una app existente (vibe-codeada, legacy, sin documentación)
+
+```
+/comprender
+```
+
+El pipeline de comprensión lee el código (solo lectura, no toca nada): inventaría el
+stack y la estructura, extrae qué hace la app con evidencia `archivo:línea`,
+**reconstruye la línea de base de requisitos** en `.dev/requirements/` (lo que el
+código demuestra completo queda baselineado; lo que está a medias queda en stub con lo
+que falta documentado), y te entrega dos cosas: el **reporte de estado honesto** (qué
+está completo, a medias o muerto) y el **cuestionario del dueño** — preguntas sin
+tecnicismos sobre lo que el código decidió y nadie validó. Respondelas y la
+reconstrucción se afina.
+
+A partir de ahí la app está adentro de la suite:
+
+```
+/auditar                                  bugs, seguridad y mejoras, verificados
+/requerimientos:cambio "arreglar SEC-001 y BUG-003"   hallazgos → trabajo trazable
+/requerimientos:incremento FG-07          completar la feature que estaba a medias
+/planificar  →  /construir-lote           planificar y construir lo que falta
+```
+
+`/auditar` también funciona solo, en cualquier repo sin la suite: tres dimensiones
+(bugs de correctitud, seguridad defensiva, mejoras de alto retorno) y cada hallazgo
+`high`/`medium` pasa por un **verificador adversarial** que intenta refutarlo leyendo
+el código antes de reportártelo — en la duda se descarta, así el reporte tiene señal y
+no ruido. Los descartados quedan listados con su razón, por transparencia.
+
 ---
 
 ## 5. Las pausas: qué te va a preguntar y cómo responder
@@ -229,6 +266,10 @@ autosuficientes: respetá el orden de lotes de `execution-plan.md` y mantené
 | Qué construir para una feature | `.dev/features/{feature}.md` |
 | Cómo se desarrolla este proyecto (stack, comandos) | `.dev/build/stack-profile.json` |
 | El veredicto de review de una feature construida | `.dev/build/reviews/{feature}.json` |
+| El estado real de una app comprendida | `.dev/recovery/state-report.md` |
+| Qué hace la app, con evidencia al código | `.dev/recovery/behavior-map.md` |
+| Las preguntas pendientes del dueño | `.dev/recovery/owner-questions.md` |
+| Los hallazgos de auditoría confirmados | `.dev/audit/audit-report.md` |
 
 La trazabilidad funciona en ambas direcciones: desde una tarea podés volver hasta la
 sección del documento que la originó (tarea → requisito → escenario → símbolo del LEL
@@ -273,6 +314,10 @@ feature.
   planificación (lotes, contratos, replanificación, checks de auditoría).
 - `plugins/build-pipeline/README.md` y `PIPELINE.md` — detalle del pipeline de build
   (perfil de stack por evidencia, modos feature/lote, reviewer, worktrees).
+- `plugins/recovery-pipeline/README.md` y `PIPELINE.md` — detalle del pipeline de
+  comprensión (inventario, extracción de comportamiento, reconstrucción, estado).
+- `plugins/audit-pipeline/README.md` y `PIPELINE.md` — detalle del pipeline de
+  auditoría (tres dimensiones, verificación adversarial, conversión en trabajo).
 - `plugins/feature-pipeline/README.md` — pipeline de build independiente (lee
   requerimientos de `/features/` con su propio formato; hoy no engancha directo con
   los briefs de `.dev/features/`).

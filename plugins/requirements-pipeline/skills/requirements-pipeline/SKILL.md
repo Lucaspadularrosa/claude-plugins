@@ -59,8 +59,8 @@ La historia de la linea de base. Una entrada por corrida:
   "version": 1,
   "entries": [
     {
-      "id": "DSC-001 | INC-001 | CR-001",
-      "kind": "discovery|increment|change_request",
+      "id": "DSC-001 | INC-001 | CR-001 | REC-001",
+      "kind": "discovery|increment|change_request|recovery",
       "date": "YYYY-MM-DD",
       "status": "in_progress|applied|rejected",
       "sources": ["sources/vision.txt"],
@@ -76,10 +76,12 @@ La historia de la linea de base. Una entrada por corrida:
 ```
 
 Ids consecutivos por tipo: `DSC-001` descubrimientos, `INC-001` incrementos, `CR-001`
-cambios. Registra la entrada con `status: in_progress` al arrancar la corrida y cerrala
-(`applied` o `rejected`) al terminar, con las versiones antes/despues de cada artefacto
-tocado. El changelog es lo que le permite al pipeline de planificacion saber **que**
-cambio, no solo que algo cambio.
+cambios, `REC-001` recuperaciones (las escribe `recovery-pipeline` cuando reconstruye
+la linea de base desde codigo existente). Registra la entrada con
+`status: in_progress` al arrancar la corrida y cerrala (`applied` o `rejected`) al
+terminar, con las versiones antes/despues de cada artefacto tocado. El changelog es lo
+que le permite al pipeline de planificacion saber **que** cambio, no solo que algo
+cambio.
 
 ## Entradas soportadas
 
