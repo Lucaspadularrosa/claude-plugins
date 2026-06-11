@@ -42,11 +42,11 @@ planning-pipeline/
 
 ## Instalacion
 
-Este plugin se distribuye en el mismo marketplace que `requirements-pipeline`. Con el
-marketplace agregado:
+Este plugin se distribuye en el mismo marketplace que `requirements-pipeline`
+(`lpadularrosa-dev-plugins`). Con el marketplace agregado:
 
 ```bash
-claude plugin install planning-pipeline@plugins-claude
+claude plugin install planning-pipeline@lpadularrosa-dev-plugins
 ```
 
 Los comandos exactos del CLI pueden variar segun la version de Claude Code: verificalos

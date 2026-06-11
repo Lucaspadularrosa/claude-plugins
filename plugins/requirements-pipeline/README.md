@@ -103,11 +103,11 @@ requirements-pipeline/
 
 ## Instalacion
 
-Este plugin se distribuye en el marketplace `plugins-claude`. Con el marketplace
-agregado:
+Este plugin se distribuye en el marketplace `lpadularrosa-dev-plugins`. Con el
+marketplace agregado:
 
 ```bash
-claude plugin install requirements-pipeline@plugins-claude
+claude plugin install requirements-pipeline@lpadularrosa-dev-plugins
 ```
 
 Por defecto queda disponible en todos los proyectos. Los comandos exactos del CLI
