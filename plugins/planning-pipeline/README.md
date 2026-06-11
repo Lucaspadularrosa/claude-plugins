@@ -155,13 +155,15 @@ plan ni tocar lo construido:
 Nada se borra: las tareas canceladas quedan con `status: "cancelled"` y todo el delta
 queda auditado en el changelog y en `applied_changelog_ids`.
 
-## Relacion con `feature-pipeline`
+## Quien ejecuta el plan
 
-Los briefs de `.dev/features/` estan pensados para un pipeline de build generico que
-tome un brief y construya la feature. El plugin `feature-pipeline` de este mismo
-marketplace es independiente: lee requerimientos de `/features/` (en la raiz del
-proyecto) con su propia estructura y flujo de aprobacion humana. Hoy no enganchan de
-forma directa; si queres alimentar `feature-pipeline` con estos briefs, copialos a
-`/features/` y revisa que el spec resultante respete el lote de ejecucion del plan.
+El ejecutor nativo de los briefs es el plugin `build-pipeline` (este mismo
+marketplace): `/construir <feature>` toma un brief y construye la feature en su rama
+(en cualquier stack), y `/construir-lote` ejecuta un lote completo en paralelo con un
+subagente por feature, actualizando `progress.json` — el insumo de `/replanificar`.
+
+El plugin `feature-pipeline` es independiente: lee requerimientos de `/features/` (en
+la raiz del proyecto) con su propia estructura y flujo de aprobacion humana. No
+engancha de forma directa con estos briefs.
 
 Ver `PIPELINE.md` para el diagrama completo y las reglas de orquestacion.

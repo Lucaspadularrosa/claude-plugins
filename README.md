@@ -13,6 +13,7 @@ cómo ejecutar el plan con agentes en paralelo.
 |---|---|
 | `requirements-pipeline` | Pipeline iterativo de ingeniería de requisitos (método LEL y Escenarios de Leite, Hadad, Kaplan y Doorn). Descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; absorbe cambios con confirmación y changelog. |
 | `planning-pipeline` | Convierte la línea de base de requisitos en un plan de ejecución para agentes IA: tareas dimensionadas para una pasada de agente, lotes de features paralelas (ronda de contratos + lotes), inspección del plan y un brief por feature. `/replanificar` absorbe cambios de requisitos sin tocar lo construido. |
+| `build-pipeline` | Ejecuta el plan en cualquier lenguaje o framework: detecta el stack por evidencia, implementa cada feature en su rama verificando los criterios de aceptación, construye lotes completos en paralelo (un agente por feature en worktrees) y mantiene el progreso para la replanificación. |
 | `feature-pipeline` | Pipeline de build end-to-end independiente (spec → branch → código → tests → review → PR) para proyectos con requerimientos en `/features/`. |
 
 ## Instalación
@@ -21,16 +22,18 @@ cómo ejecutar el plan con agentes en paralelo.
 /plugin marketplace add Lucaspadularrosa/claude-plugins
 /plugin install requirements-pipeline@lpadularrosa-dev-plugins
 /plugin install planning-pipeline@lpadularrosa-dev-plugins
+/plugin install build-pipeline@lpadularrosa-dev-plugins
 ```
 
 Requisitos: Python 3.8+ (extracción de documentos); para PDF, `pip install pypdf`.
 
-## El flujo en cuatro líneas
+## El flujo en cinco líneas
 
 ```
 /requerimientos:descubrir docs/           # mapa del producto (docs, carpetas o nada)
 /requerimientos:incremento FG-01 FG-02    # elaborar y baselinear el MVP
 /planificar                               # tareas + lotes paralelos + briefs
+/construir-lote                           # construir el lote en paralelo (cualquier stack)
 /replanificar                             # cuando los requisitos cambien
 ```
 

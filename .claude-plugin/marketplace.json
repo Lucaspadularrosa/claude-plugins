@@ -31,6 +31,17 @@
       "category": "development"
     },
     {
+      "name": "build-pipeline",
+      "description": "Ejecuta el plan de los pipelines de requisitos y planificacion, en cualquier lenguaje o framework: detecta el stack por evidencia, implementa cada feature en su rama verificando los criterios de aceptacion, construye lotes en paralelo (un agente por feature en worktrees) y mantiene progress.json al dia para la replanificacion.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Lucas Micheli",
+        "email": "lucas.t.micheli@gmail.com"
+      },
+      "source": "./plugins/build-pipeline",
+      "category": "development"
+    },
+    {
       "name": "requirements-pipeline",
       "description": "Pipeline iterativo de ingenieria de requisitos (LEL y Escenarios): descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; y absorbe cambios con confirmacion y changelog, todo trazable.",
       "version": "2.0.0",

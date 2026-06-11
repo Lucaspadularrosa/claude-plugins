@@ -21,6 +21,7 @@ Una sola vez por usuario:
 /plugin marketplace add Lucaspadularrosa/claude-plugins
 /plugin install requirements-pipeline@lpadularrosa-dev-plugins
 /plugin install planning-pipeline@lpadularrosa-dev-plugins
+/plugin install build-pipeline@lpadularrosa-dev-plugins
 ```
 
 (`lpadularrosa-dev-plugins` es el nombre del marketplace declarado en
@@ -62,6 +63,8 @@ deprecia) y **nada baselineado se modifica sin tu confirmación**.
 | `/requerimientos <rutas>` | requirements | Modo completo clásico: descubrir + elaborar todo en una corrida. |
 | `/planificar` | planning | Genera el plan de ejecución de lo baselineado: tareas, lotes paralelos, briefs. |
 | `/replanificar` | planning | Actualiza el plan cuando los requisitos cambiaron, sin tocar lo construido. |
+| `/construir <feature>` | build | Construye una feature en su rama, con tu aprobación del plan de implementación. Cualquier stack. |
+| `/construir-lote [BATCH-n]` | build | Construye un lote completo en paralelo (un agente por feature, en worktrees), sin pausas. |
 
 Todos funcionan también en lenguaje natural ("genera los requisitos a partir de estos
 documentos", "los requisitos cambiaron, actualiza el plan").
@@ -177,26 +180,37 @@ El pipeline se detiene y te espera en estos puntos (nunca inventa tus respuestas
 
 ---
 
-## 6. Ejecutar el plan con agentes en paralelo
+## 6. Ejecutar el plan: el build
 
-El plan está pensado para una flota de instancias de Claude Code (una por PC, licencia
-o agente), una rama por feature. El orden operativo sale de
-`.dev/plan/execution-plan.md`:
+El plugin `build-pipeline` es el ejecutor nativo del plan, **agnóstico de stack**: la
+primera vez detecta cómo se desarrolla tu proyecto (manifiestos, configs, CI,
+CLAUDE.md) y lo registra en `.dev/build/stack-profile.json` — comandos de test/lint/
+build, layout y convenciones. Funciona con cualquier lenguaje o framework, incluso en
+proyectos greenfield (deriva el perfil del diseño técnico y la primera feature crea el
+esqueleto).
 
-1. **Ronda de contratos** (`BATCH-0`): ejecutá y mergeá primero las tareas-contrato.
-   Son chicas (definen APIs, tipos, schemas compartidos); un solo agente las resuelve.
-2. **Por cada lote, en orden** (`BATCH-1`, `BATCH-2`...): lanzá un agente por feature
-   del lote, **todos a la vez**, cada uno en su rama. A cada agente dale su brief:
-   `.dev/features/{feature}.md` — es autosuficiente: tareas en orden de ejecución,
-   criterios de aceptación Gherkin, diseño relevante, contratos que consume y con
-   quién corre en paralelo.
-3. **Cuando el lote mergea, arranca el siguiente.** Si hay menos agentes que features
-   en el lote, empezá por las de prioridad `high` (el orden dentro del lote es libre;
-   entre lotes no).
-4. **Mantené `.dev/plan/progress.json` al día**: marcá cada feature/tarea
-   `in_progress` al arrancarla y `done` al mergearla. Es lo que le permite a
-   `/replanificar` no pisar lo construido. Si usás un pipeline de build propio,
-   sumale ese paso al cierre de cada feature.
+Dos formas de ejecutar, combinables:
+
+- **`/construir-lote`** — una sola sesión ejecuta el lote completo: mergea primero la
+  ronda de contratos si está pendiente, crea un git worktree por feature y lanza un
+  subagente por feature **en paralelo**, sin pausas. Cada feature termina en su PR;
+  el control humano queda ahí. Cuando los PRs mergean, el siguiente lote se
+  desbloquea.
+- **`/construir <feature>`** — una instancia de Claude Code construye una feature, con
+  una pausa para que **apruebes el plan de implementación** antes de codear. Ideal
+  para repartir un lote entre varias PCs/licencias: cada instancia toma una feature
+  distinta del mismo lote.
+
+En ambos modos: cada tarea se implementa y **se verifica contra sus criterios Gherkin**
+(tests con el framework del proyecto) antes de pasar a la siguiente, con un commit
+`[T-xxx]` por tarea; un agente revisor audita el diff contra el brief (cobertura,
+scope, tests corridos de verdad) antes del PR; y `progress.json` se actualiza en cada
+transición (`done` = mergeado), que es lo que le permite a `/replanificar` no pisar lo
+construido.
+
+Si preferís usar tu propio pipeline de build, los briefs de `.dev/features/` son
+autosuficientes: respetá el orden de lotes de `execution-plan.md` y mantené
+`progress.json` al día.
 
 ---
 
@@ -213,6 +227,8 @@ o agente), una rama por feature. El orden operativo sale de
 | Si el plan pasó la auditoría | `.dev/plan/plan-inspection.md` |
 | El estado del build | `.dev/plan/progress.json` |
 | Qué construir para una feature | `.dev/features/{feature}.md` |
+| Cómo se desarrolla este proyecto (stack, comandos) | `.dev/build/stack-profile.json` |
+| El veredicto de review de una feature construida | `.dev/build/reviews/{feature}.json` |
 
 La trazabilidad funciona en ambas direcciones: desde una tarea podés volver hasta la
 sección del documento que la originó (tarea → requisito → escenario → símbolo del LEL
@@ -255,6 +271,8 @@ feature.
   requisitos (método LEL y Escenarios, modos, agentes, contratos de archivos).
 - `plugins/planning-pipeline/README.md` y `PIPELINE.md` — detalle del pipeline de
   planificación (lotes, contratos, replanificación, checks de auditoría).
+- `plugins/build-pipeline/README.md` y `PIPELINE.md` — detalle del pipeline de build
+  (perfil de stack por evidencia, modos feature/lote, reviewer, worktrees).
 - `plugins/feature-pipeline/README.md` — pipeline de build independiente (lee
   requerimientos de `/features/` con su propio formato; hoy no engancha directo con
   los briefs de `.dev/features/`).
