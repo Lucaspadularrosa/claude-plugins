@@ -18,7 +18,7 @@ cómo ejecutar el plan con agentes en paralelo.
 ## Instalación
 
 ```bash
-/plugin marketplace add luquitat/claude-plugins
+/plugin marketplace add Lucaspadularrosa/claude-plugins
 /plugin install requirements-pipeline@lpadularrosa-dev-plugins
 /plugin install planning-pipeline@lpadularrosa-dev-plugins
 ```
