@@ -19,6 +19,8 @@ Lee:
 - `.dev/plan/tasks.json`
 - `.dev/plan/execution-plan.json` (ronda de contratos + lotes de ejecucion).
 - `.dev/requirements/requirements.json` (para verificar cobertura y referencias).
+- `.dev/requirements/changelog.json` (si existe; para verificar que el plan absorbio
+  todas las entradas aplicadas).
 
 ## Reglas
 
@@ -37,7 +39,8 @@ Lee:
 Checks sobre las tareas (`tasks.json`):
 
 - `PLAN-CHECK-001`: cada requisito `active` de `requirements.json` esta cubierto por al
-  menos una tarea.
+  menos una tarea **no cancelada**. Los requisitos `deprecated` no exigen cobertura;
+  una tarea `cancelled` no cubre nada.
 - `PLAN-CHECK-002`: cada tarea cita al menos un `requirement_ids` y todos existen; no hay
   tareas huerfanas. Excepcion: las tareas `type: "contract"` deben citar
   `requirement_ids` de al menos dos features distintas.
@@ -68,16 +71,22 @@ Checks sobre las tareas (`tasks.json`):
   defecto (un agente de build no puede verificarla).
 - `PLAN-CHECK-007`: desactualizacion. `requirements_version_ref` y
   `technical_design_version_ref` del plan coinciden con la `version` actual de
-  `requirements.json` y del diseno. Si no coinciden, el plan quedo stale: defecto `high`.
+  `requirements.json` y del diseno. Ademas, si existe
+  `.dev/requirements/changelog.json`, toda entrada `INC-xxx`/`CR-xxx` con
+  `status: applied` esta en `metadata.applied_changelog_ids` de `tasks.json`. Si algo
+  no coincide, el plan quedo stale: defecto `high` con correccion propuesta "correr
+  /replanificar".
 
 Checks sobre el plan de ejecucion (`execution-plan.json`):
 
-- `PLAN-CHECK-008`: completitud. Cada feature con tareas esta en exactamente un lote; la
-  union de `task_ids` de `contract_round` y de todos los lotes es exactamente el
-  conjunto de tareas de `tasks.json`, sin repetidos; toda tarea `type: "contract"` esta
-  en `contract_round` o su excepcion esta justificada en `warnings`;
-  `metadata.depends_on_convention_used` refleja el formato real de `tasks.json`.
-  Inconsistencia: defecto `high`.
+- `PLAN-CHECK-008`: completitud. Cada feature con tareas esta en exactamente un lote
+  (o, si el plan fue replanificado, en `metadata.completed_feature_ids`); la union de
+  `task_ids` de `contract_round` y de todos los lotes es exactamente el conjunto de
+  tareas de `tasks.json` — excluyendo las `cancelled` y las de features completadas —
+  sin repetidos; toda tarea `type: "contract"` esta en `contract_round`, en un lote de
+  contratos de replanificacion anterior a sus consumidores, o su excepcion esta
+  justificada en `warnings`; `metadata.depends_on_convention_used` refleja el formato
+  real de `tasks.json`. Inconsistencia: defecto `high`.
 - `PLAN-CHECK-009`: orden. Ninguna feature comparte lote con otra de la que depende
   `hard` (con `kind` efectivo segun PLAN-CHECK-003); toda feature esta en un lote
   posterior al de todas sus `waits_for`; `unlocks_after` referencia lotes existentes y

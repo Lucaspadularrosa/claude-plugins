@@ -39,6 +39,28 @@ simultaneo.
 .dev/features/{feature}.md                    (un brief por feature, con su lote,
                                                su orden de tareas y sus contratos)
         <- FIN (plan auditable + briefs para el pipeline de build)
+           + .dev/plan/progress.json inicializado (el build lo actualiza)
+
+
+            /replanificar  (cuando los requisitos cambiaron)
+
+.dev/requirements/changelog.json  vs  tasks.json metadata.applied_changelog_ids
+        |
+        v  delta = INC/CR aplicados que el plan no absorbio
+        v  + .dev/plan/progress.json (estado del build; si falta, se pregunta)
+        |
+        v  [task-derivation, modo replanificacion]
+            solo las features afectadas: tareas nuevas / reescritas (pending) /
+            tareas de ajuste (done) / canceladas (deprecado + pending)
+        -> PAUSA si hay conflictos (deprecado con tarea construida, etc.)
+        |
+        v  [execution-planning, modo replanificacion]
+            lotes solo del trabajo restante (done fuera del grafo,
+            in_progress conserva su lote, lo nuevo entra por niveles)
+        |
+        v  [plan-inspection] -> lazo de correccion
+        v  [feature-brief]   -> solo los briefs de las features afectadas
+        <- FIN (plan al dia, sin tocar lo construido)
 ```
 
 ---
@@ -72,21 +94,32 @@ La orquestacion vive en la skill `skills/planning-pipeline/SKILL.md`.
   - `execution-planning` para completitud, orden, metricas o lotes seriales sin
     justificar (checks 008, 009, 010, 012).
 
+### Replanificacion - quirurgica, nunca destructiva
+- El delta se calcula contra `changelog.json` de requisitos: entradas `INC`/`CR`
+  aplicadas que no estan en `metadata.applied_changelog_ids` del plan.
+- Solo se re-derivan las features afectadas; el resto del plan queda intacto.
+- `progress.json` protege lo construido: lo `done` no se reescribe (se crean tareas de
+  ajuste), lo `in_progress` no se mueve sin decision del usuario, y lo deprecado con
+  trabajo hecho es un conflicto que decide el usuario, no un agente.
+- Las tareas canceladas quedan con `status: "cancelled"`; nada se borra.
+
 ### Trazabilidad y auditoria
 - Toda tarea cita `requirement_ids`; ningun requisito queda sin tarea.
 - La cadena de auditoria se extiende: tarea -> requisito -> escenario -> episodio ->
   simbolo del LEL -> seccion del documento.
-- El plan registra de que version de los requisitos y del diseno se construyo. Si esas
-  versiones cambian, el plan quedo desactualizado y hay que re-planificar.
+- El plan registra de que version de los requisitos y del diseno se construyo, y que
+  entradas del changelog absorbio. Si algo de eso quedo atras, `plan-inspection` lo
+  marca y la correccion es `/replanificar`.
 
 ---
 
 ## Como iniciar el pipeline
 
-Con el slash command:
+Con los slash commands:
 
 ```
-/planificar
+/planificar          (primera vez)
+/replanificar        (cuando los requisitos cambiaron despues de planificar)
 ```
 
 O en lenguaje natural (la skill se activa sola):
@@ -110,8 +143,10 @@ El agente principal:
 ```
 .dev/plan/
   tasks.json / tasks.md             tareas trazables a los requisitos
+                                    (con applied_changelog_ids)
   execution-plan.json / .md         ronda de contratos + lotes paralelos de features
   plan-inspection.json / .md        auditoria del plan
+  progress.json                     estado de ejecucion (lo actualiza el build)
 .dev/features/
   {feature}.md                      un brief por feature para el pipeline de build
 ```

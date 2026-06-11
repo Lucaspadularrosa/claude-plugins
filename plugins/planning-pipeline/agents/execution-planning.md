@@ -23,6 +23,30 @@ siguiente".
 Lee `.dev/plan/tasks.json` (tareas con `feature_group`, `type`, `complexity` y
 `depends_on`).
 
+## Modo replanificacion
+
+El orquestador te puede indicar que el plan ya estaba en ejecucion. En ese caso lee
+ademas `.dev/plan/progress.json` (estado del build) y el `execution-plan.json` previo,
+y recalcula los lotes **solo del trabajo restante**:
+
+- Las features `done` salen del grafo: no van en ningun lote nuevo. Listalas en
+  `metadata.completed_feature_ids`. Las dependencias hard que apuntan a ellas cuentan
+  como **satisfechas** (su codigo ya esta mergeado).
+- Las features `in_progress` conservan su lote y su composicion del plan previo: no
+  las muevas ni les cambies el id de lote. Una feature nueva puede compartir su lote
+  solo si no tiene dependencias hard pendientes contra nada de ese lote ni de lotes
+  no terminados.
+- Las features `pending` y las nuevas se reasignan por niveles, como siempre, sobre el
+  grafo restante. Los ids de lotes nuevos continuan la numeracion existente (si el
+  plan previo llego a `BATCH-3`, lo nuevo arranca en `BATCH-4`).
+- Las tareas `status: "cancelled"` de `tasks.json` no van en ningun lote.
+- Si hay tareas-contrato **nuevas** (de features nuevas), la ronda de contratos
+  original ya se mergeo: armales un lote propio que preceda a sus consumidores, con
+  `rationale` "ronda de contratos de la replanificacion", en vez de tocar
+  `contract_round`.
+- Registra en `metadata.replanned: true` y conserva `tasks_version_ref` apuntando a la
+  version nueva de `tasks.json`.
+
 ### Formato de `depends_on` (acepta ambas variantes)
 
 El campo `tasks[].depends_on` puede venir en dos formatos. Aceptalos los dos y
@@ -95,6 +119,8 @@ cercas):
     "created_at": "string",
     "updated_at": "string",
     "tasks_version_ref": "string",
+    "replanned": false,
+    "completed_feature_ids": ["FG-02"],
     "depends_on_convention_used": {
       "format": "string-array | object-array",
       "kind_default": "hard"
@@ -176,9 +202,11 @@ warnings accionables en formato legible.
 ## Antes de terminar
 
 - Verifica que `execution-plan.json` es JSON valido.
-- Verifica que cada feature con tareas esta en exactamente un lote.
+- Verifica que cada feature con tareas esta en exactamente un lote (en
+  replanificacion: o en `metadata.completed_feature_ids`).
 - Verifica que la union de `task_ids` de la ronda de contratos y de todos los lotes es
-  exactamente el conjunto de tareas de `tasks.json`, sin repetidos.
+  exactamente el conjunto de tareas de `tasks.json`, sin repetidos (en
+  replanificacion: excluyendo las tareas `cancelled` y las de features completadas).
 - Verifica que ninguna feature comparte lote con otra de la que depende `hard`, y que
   toda feature esta en un lote posterior al de todas sus `waits_for`.
 - Verifica que toda tarea `type: "contract"` esta en `contract_round` (o su excepcion

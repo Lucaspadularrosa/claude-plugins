@@ -35,6 +35,7 @@ planning-pipeline/
       SKILL.md               orquestacion del pipeline
   commands/
     planificar.md            slash command de entrada
+    replanificar.md          actualiza el plan cuando los requisitos cambian
   PIPELINE.md
   README.md
 ```
@@ -64,13 +65,15 @@ Esos los produce el plugin `requirements-pipeline`. Si faltan, corre primero ese
 ## Uso
 
 ```
-/planificar
+/planificar          (primera vez)
+/replanificar        (cuando los requisitos cambiaron despues de planificar)
 ```
 
 O en lenguaje natural:
 
 ```
 Genera el plan de ejecucion a partir de los requisitos.
+Los requisitos cambiaron: actualiza el plan sin tocar lo construido.
 ```
 
 ## Como integra con los requisitos
@@ -94,6 +97,7 @@ verifica todo eso.
 | `.dev/plan/tasks.json` / `.md` | Tareas trazables a los requisitos, agrupadas por feature, con `complexity` (low/medium/high) para una pasada de agente. Las dependencias entre tareas se clasifican en `hard` (necesita el codigo mergeado) o `contract` (alcanza con la firma) |
 | `.dev/plan/execution-plan.json` / `.md` | Ronda de contratos inicial + lotes paralelos de features, con el orden de tareas de cada feature (`task_order`) y las metricas de paralelismo |
 | `.dev/plan/plan-inspection.json` / `.md` | Auditoria del plan |
+| `.dev/plan/progress.json` | Estado de ejecucion del plan (pending / in_progress / done); lo actualiza el pipeline de build o el usuario |
 | `.dev/features/{feature}.md` | Un brief por feature (con su lote, su orden de tareas y sus contratos), para el pipeline de build |
 
 ## Como se ejecuta el plan con agentes en paralelo
@@ -126,6 +130,30 @@ Si el plan termina con paralelismo bajo, `execution-planning` emite warnings
 **accionables** (que tarea concreta extraer como contrato para subir una feature de
 lote) y `plan-inspection` rebota a `task-derivation` para extraer mas contratos o
 partir features densamente acopladas.
+
+## Replanificacion: cuando los requisitos cambian a mitad del build
+
+El pipeline de requisitos (`requirements-pipeline`) es iterativo: llegan incrementos y
+change requests despues de planificar. `/replanificar` los absorbe sin regenerar el
+plan ni tocar lo construido:
+
+1. El delta se calcula contra `.dev/requirements/changelog.json`: las entradas
+   `INC-xxx`/`CR-xxx` aplicadas que no figuran en `metadata.applied_changelog_ids` del
+   plan.
+2. `progress.json` dice que esta hecho. Con eso: requisito nuevo -> tareas nuevas;
+   requisito modificado -> se reescriben solo las tareas `pending` (lo `done` recibe
+   una **tarea de ajuste**, nunca se reescribe la historia); requisito deprecado ->
+   tareas `pending` canceladas, y si habia trabajo construido encima queda como
+   conflicto que decide el usuario.
+3. Los lotes se recalculan **solo para el trabajo restante**: las features terminadas
+   salen del grafo (sus dependencias cuentan como satisfechas), las que estan en curso
+   conservan su lote, y lo nuevo se inserta por niveles — incluso en paralelo con lo
+   que ya corre, si el grafo lo permite.
+4. Se regeneran solo los briefs de las features afectadas, citando que entrada del
+   changelog las cambio.
+
+Nada se borra: las tareas canceladas quedan con `status: "cancelled"` y todo el delta
+queda auditado en el changelog y en `applied_changelog_ids`.
 
 ## Relacion con `feature-pipeline`
 

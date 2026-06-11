@@ -20,6 +20,37 @@ Lee:
   `feature_groups`, `priority`, `estimated_effort`, `depends_on` y `acceptance_criteria`).
 - `.dev/requirements/technical-design.json` (modulos, contratos de API, decisiones).
 - `.dev/requirements/data-model.json` (entidades; para asociar tareas a entidades).
+- `.dev/requirements/changelog.json` (si existe: registra en
+  `metadata.applied_changelog_ids` que entradas `INC-xxx`/`CR-xxx` aplicadas cubre este
+  plan).
+
+## Modo replanificacion
+
+El orquestador te puede indicar que ya existe un plan y que hay un **delta** de
+changelog para absorber (entradas `INC-xxx`/`CR-xxx` no aplicadas). En ese caso, ademas
+de lo anterior lee `.dev/plan/tasks.json` (el plan previo) y `.dev/plan/progress.json`
+(estado del build), y trabaja quirurgicamente:
+
+- **Solo tocas las features afectadas** por el delta (las `feature_ids` y `verdicts`
+  de cada entrada del changelog). Las tareas de las demas features quedan
+  byte-a-byte intactas, con sus ids.
+- Requisito **nuevo** -> tareas nuevas con ids que continuan la secuencia (`T-090`...).
+- Requisito **modificado**:
+  - sus tareas `pending` (segun progress) -> reescribilas para reflejar la version
+    nueva, conservando sus ids;
+  - sus tareas `in_progress` -> NO las toques: reporta el conflicto;
+  - sus tareas `done` -> NO las toques: crea una **tarea de ajuste** nueva
+    (`adjusts_task_id` apuntando a la tarea original, evidencia citando el `CR/INC`).
+- Requisito **deprecado**:
+  - sus tareas `pending` -> marcalas `status: "cancelled"` (no las borres);
+  - sus tareas `in_progress` o `done` -> NO las toques: reporta el conflicto (hay
+    trabajo construido sobre un requisito que ya no existe; lo decide el usuario).
+- Los **conflictos** van en `warnings` con formato fijo:
+  `CONFLICTO [INC/CR-xxx]: <requisito> <verdicto> pero <task> esta <estado>.
+  Sugerencia: <accion>`. El orquestador los presenta al usuario y te re-invoca con las
+  decisiones; aplicalas tal cual.
+- Al terminar, agrega las entradas del delta a `metadata.applied_changelog_ids`,
+  actualiza los `*_version_ref` e incrementa `version`.
 
 ## Reglas
 
@@ -103,7 +134,10 @@ Reglas de la tarea-contrato:
   de los `acceptance_criteria` de los requisitos, acotados al alcance de la tarea.
 - `module_ids` y `entity_ids`: modulos y entidades del diseno que toca la tarea, si
   aplica.
-- `status`: siempre `pending` en esta etapa.
+- `status`: siempre `pending` en la derivacion inicial. `cancelled` solo aparece en
+  replanificacion (tareas de requisitos deprecados que nadie habia empezado).
+- `adjusts_task_id`: solo en tareas de ajuste creadas en replanificacion; apunta a la
+  tarea ya construida que esta tarea corrige.
 - Usa ids estables: `T-001` tareas, `Q-001` preguntas abiertas.
 - Todos los valores legibles por humanos van en espanol.
 
@@ -115,7 +149,7 @@ Escribi `.dev/plan/tasks.json` con este contrato exacto (solo JSON valido, sin c
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "requirements_version_ref": "string", "technical_design_version_ref": "string"},
+  "metadata": {"created_at": "string", "updated_at": "string", "requirements_version_ref": "string", "technical_design_version_ref": "string", "applied_changelog_ids": ["INC-001"]},
   "summary": {
     "feature_count": 0, "task_count": 0,
     "covered_requirement_ids": ["RF-001"], "uncovered_requirement_ids": ["RF-002"],
@@ -138,7 +172,8 @@ Escribi `.dev/plan/tasks.json` con este contrato exacto (solo JSON valido, sin c
       "module_ids": ["MOD-001"],
       "entity_ids": ["ENT-001"],
       "acceptance_criteria": [{"id": "AC-001", "given": "string", "when": "string", "then": "string"}],
-      "status": "pending",
+      "status": "pending|cancelled",
+      "adjusts_task_id": "T-012",
       "assumptions": ["string"],
       "open_questions": ["string"],
       "evidence_refs": ["RF-001"]
@@ -152,10 +187,13 @@ Escribi `.dev/plan/tasks.json` con este contrato exacto (solo JSON valido, sin c
 ```
 
 Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archivo
-(modo correccion incluido); `metadata.updated_at` se actualiza siempre.
-`requirements_version_ref` y `technical_design_version_ref` citan el numero de
+(modo correccion y replanificacion incluidos); `metadata.updated_at` se actualiza
+siempre. `requirements_version_ref` y `technical_design_version_ref` citan el numero de
 `version` actual de `requirements.json` y `technical-design.json`, como string
-(ej. `"3"`): son la base de la deteccion de desactualizacion del plan.
+(ej. `"3"`): son la base de la deteccion de desactualizacion del plan. En la
+derivacion inicial, `applied_changelog_ids` lista todas las entradas `INC-xxx`/`CR-xxx`
+con `status: applied` del changelog de requisitos al momento de planificar (vacia si
+no hay changelog); en replanificacion se le suman las entradas del delta absorbido.
 
 Tambien escribi `.dev/plan/tasks.md`: un resumen legible con, por cada feature, sus tareas
 (id, titulo, prioridad, complejidad, dependencias y requisitos que cubre).

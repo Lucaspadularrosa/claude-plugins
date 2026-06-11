@@ -21,8 +21,8 @@
     },
     {
       "name": "planning-pipeline",
-      "description": "Convierte una linea de base de requisitos en un plan de ejecucion para agentes IA: deriva tareas trazables a los requisitos dimensionadas para una pasada de agente, calcula los lotes de features que pueden construirse en paralelo, inspecciona el plan y emite un brief por feature para alimentar un pipeline de build.",
-      "version": "2.0.0",
+      "description": "Convierte una linea de base de requisitos en un plan de ejecucion para agentes IA: deriva tareas trazables dimensionadas para una pasada de agente, calcula los lotes de features paralelas, inspecciona el plan y emite un brief por feature. Con /replanificar absorbe cambios de requisitos sin tocar lo construido.",
+      "version": "2.1.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"

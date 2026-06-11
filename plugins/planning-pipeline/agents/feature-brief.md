@@ -25,6 +25,16 @@ Lee:
 Corres solo despues de que el plan paso la inspeccion. No corras si el plan tiene
 defectos `high` o `medium` sin resolver.
 
+### Modo replanificacion
+
+El orquestador te puede indicar una lista acotada de features afectadas por una
+replanificacion. En ese caso regenera **solo esos briefs**; los demas archivos de
+`.dev/features/` quedan intactos. Cada brief regenerado arranca con una linea de
+actualizacion: que entrada del changelog lo cambio (`INC-xxx`/`CR-xxx`) y que cambio
+(tareas nuevas, ajustadas o canceladas; cambio de lote). No incluyas tareas
+`cancelled` en el plan de ejecucion del brief; listalas aparte como canceladas con su
+motivo.
+
 ## Reglas
 
 - Tu output son los briefs por feature. No generes codigo ni reescribas el plan.

@@ -1,6 +1,6 @@
 ---
 name: planning-pipeline
-description: Convierte una linea de base de requisitos en un plan de ejecucion para agentes IA. Deriva tareas trazables a los requisitos dimensionadas para una pasada de agente, calcula los lotes de features que pueden construirse en paralelo, inspecciona el plan y emite un brief por feature. Usar cuando el usuario quiere planificar la construccion de un sistema a partir de requisitos ya generados.
+description: Convierte una linea de base de requisitos en un plan de ejecucion para agentes IA. Deriva tareas trazables a los requisitos dimensionadas para una pasada de agente, calcula los lotes de features que pueden construirse en paralelo, inspecciona el plan y emite un brief por feature. Tambien replanifica, absorbe incrementos y cambios de requisitos del changelog sin tocar lo construido. Usar cuando el usuario quiere planificar la construccion a partir de requisitos ya generados, o actualizar el plan porque los requisitos cambiaron.
 ---
 
 # Pipeline de Planificacion (tareas, lotes paralelos y briefs de feature)
@@ -31,10 +31,40 @@ requisitos (`requirements-pipeline`).
 
 | Orden | Subagente | Lee | Escribe |
 |---|---|---|---|
-| 1 | `task-derivation` | requisitos + diseno | `.dev/plan/tasks.json` (+ `.md`) |
-| 2 | `execution-planning` | `tasks.json` | `.dev/plan/execution-plan.json` (+ `.md`) |
+| 1 | `task-derivation` | requisitos + diseno (+ changelog y plan previo en replanificacion) | `.dev/plan/tasks.json` (+ `.md`) |
+| 2 | `execution-planning` | `tasks.json` (+ `progress.json` y plan previo en replanificacion) | `.dev/plan/execution-plan.json` (+ `.md`) |
 | 3 | `plan-inspection` | `tasks.json`, `execution-plan.json`, requisitos | `.dev/plan/plan-inspection.json` (+ `.md`) |
 | 4 | `feature-brief` | plan + execution-plan + requisitos + diseno | `.dev/features/{feature}.md` |
+
+## Artefactos de control
+
+### `metadata.applied_changelog_ids` (en `tasks.json`)
+
+La lista de entradas del changelog de requisitos (`INC-xxx`, `CR-xxx` con
+`status: applied`) que este plan ya absorbio. Es el contrato con el pipeline de
+requisitos: si en `.dev/requirements/changelog.json` hay entradas aplicadas que no
+estan en esta lista, el plan esta desactualizado y corresponde replanificar.
+
+### `progress.json` (en `.dev/plan/`; lo escribis vos y el pipeline de build)
+
+El estado de ejecucion del plan. Lo inicializas vos al cerrar `/planificar` (todo
+`pending`); el pipeline de build (o el usuario) lo actualiza a medida que avanza:
+
+```json
+{
+  "version": 1,
+  "updated_at": "string",
+  "features": [
+    {"feature_id": "FG-01", "status": "pending|in_progress|done", "branch": "string", "notes": "string"}
+  ],
+  "tasks": [
+    {"task_id": "T-001", "status": "pending|in_progress|done|cancelled"}
+  ]
+}
+```
+
+La replanificacion lo necesita para no tocar lo construido. Si no existe al
+replanificar, pregunta al usuario el estado real antes de seguir.
 
 ## Procedimiento
 
@@ -75,11 +105,44 @@ alimentar un pipeline de desarrollo de features.
 
 ### Paso 5 - Cierre
 
-Informa al usuario los archivos generados en `.dev/plan/` y `.dev/features/`, y resalta:
-el conteo de features y tareas, el maximo paralelismo (`max_parallel_degree`: cuantos
-agentes a la vez aprovecha el plan), el critical path en turnos
-(`critical_path_length`), la cantidad de contratos en la ronda inicial y las preguntas
-abiertas.
+Inicializa `.dev/plan/progress.json` con todas las features y tareas en `pending` (si
+ya existia, no lo pises). Informa al usuario los archivos generados en `.dev/plan/` y
+`.dev/features/`, y resalta: el conteo de features y tareas, el maximo paralelismo
+(`max_parallel_degree`: cuantos agentes a la vez aprovecha el plan), el critical path
+en turnos (`critical_path_length`), la cantidad de contratos en la ronda inicial y las
+preguntas abiertas.
+
+## Modo REPLANIFICACION (`/replanificar`)
+
+Cuando los requisitos cambiaron despues de planificar (incrementos o CRs nuevos), el
+plan se actualiza quirurgicamente: solo las features afectadas, sin tocar lo
+construido.
+
+1. **Delta**: lee `.dev/requirements/changelog.json` y compara sus entradas `INC-xxx`
+   / `CR-xxx` con `status: applied` contra `metadata.applied_changelog_ids` de
+   `tasks.json`. Las no aplicadas son el delta. Si no hay delta y los `*_version_ref`
+   coinciden con las versiones actuales, el plan esta al dia: informalo y termina. Si
+   las versiones no coinciden pero no hay changelog (linea de base anterior al
+   versionado), adverti que la replanificacion va a ser completa, no quirurgica.
+2. **Estado del build**: lee `.dev/plan/progress.json`. Si no existe, pregunta al
+   usuario que features/tareas estan hechas o en curso. Nunca asumas el estado.
+3. **Resumen previo**: mostra al usuario las features afectadas y los veredictos del
+   delta antes de tocar el plan.
+4. Invoca `task-derivation` en modo replanificacion, indicandole el delta y el estado
+   del build. Re-deriva solo las features afectadas; lo demas queda intacto.
+5. **PAUSA DE CONFLICTOS**: si `task-derivation` reporta conflictos (requisito
+   deprecado con tarea `done`, requisito modificado con tarea `in_progress`),
+   presentalos al usuario con la decision sugerida y espera su respuesta, uno por
+   uno. Aplica las decisiones re-invocando al agente.
+6. Invoca `execution-planning` en modo replanificacion: recalcula los lotes del
+   trabajo restante (features `done` fuera del grafo, `in_progress` conservan su
+   lote, lo nuevo se inserta por niveles).
+7. Corre `plan-inspection` con su lazo de correccion, igual que en el Paso 3.
+8. Invoca `feature-brief` indicandole **solo las features afectadas**: regenera esos
+   briefs citando que entrada del changelog los cambio.
+9. Cierre: actualiza `progress.json` (tareas nuevas en `pending`, canceladas en
+   `cancelled`), y resume: que se agrego/modifico/cancelo, los lotes del trabajo
+   restante, el paralelismo resultante y los `applied_changelog_ids` actualizados.
 
 ## Reglas de orquestacion
 
@@ -100,6 +163,7 @@ abiertas.
   tasks.json / tasks.md             tareas trazables a los requisitos
   execution-plan.json / .md         ronda de contratos + lotes paralelos de features
   plan-inspection.json / .md        inspeccion del plan (auditoria)
+  progress.json                     estado de ejecucion (lo actualiza el build)
 .dev/features/
   {feature}.md                      un brief por feature para el pipeline de build
 ```
