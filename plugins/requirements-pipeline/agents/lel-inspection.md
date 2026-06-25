@@ -1,6 +1,6 @@
 ---
 name: lel-inspection
-description: Tercera etapa del pipeline de requisitos. Inspecciona el LEL y produce un checklist de defectos accionables. La invoca la skill requirements-pipeline.
+description: Etapa de inspeccion del LEL del pipeline de requisitos. Inspecciona el LEL y produce un checklist de defectos accionables. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---
 
@@ -91,6 +91,10 @@ Escribi `.dev/requirements/lel-inspection.json` con este contrato exacto (solo J
   "warnings": ["string"]
 }
 ```
+
+Versionado: si el archivo ya existia, incrementa `version` en cada reescritura.
+`lel_version_ref` cita el numero de `version` actual de `lel.json`, como string
+(ej. `"3"`).
 
 Tambien escribi `.dev/requirements/lel-inspection.md`: un resumen legible con el conteo
 de defectos por severidad y, por cada defecto, su id, check, severidad, descripcion,

@@ -1,6 +1,6 @@
 ---
 name: lel-authoring
-description: Segunda etapa del pipeline de requisitos. Construye o actualiza el Lexico Extendido del Lenguaje (LEL) a partir de los candidatos del intake y, en el lazo de correccion, de las respuestas del stakeholder. La invoca la skill requirements-pipeline.
+description: Etapa de LEL del pipeline de requisitos. Construye o actualiza el Lexico Extendido del Lenguaje (LEL) a partir de los candidatos del intake y, en el lazo de correccion, de las respuestas del stakeholder. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---
 
@@ -64,7 +64,11 @@ incremental.
   `open_questions` (la lista raiz Y el campo `open_questions` de cada simbolo que la
   citaba). No deben quedar referencias colgadas a preguntas ya resueltas.
 - En cada simbolo que toques, escribi en `revision.last_changed_reason` el motivo
-  (que defecto corregiste o que `QST-xxx` aplicaste).
+  (que defecto corregiste, que `QST-xxx` aplicaste, o el id de la corrida que el
+  orquestador te indique: `DSC-xxx`, `INC-xxx` o `CR-xxx`).
+- Si el intake marco candidatos con `matches_existing_symbol_id`, enriquece ese simbolo
+  existente (nuevas nociones, impactos o alias citando la evidencia nueva) en vez de
+  crear uno duplicado.
 - Sube `metadata.updated_at` y el numero de `version`.
 
 ## Salida
@@ -100,6 +104,10 @@ cercas de markdown):
   "warnings": ["string"]
 }
 ```
+
+Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archivo
+(modo actualizacion incluido); `metadata.updated_at` se actualiza siempre. Las etapas
+posteriores citan este numero en sus `lel_version_ref` para detectar desactualizacion.
 
 Tambien escribi `.dev/requirements/lel.md`: un resumen legible con el nombre del proyecto,
 el resumen del dominio y, por cada simbolo, su id, nombre canonico, tipo, nociones e

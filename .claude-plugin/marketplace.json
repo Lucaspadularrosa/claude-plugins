@@ -21,8 +21,8 @@
     },
     {
       "name": "planning-pipeline",
-      "description": "Convierte una linea de base de requisitos en un plan de implementacion auditable: deriva tareas trazables a los requisitos, las agrupa en fases y sprints, inspecciona el plan y emite un brief por feature para alimentar un pipeline de build.",
-      "version": "1.0.0",
+      "description": "Convierte una linea de base de requisitos en un plan de ejecucion para agentes IA: deriva tareas trazables dimensionadas para una pasada de agente, calcula los lotes de features paralelas, inspecciona el plan y emite un brief por feature. Con /replanificar absorbe cambios de requisitos sin tocar lo construido.",
+      "version": "2.1.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"
@@ -31,9 +31,42 @@
       "category": "development"
     },
     {
-      "name": "requirements-pipeline",
-      "description": "Convierte un documento de dominio en una linea de base de requisitos trazable: LEL, inspeccion, preguntas a stakeholders, escenarios, requisitos funcionales y no funcionales, diseno tecnico e inspeccion del diseno.",
+      "name": "audit-pipeline",
+      "description": "Audita un codebase en tres dimensiones, bugs de correctitud, seguridad defensiva y mejoras de alto retorno, con verificacion adversarial de cada hallazgo antes de reportarlo. Funciona standalone o integrado con la suite: los confirmados se convierten en change requests planificables.",
       "version": "1.0.0",
+      "author": {
+        "name": "Lucas Micheli",
+        "email": "lucas.t.micheli@gmail.com"
+      },
+      "source": "./plugins/audit-pipeline",
+      "category": "development"
+    },
+    {
+      "name": "build-pipeline",
+      "description": "Ejecuta el plan de los pipelines de requisitos y planificacion, en cualquier lenguaje o framework: detecta el stack por evidencia, implementa cada feature en su rama verificando los criterios de aceptacion, construye lotes en paralelo (un agente por feature en worktrees) y mantiene progress.json al dia para la replanificacion.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Lucas Micheli",
+        "email": "lucas.t.micheli@gmail.com"
+      },
+      "source": "./plugins/build-pipeline",
+      "category": "development"
+    },
+    {
+      "name": "recovery-pipeline",
+      "description": "Comprende una aplicacion ya desarrollada aunque no tenga documentacion (vibe-coding): inventaria el codigo, extrae que hace con evidencia archivo:linea, reconstruye la linea de base de requisitos en formato .dev/requirements/ compatible con toda la suite, reporta el estado real y arma el cuestionario de decisiones para el dueño.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Lucas Micheli",
+        "email": "lucas.t.micheli@gmail.com"
+      },
+      "source": "./plugins/recovery-pipeline",
+      "category": "development"
+    },
+    {
+      "name": "requirements-pipeline",
+      "description": "Pipeline iterativo de ingenieria de requisitos (LEL y Escenarios): descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; y absorbe cambios con confirmacion y changelog, todo trazable.",
+      "version": "2.0.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"

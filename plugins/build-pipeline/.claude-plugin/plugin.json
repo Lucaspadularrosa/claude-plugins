@@ -1,0 +1,19 @@
+{
+  "name": "build-pipeline",
+  "version": "1.0.0",
+  "displayName": "Build Pipeline (ejecucion del plan, agnostico de stack)",
+  "description": "Ejecuta el plan de los pipelines de requisitos y planificacion: toma los briefs de .dev/features/, detecta el stack del proyecto (cualquier lenguaje o framework), implementa cada feature en su rama verificando los criterios de aceptacion, y construye lotes completos en paralelo con un agente por feature. Actualiza progress.json para que /replanificar nunca pise lo construido.",
+  "keywords": [
+    "build",
+    "desarrollo",
+    "features",
+    "paralelismo",
+    "agentes",
+    "stack-agnostic"
+  ],
+  "author": {
+    "name": "Lucas Micheli",
+    "email": "lucas.t.micheli@gmail.com"
+  },
+  "license": "MIT"
+}

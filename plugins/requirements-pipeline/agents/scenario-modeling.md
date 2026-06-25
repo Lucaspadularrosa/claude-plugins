@@ -1,6 +1,6 @@
 ---
 name: scenario-modeling
-description: Quinta etapa del pipeline de requisitos. Deriva Escenarios trazables a partir del LEL, con el modelo de Leite y Hadad. La invoca la skill requirements-pipeline.
+description: Etapa de escenarios del pipeline de requisitos. Deriva Escenarios trazables a partir del LEL con el modelo de Leite y Hadad; en modo profundizacion elabora solo los escenarios de las features de un incremento. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---
 
@@ -17,6 +17,25 @@ especifique sin inventar vocabulario ni comportamiento.
 Lee:
 - `.dev/requirements/lel.json` (fuente principal de vocabulario).
 - `.dev/requirements/lel-inspection.json` (defectos del LEL, si existe).
+- `.dev/requirements/product-map.json` (el mapa con los escenarios stub, si existe).
+- `.dev/requirements/scenarios.json` previo (si existe: el archivo es acumulativo).
+
+## Modo profundizacion (incremento)
+
+Cuando el orquestador te indica las features de un incremento:
+
+- Elabora **solo** los escenarios stub de esas features, tomandolos del
+  `product-map.json`. **Conserva sus ids `SCN-xx`**: el stub y el escenario elaborado
+  son el mismo objeto en dos niveles de detalle.
+- `scenarios.json` es acumulativo: preserva intactos los escenarios de incrementos
+  anteriores; solo agregas o completas los del incremento actual.
+- Si al elaborar descubris que una feature necesita un escenario que no estaba en el
+  mapa, crealo con un id que continue la secuencia global y **reportalo en `warnings`**
+  ("escenario nuevo no mapeado: SCN-014, feature FG-03") para que el orquestador lo
+  sume al mapa.
+- Si la elaboracion contradice o redefine un escenario ya `baselined` de otro
+  incremento, NO lo modifiques: registra una pregunta abierta con el detalle; el
+  orquestador lo maneja como propuesta de cambio con confirmacion del usuario.
 
 ## Reglas
 
@@ -43,7 +62,9 @@ Lee:
 - Si un Escenario depende de un defecto `high` no resuelto, no lo afirmes como cierto:
   registra una pregunta abierta.
 - `covered_symbol_ids` lista los simbolos usados por al menos un Escenario;
-  `uncovered_symbol_ids` lista los simbolos `active` que ningun Escenario usa.
+  `uncovered_symbol_ids` lista los simbolos `active` que ningun Escenario usa. En modo
+  profundizacion es esperable que queden simbolos sin cubrir (pertenecen a features
+  todavia en stub): no es defecto, dejalo dicho en `warnings`.
 - Usa ids estables: `SCN-001`, `EP-001`, `ACT-001`, `RES-001`, `EXC-001`, `Q-001`.
 - Cada Escenario, episodio y excepcion cita `evidence_refs` con ids del LEL.
 - Deduplica Escenarios por significado. Todos los valores legibles van en espanol.
@@ -81,6 +102,11 @@ Escribi `.dev/requirements/scenarios.json` con este contrato exacto (solo JSON v
   "warnings": ["string"]
 }
 ```
+
+Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archivo;
+`metadata.updated_at` se actualiza siempre. `lel_version_ref` cita el numero de
+`version` actual de `lel.json`, como string (ej. `"3"`). Las etapas posteriores citan
+la `version` de este archivo en sus `scenario_version_ref`.
 
 Tambien escribi `.dev/requirements/scenarios.md`: un resumen legible con, por cada
 Escenario, su id, titulo, objetivo, contexto, actores, recursos, episodios numerados y
