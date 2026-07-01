@@ -104,6 +104,27 @@ modelarse como un campo enum de otra entidad o como una entidad propia.
 - No disenes HTML ni CSS que los assets no contengan: tu trabajo es documentar y trazar
   el diseno existente, no producir la interfaz.
 
+## Decisiones de seguridad (ADRs)
+
+Cuando el sistema tiene autenticacion, autorizacion, datos sensibles o entrada externa
+(casi siempre), las decisiones de seguridad se registran como ADRs, para que el build las
+tome como diseño y no las improvise:
+
+- Emiti un ADR por cada decision de seguridad propia del sistema: estrategia de
+  **autenticacion** (sesion vs token, proveedor), modelo de **autorizacion**
+  (roles/permisos, RBAC/ABAC, ownership de recursos), **gestion de secretos** (de donde
+  salen las claves), **proteccion de datos** (que se cifra/hashea, con que, en transito y
+  en reposo) y **validacion de entrada** (donde estan los limites de confianza).
+- Cada ADR de seguridad cita los `requirement_ids` de los RNF `category: security` que lo
+  motivan, y ancla en su `context` la categoria OWASP que aborda, para que la
+  trazabilidad llegue hasta la base de seguridad del build. Si una decision de seguridad
+  es necesaria pero ningun RNF la respalda, registra una pregunta abierta (puede faltar
+  el requisito) en vez de decidir en silencio.
+- No disenes el **piso generico** (parametrizar queries, escapar salida, no hardcodear
+  secretos, defaults seguros): eso lo garantiza el pipeline de build por construccion con
+  la base de seguridad del stack. Los ADRs son para las decisiones **propias del
+  sistema**, no para repetir buenas practicas universales.
+
 ## Salida
 
 ### 1. `.dev/requirements/data-model.json` (solo JSON valido)

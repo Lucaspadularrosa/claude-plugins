@@ -222,9 +222,11 @@ El pipeline se detiene y te espera en estos puntos (nunca inventa tus respuestas
 El plugin `build-pipeline` es el ejecutor nativo del plan, **agnóstico de stack**: la
 primera vez detecta cómo se desarrolla tu proyecto (manifiestos, configs, CI,
 CLAUDE.md) y lo registra en `.dev/build/stack-profile.json` — comandos de test/lint/
-build, layout y convenciones. Funciona con cualquier lenguaje o framework, incluso en
-proyectos greenfield (deriva el perfil del diseño técnico y la primera feature crea el
-esqueleto).
+build, layout y convenciones. En la misma pasada deriva la **base de seguridad** del
+stack (`.dev/build/security-baseline.json`): la superficie de ataque, las categorías
+OWASP Top 10 aplicables y el mecanismo nativo del framework para cada una. Funciona con
+cualquier lenguaje o framework, incluso en proyectos greenfield (deriva los perfiles del
+diseño técnico y la primera feature crea el esqueleto).
 
 Dos formas de ejecutar, combinables:
 
@@ -238,12 +240,15 @@ Dos formas de ejecutar, combinables:
   para repartir un lote entre varias PCs/licencias: cada instancia toma una feature
   distinta del mismo lote.
 
-En ambos modos: cada tarea se implementa y **se verifica contra sus criterios Gherkin**
-(tests con el framework del proyecto) antes de pasar a la siguiente, con un commit
-`[T-xxx]` por tarea; un agente revisor audita el diff contra el brief (cobertura,
-scope, tests corridos de verdad) antes del PR; y `progress.json` se actualiza en cada
-transición (`done` = mergeado), que es lo que le permite a `/replanificar` no pisar lo
-construido.
+En ambos modos: cada tarea se implementa **con el piso de seguridad OWASP aplicado por
+construcción** y **se verifica contra sus criterios Gherkin** (tests con el framework del
+proyecto) antes de pasar a la siguiente, con un commit `[T-xxx]` por tarea; antes del PR,
+un agente revisor audita el diff contra el brief (cobertura, scope, tests corridos de
+verdad) y un `security-gate` verifica el piso de seguridad (OWASP + audit de
+dependencias); y `progress.json` se actualiza en cada transición (`done` = mergeado), que
+es lo que le permite a `/replanificar` no pisar lo construido. La auditoría profunda de
+seguridad sigue estando en `/auditar` (`audit-pipeline`), al que el gate deriva lo que
+excede el piso.
 
 Si preferís usar tu propio pipeline de build, los briefs de `.dev/features/` son
 autosuficientes: respetá el orden de lotes de `execution-plan.md` y mantené
@@ -265,7 +270,9 @@ autosuficientes: respetá el orden de lotes de `execution-plan.md` y mantené
 | El estado del build | `.dev/plan/progress.json` |
 | Qué construir para una feature | `.dev/features/{feature}.md` |
 | Cómo se desarrolla este proyecto (stack, comandos) | `.dev/build/stack-profile.json` |
+| La base de seguridad del stack (superficie, OWASP, tooling) | `.dev/build/security-baseline.json` |
 | El veredicto de review de una feature construida | `.dev/build/reviews/{feature}.json` |
+| El veredicto de seguridad (piso OWASP) de una feature | `.dev/build/security/{feature}.json` |
 | El estado real de una app comprendida | `.dev/recovery/state-report.md` |
 | Qué hace la app, con evidencia al código | `.dev/recovery/behavior-map.md` |
 | Las preguntas pendientes del dueño | `.dev/recovery/owner-questions.md` |

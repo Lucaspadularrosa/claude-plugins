@@ -17,6 +17,14 @@ suite (`.dev/requirements/`, generada por `requirements-pipeline` o reconstruida
 los requisitos no otorgan, y los hallazgos confirmados pueden convertirse en trabajo
 planificable.
 
+**Relacion con el piso de seguridad del build.** Si el codigo se construyo con
+`build-pipeline`, ya trae un **piso de seguridad OWASP por construccion**, verificado
+feature por feature por su `security-gate` (prevencion). Esta auditoria es el nivel
+**profundo y complementario**: analisis adversarial, cadenas de explotacion y cobertura
+que el piso no persigue. No se pisan — el gate previene lo tipico y deriva aca lo que
+excede el piso (`deferred_to_audit` en `.dev/build/security/*.json`). Corre `/auditar`
+cuando quieras esa pasada profunda, sin importar como se construyo el codigo.
+
 Vos, el agente principal, sos el orquestador: delegas en los subagentes con la
 herramienta Task (en paralelo cuando se puede), consolidas y reportas.
 
@@ -35,10 +43,13 @@ herramienta Task (en paralelo cuando se puede), consolidas y reportas.
 
 - Alcance: `bugs`, `seguridad`, `mejoras`, una ruta/modulo, o nada (= las tres
   dimensiones sobre todo el repo). Resolvelo desde los argumentos del usuario.
-- Contexto disponible (pasaselo a los auditores que corresponda): el stack-profile
-  (`.dev/build/`), la linea de base (`.dev/requirements/`) y las señales del recovery
-  (`.dev/recovery/state-report.json`, campo `audit_signals`), si existen. Ninguno es
-  obligatorio.
+- Contexto disponible (pasaselo a los auditores que corresponda): el stack-profile y la
+  **base de seguridad** (`.dev/build/security-baseline.json`), los veredictos del
+  `security-gate` con lo que dejo para auditoria profunda (`.dev/build/security/*.json`,
+  campo `deferred_to_audit`), la linea de base (`.dev/requirements/`) y las señales del
+  recovery (`.dev/recovery/state-report.json`, campo `audit_signals`), si existen.
+  Ninguno es obligatorio. Arrancar por los `deferred_to_audit` del gate es un buen
+  punto de partida cuando existen.
 
 ### Paso 2 - Dimensiones en paralelo
 

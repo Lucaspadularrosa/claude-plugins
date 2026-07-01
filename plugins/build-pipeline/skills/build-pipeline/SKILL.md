@@ -28,17 +28,21 @@ Si falta el plan, indicale al usuario que primero corra `/planificar`
 
 | Subagente | Rol | Cuando |
 |---|---|---|
-| `stack-profiler` | Descubre el stack del proyecto y emite `.dev/build/stack-profile.json` | Primera vez, o si el perfil quedo stale |
-| `feature-implementer` | Construye UNA feature: modo plan (propone) y modo ejecucion (implementa y verifica) | Por cada feature |
-| `build-reviewer` | Revisa el diff contra el brief y emite veredicto en `.dev/build/reviews/{slug}.json` | Antes de cada PR |
+| `stack-profiler` | Descubre el stack y la base de seguridad del proyecto; emite `.dev/build/stack-profile.json` y `.dev/build/security-baseline.json` | Primera vez, o si el perfil quedo stale |
+| `feature-implementer` | Construye UNA feature: modo plan (propone) y modo ejecucion (implementa y verifica, con el piso de seguridad OWASP por construccion) | Por cada feature |
+| `build-reviewer` | Revisa el diff contra el brief (cobertura, scope, correctitud, convenciones) y emite veredicto en `.dev/build/reviews/{slug}.json` | Antes de cada PR |
+| `security-gate` | Revisa el diff contra la base de seguridad (piso OWASP) y corre el audit de dependencias; emite veredicto en `.dev/build/security/{slug}.json` | Antes de cada PR, junto con el review |
 
 ## Convenciones compartidas
 
-- **Perfil de stack**: si `.dev/build/stack-profile.json` no existe, o su
-  `technical_design_version_ref` no coincide con la version actual del diseno, invoca
-  `stack-profiler` antes que nada. Si el perfil tiene `open_questions` (no hay comando
-  de test, no se sabe la rama de integracion), resolvelas con el usuario antes de
-  construir: sin verificacion no hay build.
+- **Perfil de stack y base de seguridad**: si `.dev/build/stack-profile.json` o
+  `.dev/build/security-baseline.json` no existen, o el `technical_design_version_ref`
+  del perfil no coincide con la version actual del diseno, invoca `stack-profiler` antes
+  que nada (emite ambos en una pasada). Si el perfil tiene `open_questions` (no hay
+  comando de test, no se sabe la rama de integracion), resolvelas con el usuario antes
+  de construir: sin verificacion no hay build. Si la base de seguridad quedo con huecos
+  (ej.: sin comando de audit de dependencias), no bloquea el build, pero avisale al
+  usuario: el `security-gate` lo va a reportar.
 - **Compuerta de lote**: una feature solo puede construirse si su lote esta
   desbloqueado: todos los lotes de su `unlocks_after` tienen sus features `done` en
   `progress.json`, y la ronda de contratos esta mergeada. Si no, explicale al usuario
@@ -74,13 +78,16 @@ Construye una feature, con aprobacion del plan de implementacion antes de codear
    `progress.json` (con la rama), e invoca `feature-implementer` en **modo ejecucion**
    con el plan aprobado. A medida que reporta tareas terminadas, marcalas `done` en
    `progress.json`.
-5. Invoca `build-reviewer`. Si reporta hallazgos `high` o `medium`, re-invoca
-   `feature-implementer` con los hallazgos para corregir y volve a revisar, hasta que
-   pase.
+5. Invoca `build-reviewer` y `security-gate` (podes lanzarlos en paralelo: ambos son de
+   solo lectura y emiten veredictos separados). Si cualquiera reporta hallazgos `high` o
+   `medium`, re-invoca `feature-implementer` con los hallazgos de ambos para corregir y
+   volve a revisar con los dos, hasta que los dos pasen. Los `deferred_to_audit` del
+   gate no bloquean el PR: se anotan para sugerir `/auditar` despues.
 6. Crea el PR contra la rama de integracion y mostrale al usuario el resumen: tareas
-   construidas, criterios verificados, veredicto del review, link del PR. La feature
-   queda `in_progress` hasta que el PR mergee (anota el PR en `notes`); si el usuario
-   lo mergea en la sesion, marcala `done`.
+   construidas, criterios verificados, veredicto del review, **veredicto de seguridad**
+   (piso OWASP: passed, hallazgos, resultado del audit de dependencias) y link del PR. La
+   feature queda `in_progress` hasta que el PR mergee (anota el PR en `notes`); si el
+   usuario lo mergea en la sesion, marcala `done`.
 
 ## Modo LOTE (`/construir-lote [BATCH-n]`)
 
@@ -101,16 +108,19 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
    features del lote **en paralelo** (una sola tanda de llamadas Task), cada uno con
    su worktree como ruta de trabajo. Cada agente trabaja solo dentro de su feature:
    los briefs garantizan que no se pisan.
-5. A medida que cada implementador termina, lanza su `build-reviewer` (tambien en
-   paralelo entre features). Hallazgos `high`/`medium`: re-invoca al implementador de
-   esa feature para corregir y re-revisa, hasta que pase. Un bloqueo en una feature no
-   frena a las demas: registralo y segui.
-6. Por cada feature que paso: push de la rama, PR contra la rama de integracion, y
-   limpieza del worktree (`git worktree remove`). Actualiza `progress.json` (tareas
-   `done`; features `in_progress` con su PR en `notes`).
-7. Resumen final: por feature, tareas construidas, veredicto del review y PR; bloqueos
-   si los hubo; y el proximo paso (mergear los PRs y, cuando esten `done`, el
-   siguiente lote — o `/replanificar` si llegaron cambios de requisitos).
+5. A medida que cada implementador termina, lanza su `build-reviewer` y su
+   `security-gate` (tambien en paralelo entre features). Hallazgos `high`/`medium` de
+   cualquiera de los dos: re-invoca al implementador de esa feature para corregir y
+   re-revisa con ambos, hasta que pasen. Un bloqueo en una feature no frena a las demas:
+   registralo y segui.
+6. Por cada feature que paso (review y gate en verde): push de la rama, PR contra la
+   rama de integracion, y limpieza del worktree (`git worktree remove`). Actualiza
+   `progress.json` (tareas `done`; features `in_progress` con su PR en `notes`).
+7. Resumen final: por feature, tareas construidas, veredicto del review, veredicto de
+   seguridad (piso OWASP + audit de dependencias) y PR; bloqueos y `deferred_to_audit`
+   si los hubo; y el proximo paso (mergear los PRs y, cuando esten `done`, el siguiente
+   lote — o `/replanificar` si llegaron cambios de requisitos, o `/auditar` si el gate
+   dejo cosas para auditoria profunda).
 
 ---
 
@@ -121,10 +131,14 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
 - Nada se construye sin verificacion: criterios Gherkin demostrados con los comandos
   del perfil. Si el perfil no tiene comando de test, eso se resuelve con el usuario
   antes, no se saltea.
+- Nada se mergea sin el piso de seguridad: el `security-gate` es compuerta del PR igual
+  que el `build-reviewer`. Ambos deben pasar (sin `high`/`medium`) antes de abrir/mergear.
+  El piso es prevencion; la auditoria profunda sigue siendo `/auditar` (audit-pipeline),
+  al que el gate deriva lo que lo excede.
 - `progress.json` es sagrado: es lo que `/replanificar` usa para no pisar trabajo.
   Actualizalo en cada transicion, no al final.
 - Trazabilidad: commits con `[T-xxx]`, PRs citando `FG-xx` y tareas; el review queda
-  en `.dev/build/reviews/`.
+  en `.dev/build/reviews/` y el veredicto de seguridad en `.dev/build/security/`.
 - Si durante el build llegan cambios de requisitos (el usuario lo menciona o
   `plan-inspection` marco staleness), no improvises sobre el plan viejo: sugerile
   correr `/replanificar` y retoma despues.
@@ -134,7 +148,9 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
 ```
 .dev/build/
   stack-profile.json          perfil de stack del proyecto (por evidencia)
+  security-baseline.json      base de seguridad del stack (superficie, OWASP, tooling)
   reviews/{slug}.json         veredicto de review por feature
+  security/{slug}.json        veredicto de seguridad (piso OWASP) por feature
 .dev/plan/progress.json       actualizado en cada transicion
 ramas feature/{slug}          una por feature, PR contra la rama de integracion
 ```
