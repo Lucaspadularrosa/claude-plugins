@@ -125,6 +125,26 @@ Reglas de la tarea-contrato:
 - Reserva `kind: "hard"` solo para cuando la firma no alcanza (necesitas ejecutar la
   logica real de B). Si dudas, preferi extraer un contrato.
 
+### Requisitos de seguridad (RNF `category: security`)
+
+Los RNF de seguridad que llegan de requisitos son concretos y propios del sistema (el
+piso generico de OWASP no se planifica: lo cubre el build por construccion). Derivalos
+asi:
+
+- Si el requisito es una **capacidad localizable** (rate-limit al login, hashear
+  passwords, matriz RBAC, cifrar un campo, auditar accesos), deriva una tarea vertical
+  como con cualquier requisito; o, si es una salvaguarda de una capacidad que ya tiene
+  tarea, sumala como **criterio de aceptacion Gherkin** de esa tarea (ej.: la tarea de
+  login gana un criterio de bloqueo tras N intentos). Cita el `requirement_ids` del RNF.
+- **Nunca** crees una tarea generica tipo "implementar seguridad" o "aplicar OWASP": es
+  el anti-patron. El piso transversal (parametrizar queries, escapar salida, no hardcodear
+  secretos, validar entrada) no es una tarea — lo aplica el `feature-implementer` por
+  construccion y lo verifica el `security-gate`. Una tarea de seguridad es siempre una
+  capacidad concreta y verificable.
+- Un RNF de seguridad que atraviesa varias features (ej.: "toda ruta bajo /admin exige
+  rol admin") se cubre como criterio de aceptacion en las tareas de esas features, no
+  como una tarea suelta. Si eso no alcanza para cubrirlo, registra una pregunta abierta.
+
 ### Campos restantes
 
 - `priority`: heredada del requisito de origen; si una tarea cubre varios, usa el

@@ -39,6 +39,12 @@ El orquestador te indica la feature (slug), la rama y la ruta de trabajo. Lee:
 5. **Convenciones**: estilo y layout del perfil y de CLAUDE.md; consistencia con el
    codigo circundante.
 
+La **seguridad** no la revisas vos: la cubre el `security-gate` (piso OWASP) en un
+veredicto propio (`.dev/build/security/{slug}.json`), y el audit de dependencias lo corre
+el. No la re-audites ni corras `dependency_audit`: evitas solape y doble reporte. Si de
+paso ves algo de seguridad flagrante, dejalo como `warning` para el orquestador, no como
+hallazgo tuyo.
+
 Reglas:
 
 - Pocos hallazgos y utiles; prioriza lo que bloquea el PR. `high` = no puede

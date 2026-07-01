@@ -18,8 +18,10 @@ Lee:
 - `.dev/plan/tasks.json` (tareas por feature).
 - `.dev/plan/execution-plan.json` (ronda de contratos, lote de cada feature y orden de
   ejecucion de sus tareas).
-- `.dev/requirements/requirements.json` (requisitos y criterios de aceptacion).
-- `.dev/requirements/technical-design.json` (modulos, API, pantallas, decisiones).
+- `.dev/requirements/requirements.json` (requisitos y criterios de aceptacion, incluidos
+  los RNF `category: security`).
+- `.dev/requirements/technical-design.json` (modulos, API con su `auth_required`,
+  pantallas, decisiones — incluidos los ADRs de seguridad).
 - `.dev/requirements/data-model.json` (entidades).
 
 Corres solo despues de que el plan paso la inspeccion. No corras si el plan tiene
@@ -62,18 +64,27 @@ Cada brief tiene estas secciones:
    Son la definicion de verificado: el agente no cierra una tarea sin cumplirlos.
 5. **Diseno relevante**: los modulos, contratos de API, pantallas y entidades del diseno
    tecnico que toca esta feature.
-6. **Contratos**: las tareas-contrato que esta feature produce (firmas que expone) y las
+6. **Seguridad**: las categorias OWASP que aplican a esta feature segun su superficie
+   (si toca entrada de usuario, acceso a datos, salida, auth, requests salientes); los
+   requisitos o criterios de seguridad **especificos** que debe cumplir (RNF
+   `category: security` y criterios de aceptacion de seguridad de sus tareas, citando sus
+   ids; ADRs de seguridad del diseno que la afectan); y los contratos de API con
+   `auth_required`. Cierra con la nota de que el implementador aplica el **piso de
+   seguridad del stack** (`.dev/build/security-baseline.json`) con los mecanismos nativos
+   del framework y que el `security-gate` lo verifica. Si la feature no tiene requisitos
+   de seguridad propios, deja solo esa nota del piso: no inventes controles.
+7. **Contratos**: las tareas-contrato que esta feature produce (firmas que expone) y las
    que consume (firmas contra las que puede mockear), con sus `task_id`. Recorda que la
    ronda de contratos ya esta mergeada cuando esta feature arranca.
-7. **Lote de ejecucion**: en que `BATCH-...` cae esta feature segun
+8. **Lote de ejecucion**: en que `BATCH-...` cae esta feature segun
    `execution-plan.json`, con que otras features corre en paralelo (las del mismo lote)
    y que espera para arrancar (`waits_for`, citando las aristas `from_task` ->
    `to_task`). Si la feature quedo sola en su lote, deci que dependencias hard la
    aislaron.
-8. **Dependencias entre features**: si alguna tarea depende de tareas de otra feature.
+9. **Dependencias entre features**: si alguna tarea depende de tareas de otra feature.
    Distingui `hard` (necesita el codigo mergeado) de `contract` (alcanza con la firma ya
    mergeada en la ronda de contratos). Cita los `task_id` de cada dependencia.
-9. **Trazabilidad**: de que escenarios y simbolos del LEL viene la feature (via los
+10. **Trazabilidad**: de que escenarios y simbolos del LEL viene la feature (via los
    requisitos), y preguntas abiertas que la afectan.
 
 ## Antes de terminar
@@ -81,6 +92,8 @@ Cada brief tiene estas secciones:
 - Verifica que escribiste un archivo por cada feature con tareas.
 - Verifica que cada brief cita ids reales de requisitos, tareas, modulos y entidades.
 - Verifica que ninguna tarea de una feature quedo fuera de su brief.
+- Verifica que cada brief tiene su seccion de Seguridad: con los requisitos/criterios de
+  seguridad especificos de la feature si los hay, y siempre la nota del piso del stack.
 - Verifica que el orden de las tareas de cada brief coincide con el `task_order` del
   execution-plan.
 

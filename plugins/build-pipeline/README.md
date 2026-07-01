@@ -20,6 +20,26 @@ Para soportar un stack nuevo no se modifica el plugin: se corre en el proyecto. 
 proyectos greenfield (sin codigo todavia), el perfil se deriva del diseno tecnico y la
 primera feature crea el esqueleto.
 
+## Seguridad por construccion (piso OWASP)
+
+En la misma pasada, `stack-profiler` deriva la **base de seguridad** del stack en
+`.dev/build/security-baseline.json`: la superficie de ataque del proyecto (web, API,
+CLI, libreria, servicio), las categorias de OWASP Top 10 que aplican, el mecanismo
+**nativo** del stack para cada una (el ORM que parametriza, el template que escapa, el
+middleware de authz, el hasher de passwords, el gestor de secretos) y el comando de
+audit de dependencias.
+
+Con eso, el `feature-implementer` codea con un **piso de seguridad desde el primer
+commit** — usando lo que el framework ya da, nunca crypto o escaping artesanal — y el
+`security-gate` lo verifica antes del PR: revisa el diff contra las categorias
+aplicables y corre el audit de dependencias. Es **prevencion**, no auditoria: el piso
+que evita los errores tipicos. La auditoria profunda adversarial sigue siendo
+`audit-pipeline` (`/auditar`), al que el gate deriva lo que lo excede.
+
+Como todo en el plugin, es por evidencia y agnostico de stack: no hay un checklist de
+seguridad hardcodeado. La referencia de categorias y defensas es
+`reference/owasp-baseline.md`.
+
 ## Que necesitas antes
 
 La salida de `planning-pipeline` en el proyecto:
@@ -46,8 +66,9 @@ autoritativa), pero no es obligatorio.
    criterios Gherkin (tests con el framework del perfil) y se commitea con su
    `[T-xxx]`.
 4. `build-reviewer` revisa el diff (cobertura del brief, scope, correctitud, tests
-   corridos de verdad); los hallazgos rebotan al implementador hasta pasar.
-5. PR contra la rama de integracion, con el resumen y el veredicto.
+   corridos de verdad) y `security-gate` revisa el piso de seguridad (OWASP + audit de
+   dependencias); los hallazgos de ambos rebotan al implementador hasta pasar.
+5. PR contra la rama de integracion, con el resumen y los veredictos (review y seguridad).
 
 ### `/construir-lote` — el ejecutor del plan
 
@@ -68,15 +89,18 @@ build-pipeline/
   .claude-plugin/
     plugin.json
   agents/
-    stack-profiler.md        descubre el stack del proyecto (por evidencia)
+    stack-profiler.md        descubre el stack y la base de seguridad (por evidencia)
     feature-implementer.md   construye una feature (modo plan / modo ejecucion)
     build-reviewer.md        revisa el diff contra el brief antes del PR
+    security-gate.md         revisa el piso de seguridad (OWASP) antes del PR
   skills/
     build-pipeline/
       SKILL.md               orquestacion de los dos modos
   commands/
     construir.md             /construir <feature>
     construir-lote.md        /construir-lote [BATCH-n]
+  reference/
+    owasp-baseline.md        base de seguridad canonica (OWASP Top 10 2021)
   PIPELINE.md
   README.md
 ```
@@ -88,6 +112,9 @@ build-pipeline/
 - **Nada fuera del brief**: sin features extra, refactors oportunistas ni dependencias
   que el diseno no pida. Tocar archivos de otra feature del lote es hallazgo `high`
   (rompe el paralelismo).
+- **Piso de seguridad OWASP**: cada feature se codea con los mecanismos nativos del
+  stack contra las categorias OWASP aplicables, y el `security-gate` lo verifica (mas el
+  audit de dependencias) antes del PR. Veredictos en `.dev/build/security/`.
 - **Trazabilidad hasta el codigo**: commits `[T-xxx]` → tarea → requisito → escenario
   → LEL → fuente. Reviews archivados en `.dev/build/reviews/`.
 - **`progress.json` siempre al dia**: `done` = mergeado. Es lo que le permite a

@@ -107,6 +107,29 @@ cero. Al terminar, incrementa `version` y actualiza `metadata.updated_at`.
 - Cubri el camino principal y, cuando el Escenario tenga excepciones relevantes, agrega
   un criterio para el camino de error.
 
+### Requisitos de seguridad (RNF `category: security`)
+
+La seguridad tiene dos niveles y solo uno vive aca:
+
+- **Especifica del dominio -> RNF trazable.** Cuando la fuente, un Escenario o el
+  supporting-context piden algo concreto de seguridad (hashear passwords, cifrar o
+  retener PII, rate-limit al login, matriz de roles/permisos RBAC, auditar accesos,
+  expiracion de sesion, MFA, retencion/borrado de datos), especificalo como RNF
+  `category: security`, en voz activa, con criterios de aceptacion Gherkin verificables y
+  `metric` cuando haya un objetivo. En el `rationale`, ancla el requisito a la categoria
+  OWASP que aborda (control de acceso, cripto, autenticacion, etc.).
+- **Piso generico -> NO se enumera aca.** Las buenas practicas transversales del OWASP
+  Top 10 (parametrizar queries, escapar salida, no hardcodear secretos, validar entrada,
+  defaults seguros) las garantiza el pipeline de **build** por construccion, con la base
+  de seguridad del stack. No las repitas como RNF uno por uno: seria ruido. A RNF suben
+  solo los requisitos de seguridad **concretos y propios de este sistema**.
+- **Deriva de evidencia.** Si un Escenario o el supporting-context marca un dato
+  sensible, un actor con permisos o una regla de acceso, ahi hay un RNF de seguridad. Si
+  no hay evidencia de un requisito concreto, no inventes uno: el piso ya lo cubre el
+  build. Si el dominio claramente maneja datos sensibles o accesos pero la fuente no lo
+  detalla, registra una pregunta abierta (`target_role` de seguridad/negocio) en vez de
+  suponer.
+
 ## Salida
 
 Escribi `.dev/requirements/requirements.json` con este contrato exacto (solo JSON valido):
