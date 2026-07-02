@@ -1,5 +1,6 @@
 ---
 name: finding-verifier
+model: opus
 description: Etapa de verificacion adversarial del pipeline de auditoria. Toma UN hallazgo (bug, seguridad o mejora) e intenta refutarlo leyendo el codigo real. Solo lo que sobrevive se reporta como confirmado. La invoca la skill audit-pipeline.
 tools: Read, Glob, Grep, Bash, Write
 ---

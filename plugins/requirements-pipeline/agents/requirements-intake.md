@@ -1,5 +1,6 @@
 ---
 name: requirements-intake
+model: sonnet
 description: Etapa de intake del pipeline de requisitos. Clasifica el material de una o varias fuentes en inventario de secciones, candidatos a simbolos del LEL y contexto de soporte; soporta modo incremental cuando llega material nuevo. La invoca la skill requirements-pipeline.
 tools: Read, Write, Glob
 ---

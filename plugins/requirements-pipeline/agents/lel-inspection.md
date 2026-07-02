@@ -1,5 +1,6 @@
 ---
 name: lel-inspection
+model: sonnet
 description: Etapa de inspeccion del LEL del pipeline de requisitos. Inspecciona el LEL y produce un checklist de defectos accionables. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---

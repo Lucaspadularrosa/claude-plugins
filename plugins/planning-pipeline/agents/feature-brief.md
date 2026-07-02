@@ -1,5 +1,6 @@
 ---
 name: feature-brief
+model: sonnet
 description: Etapa final del pipeline de planificacion. Emite un documento por feature en .dev/features/ para que un agente de build la construya, con su lote de ejecucion y el orden de sus tareas. La invoca la skill planning-pipeline.
 tools: Read, Write
 ---

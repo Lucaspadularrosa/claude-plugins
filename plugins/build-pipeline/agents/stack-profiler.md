@@ -1,5 +1,6 @@
 ---
 name: stack-profiler
+model: sonnet
 description: Etapa de perfilado del pipeline de build. Inspecciona el proyecto y produce el perfil de stack (tecnologias, comandos de test/lint/build, layout y convenciones) y la base de seguridad del stack (superficie de ataque, mecanismos nativos por categoria OWASP y comandos de audit), para que el resto del pipeline construya y verifique en cualquier lenguaje o framework sin conocimiento hardcodeado. La invoca la skill build-pipeline.
 tools: Read, Glob, Grep, Bash, Write
 ---

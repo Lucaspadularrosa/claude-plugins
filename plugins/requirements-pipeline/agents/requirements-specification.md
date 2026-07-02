@@ -1,5 +1,6 @@
 ---
 name: requirements-specification
+model: opus
 description: Etapa de especificacion del pipeline de requisitos. Deriva los requisitos funcionales y no funcionales a partir de los Escenarios, lista para alimentar la planificacion; en modo incremento especifica solo las features elegidas. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---

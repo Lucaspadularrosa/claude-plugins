@@ -1,5 +1,6 @@
 ---
 name: execution-planning
+model: sonnet
 description: Segunda etapa del pipeline de planificacion. Calcula los lotes de ejecucion paralela para agentes IA, una ronda de contratos inicial y lotes ordenados de features sin dependencias hard cruzadas. La invoca la skill planning-pipeline.
 tools: Read, Write
 ---

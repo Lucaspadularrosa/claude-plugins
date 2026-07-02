@@ -1,5 +1,6 @@
 ---
 name: lel-authoring
+model: opus
 description: Etapa de LEL del pipeline de requisitos. Construye o actualiza el Lexico Extendido del Lenguaje (LEL) a partir de los candidatos del intake y, en el lazo de correccion, de las respuestas del stakeholder. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---

@@ -1,5 +1,6 @@
 ---
 name: code-inventory
+model: sonnet
 description: Primera etapa del pipeline de comprension. Inventaria una aplicacion existente, stack, layout, modulos, puntos de entrada, dependencias y salud gruesa, por evidencia del codigo. La invoca la skill recovery-pipeline.
 tools: Read, Glob, Grep, Bash, Write
 ---

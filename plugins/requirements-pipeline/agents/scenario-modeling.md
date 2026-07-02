@@ -1,5 +1,6 @@
 ---
 name: scenario-modeling
+model: opus
 description: Etapa de escenarios del pipeline de requisitos. Deriva Escenarios trazables a partir del LEL con el modelo de Leite y Hadad; en modo profundizacion elabora solo los escenarios de las features de un incremento. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---

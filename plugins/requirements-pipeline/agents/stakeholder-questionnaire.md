@@ -1,5 +1,6 @@
 ---
 name: stakeholder-questionnaire
+model: sonnet
 description: Etapa de preguntas del pipeline de requisitos. Arma un cuestionario para el stakeholder a partir de los defectos del LEL y las preguntas abiertas; en modo elicitacion entrevista el dominio cuando hay poco o ningun documento. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---

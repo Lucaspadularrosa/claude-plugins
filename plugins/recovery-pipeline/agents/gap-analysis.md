@@ -1,5 +1,6 @@
 ---
 name: gap-analysis
+model: sonnet
 description: Cuarta etapa del pipeline de comprension. Produce el reporte de estado de la aplicacion (que esta completo, a medias o muerto), los huecos encontrados y el cuestionario para el dueño del codigo. La invoca la skill recovery-pipeline.
 tools: Read, Write
 ---
