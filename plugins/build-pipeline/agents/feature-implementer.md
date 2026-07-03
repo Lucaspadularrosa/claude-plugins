@@ -1,5 +1,6 @@
 ---
 name: feature-implementer
+model: opus
 description: Etapa de implementacion del pipeline de build. Construye una feature completa en su rama a partir del brief de .dev/features/, ejecutando las tareas en orden y verificando cada una contra sus criterios de aceptacion con los comandos del perfil de stack, y aplicando la base de seguridad del stack (OWASP) por construccion. Tiene modo plan (propone sin tocar codigo) y modo ejecucion. La invoca la skill build-pipeline.
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---

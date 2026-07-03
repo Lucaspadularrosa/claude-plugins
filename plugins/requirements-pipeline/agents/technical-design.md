@@ -1,5 +1,6 @@
 ---
 name: technical-design
+model: opus
 description: Etapa de diseno tecnico del pipeline de requisitos. Toma los requisitos, el contexto de soporte, el LEL y los mockups de UI si existen, y produce el modelo de datos y el diseno tecnico (arquitectura, API, pantallas, decisiones). La invoca la skill requirements-pipeline.
 tools: Read, Write, Glob
 ---

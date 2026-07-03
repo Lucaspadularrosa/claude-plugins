@@ -1,5 +1,6 @@
 ---
 name: design-inspection
+model: sonnet
 description: Etapa de inspeccion del diseno del pipeline de requisitos. Inspecciona el modelo de datos y el diseno tecnico y produce un reporte de defectos, incluyendo normalizacion en formas normales cuando el stack usa una base de datos relacional. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---

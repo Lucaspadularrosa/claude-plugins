@@ -1,5 +1,6 @@
 ---
 name: requirements-inspection
+model: sonnet
 description: Etapa de inspeccion de requisitos del pipeline. Inspecciona la especificacion y produce un reporte de defectos sobre cobertura de lo elaborado, trazabilidad, dependencias, criterios de aceptacion y campos que necesita la planificacion. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---

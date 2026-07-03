@@ -1,5 +1,6 @@
 ---
 name: task-derivation
+model: opus
 description: Primera etapa del pipeline de planificacion. Deriva tareas de implementacion a partir de los requisitos, agrupadas por feature, trazables y dimensionadas para agentes IA. La invoca la skill planning-pipeline.
 tools: Read, Write
 ---

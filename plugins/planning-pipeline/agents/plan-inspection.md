@@ -1,5 +1,6 @@
 ---
 name: plan-inspection
+model: sonnet
 description: Tercera etapa del pipeline de planificacion. Inspecciona las tareas y el plan de ejecucion y produce un reporte de defectos sobre cobertura, tareas huerfanas, ciclos, granularidad para agentes, paralelismo y desactualizacion. La invoca la skill planning-pipeline.
 tools: Read, Write
 ---

@@ -1,5 +1,6 @@
 ---
 name: baseline-reconstruction
+model: opus
 description: Tercera etapa del pipeline de comprension. Reconstruye la linea de base de requisitos en formato .dev/requirements/ (mapa, LEL, escenarios, requisitos, modelo de datos, diseno) a partir del comportamiento extraido del codigo, con evidencia archivo:linea. La invoca la skill recovery-pipeline.
 tools: Read, Write
 ---

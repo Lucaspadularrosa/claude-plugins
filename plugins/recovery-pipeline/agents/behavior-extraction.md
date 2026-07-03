@@ -1,5 +1,6 @@
 ---
 name: behavior-extraction
+model: opus
 description: Segunda etapa del pipeline de comprension. Extrae del codigo el comportamiento observable de la aplicacion, features, flujos, reglas, estados y vocabulario, con evidencia archivo:linea. La invoca la skill recovery-pipeline.
 tools: Read, Glob, Grep, Write
 ---

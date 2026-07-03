@@ -1,5 +1,6 @@
 ---
 name: security-auditor
+model: opus
 description: Dimension de seguridad del pipeline de auditoria. Revision defensiva del codigo propio, inyeccion, autenticacion y autorizacion, secretos expuestos, validacion de entrada y exposicion de datos, con evidencia archivo:linea. Sus hallazgos pasan por verificacion adversarial. La invoca la skill audit-pipeline.
 tools: Read, Glob, Grep, Write
 ---

@@ -1,5 +1,6 @@
 ---
 name: product-mapping
+model: sonnet
 description: Etapa de descubrimiento del pipeline de requisitos. Construye o actualiza el mapa del producto, features candidatas y escenarios stub, priorizados y trazables al LEL, sin elaborarlos en profundidad. La invoca la skill requirements-pipeline.
 tools: Read, Write
 ---
