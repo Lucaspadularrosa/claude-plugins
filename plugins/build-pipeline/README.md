@@ -125,13 +125,8 @@ build-pipeline/
 - **`progress.json` siempre al dia**: `done` = mergeado. Es lo que le permite a
   `/replanificar` absorber cambios de requisitos sin pisar lo construido.
 
-## Relacion con `feature-pipeline`
-
-`feature-pipeline` (este mismo marketplace) es un pipeline de build independiente que
-lee requerimientos de `/features/` con su propio formato y flujo de aprobacion, pensado
-originalmente para Next.js/TypeScript. `build-pipeline` no lo reemplaza: es el ejecutor
-nativo del sistema `.dev/` (requirements-pipeline + planning-pipeline), agnostico de
-stack. Si tu proyecto no usa esos pipelines, `feature-pipeline` sigue siendo una opcion
-valida.
-
 Ver `PIPELINE.md` para el diagrama completo y las reglas de orquestacion.
+
+Nota historica: el plugin `feature-pipeline` (primera generacion, atado a
+Next.js/TypeScript y a `/features/`) fue retirado a `archive/`; `build-pipeline` es
+su reemplazo agnostico de stack.

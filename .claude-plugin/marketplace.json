@@ -9,17 +9,6 @@
   },
   "plugins": [
     {
-      "name": "feature-pipeline",
-      "description": "End-to-end feature development pipeline with Stack Specialist agent. Covers spec, branch, implement, docs, tests, code review, and PR — driven by requirements in /features/ and a CLAUDE.md project context file.",
-      "version": "1.0.0",
-      "author": {
-        "name": "lucas_padularrosa",
-        "email": ""
-      },
-      "source": "./plugins/feature-pipeline",
-      "category": "development"
-    },
-    {
       "name": "planning-pipeline",
       "description": "Convierte una linea de base de requisitos en un plan de ejecucion para agentes IA: deriva tareas trazables dimensionadas para una pasada de agente, calcula los lotes de features paralelas, inspecciona el plan y emite un brief por feature. Con /replanificar absorbe cambios de requisitos sin tocar lo construido.",
       "version": "2.1.0",

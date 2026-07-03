@@ -19,7 +19,6 @@ cómo ejecutar el plan con agentes en paralelo.
 | `build-pipeline` | Ejecuta el plan en cualquier lenguaje o framework: detecta el stack y su base de seguridad por evidencia, implementa cada feature en su rama con un **piso de seguridad OWASP por construcción**, verifica los criterios de aceptación y ese piso (un `security-gate` + audit de dependencias) antes de cada PR, construye lotes completos en paralelo (un agente por feature en worktrees) y mantiene el progreso para la replanificación. |
 | `recovery-pipeline` | Comprende una app ya desarrollada (aunque no tenga documentación): qué hace, en qué estado está, qué falta y qué hay que decidir. Reconstruye la línea de base de requisitos con evidencia `archivo:línea`, compatible con toda la suite. |
 | `audit-pipeline` | Audita el codebase en tres dimensiones — bugs, seguridad defensiva y mejoras — con verificación adversarial de cada hallazgo antes de reportarlo. Los confirmados se convierten en change requests planificables. |
-| `feature-pipeline` | Pipeline de build end-to-end independiente (spec → branch → código → tests → review → PR) para proyectos con requerimientos en `/features/`. |
 
 ## Instalación
 

@@ -162,8 +162,4 @@ marketplace): `/construir <feature>` toma un brief y construye la feature en su 
 (en cualquier stack), y `/construir-lote` ejecuta un lote completo en paralelo con un
 subagente por feature, actualizando `progress.json` — el insumo de `/replanificar`.
 
-El plugin `feature-pipeline` es independiente: lee requerimientos de `/features/` (en
-la raiz del proyecto) con su propia estructura y flujo de aprobacion humana. No
-engancha de forma directa con estos briefs.
-
 Ver `PIPELINE.md` para el diagrama completo y las reglas de orquestacion.

@@ -38,7 +38,8 @@ de documentos. Para leer PDF: `pip install pypdf`. Word (`.docx`), Markdown y te
 plano no necesitan nada.
 
 En tus proyectos no hay que copiar ninguna carpeta: los plugins viven fuera del
-proyecto y solo generan salidas en `.dev/requirements/` y `.dev/plan/`.
+proyecto y solo generan salidas bajo `.dev/` (requirements, plan, features, build,
+recovery, audit — ver la tabla de la sección 7).
 
 ---
 
@@ -325,6 +326,5 @@ feature.
   comprensión (inventario, extracción de comportamiento, reconstrucción, estado).
 - `plugins/audit-pipeline/README.md` y `PIPELINE.md` — detalle del pipeline de
   auditoría (tres dimensiones, verificación adversarial, conversión en trabajo).
-- `plugins/feature-pipeline/README.md` — pipeline de build independiente (lee
-  requerimientos de `/features/` con su propio formato; hoy no engancha directo con
-  los briefs de `.dev/features/`).
+- `archive/feature-pipeline/` — el pipeline de build de la primera generación,
+  retirado del marketplace (su rol lo cubren `build-pipeline` y `audit-pipeline`).
