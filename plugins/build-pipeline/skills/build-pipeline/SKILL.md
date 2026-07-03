@@ -106,7 +106,9 @@ Construye una feature, con aprobacion del plan de implementacion antes de codear
    `deferred_to_audit` del gate no bloquean el PR: se anotan para sugerir `/auditar`
    despues.
 6. Crea el PR contra la rama de integracion y mostrale al usuario el resumen: tareas
-   construidas, criterios verificados, veredicto del review, **veredicto de seguridad**
+   construidas, criterios verificados, **cierre por requisito** (cada RF/RNF del
+   brief con sus criterios demostrados, del `requirements_closure` del review),
+   veredicto del review, **veredicto de seguridad**
    (piso OWASP: passed, hallazgos, resultado del audit de dependencias) y link del PR. La
    feature queda `in_progress` hasta que el PR mergee (anota el PR en `notes`); si el
    usuario lo mergea en la sesion, marcala `done`.
@@ -170,7 +172,8 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
    `progress.json` (features `in_progress` con su PR en `notes`). Los worktrees de
    las features bloqueadas quedan en pie para el retome: listalos en el resumen para
    que no queden huerfanos invisibles.
-7. Resumen final: por feature, tareas construidas, veredicto del review, veredicto de
+7. Resumen final: por feature, tareas construidas, cierre por requisito, veredicto
+   del review, veredicto de
    seguridad (piso OWASP + audit de dependencias) y PR; bloqueos con su worktree y
    como retomarlos (resolver el motivo y re-correr `/construir-lote`: las toma como
    retome) y `deferred_to_audit`
@@ -193,7 +196,8 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
   al que el gate deriva lo que lo excede.
 - `progress.json` es sagrado: es lo que `/replanificar` usa para no pisar trabajo.
   Actualizalo en cada transicion, no al final.
-- Trazabilidad: commits con `[T-xxx]`, PRs citando `FG-xx` y tareas; el review queda
+- Trazabilidad: commits con `[T-xxx]`, PRs citando `FG-xx`, sus tareas y los
+  requisitos que cierran (`RF-xxx`); el review queda
   en `.dev/build/reviews/` y el veredicto de seguridad en `.dev/build/security/`.
 - Si durante el build llegan cambios de requisitos (el usuario lo menciona o
   `plan-inspection` marco staleness), no improvises sobre el plan viejo: sugerile

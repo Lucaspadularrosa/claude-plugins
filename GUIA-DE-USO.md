@@ -244,8 +244,10 @@ Dos formas de ejecutar, combinables:
 En ambos modos: cada tarea se implementa **con el piso de seguridad OWASP aplicado por
 construcción** y **se verifica contra sus criterios Gherkin** (tests con el framework del
 proyecto) antes de pasar a la siguiente, con un commit `[T-xxx]` por tarea; antes del PR,
-un agente revisor audita el diff contra el brief (cobertura, scope, tests corridos de
-verdad) y un `security-gate` verifica el piso de seguridad (OWASP + audit de
+un agente revisor audita el diff contra el brief (cobertura, **cierre por requisito**
+— cada requisito del brief con sus criterios de aceptación demostrados, no solo los
+de las tareas —, scope, tests corridos de verdad) y un `security-gate` verifica el
+piso de seguridad (OWASP + audit de
 dependencias); y `progress.json` se actualiza en cada transición (`done` = mergeado), que
 es lo que le permite a `/replanificar` no pisar lo construido. La auditoría profunda de
 seguridad sigue estando en `/auditar` (`audit-pipeline`), al que el gate deriva lo que

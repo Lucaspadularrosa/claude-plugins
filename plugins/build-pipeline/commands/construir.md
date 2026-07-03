@@ -19,11 +19,12 @@ Segui el modo FEATURE de la skill `build-pipeline`:
    aprobacion**; si pido cambios, ajustalo.
 4. Aprobado: crea la rama `feature/{slug}`, marca `in_progress` en `progress.json` y
    corre `feature-implementer` en modo ejecucion. Tarea terminada y verificada =
-   tarea `done` en progress.
+   tarea `done` en progress. Al final del implementador viene el cierre de feature:
+   cada criterio de los REQUISITOS del brief demostrado (no solo los de las tareas).
 5. Corre `build-reviewer` y `security-gate` (piso OWASP + audit de dependencias);
    hallazgos high/medium de cualquiera rebotan al implementador en modo correccion,
    con tope de 3 rondas: si no pasa, o algo es no corregible (p. ej. vulnerabilidad
    de dependencia sin fix), bloquea y mostrame el caso.
 6. Crea el PR contra la rama de integracion y mostrame el resumen (tareas, criterios
-   verificados, veredicto del review, veredicto de seguridad, PR). La feature queda
-   `done` recien cuando el PR mergea.
+   verificados, cierre por requisito, veredicto del review, veredicto de seguridad,
+   PR). La feature queda `done` recien cuando el PR mergea.

@@ -73,6 +73,16 @@ brief, **en su orden**:
    va en el mensaje: es la trazabilidad codigo -> plan.
 6. Recien entonces pasa a la siguiente tarea.
 
+**Cierre de feature** (despues de la ultima tarea, antes de tu reporte): recorre los
+requisitos del brief (seccion Requisitos) y verifica que **cada criterio de
+aceptacion de requisito** (`RF-xxx/AC-xxx`) tiene su verificacion ejecutable en la
+rama. Los que el brief lista como *Criterios de cierre de feature* (los que ninguna
+tarea cubria por si sola, tipicamente el flujo punta a punta) demostralos ahora con
+tests de integracion, commit `feat({slug}): cierre de feature [FG-xx]`. La feature
+no es la suma de sus tareas: un requisito del brief con criterios sin demostrar es
+una feature sin terminar — si no podes cerrarlo, reportalo como bloqueo, no lo des
+por hecho.
+
 Reglas duras:
 
 - **No te salgas del brief.** Nada de features extra, refactors oportunistas ni
@@ -159,7 +169,9 @@ Tu ultimo mensaje al orquestador es el reporte, conciso y estructurado:
 
 - Modo plan: el plan por tarea + dudas/riesgos.
 - Modo ejecucion: por tarea: `T-xxx: done|blocked`, los criterios verificados (y
-  como), commits creados; resultado de la corrida final de tests y lint; **notas de
+  como), commits creados; el **cierre de feature**: por requisito del brief,
+  `RF-xxx: cerrado|bloqueado` con que test demuestra cada criterio; resultado de la
+  corrida final de tests y lint; **notas de
   seguridad** (que controles OWASP aplicaste y con que mecanismo, resultado del
   `dependency_audit`, y cualquier `gap` del baseline que quedo sin mecanismo nativo);
   bloqueos o desvios del brief si los hubo. NO marques `done` una tarea cuyos criterios

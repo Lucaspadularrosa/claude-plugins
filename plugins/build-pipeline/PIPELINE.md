@@ -93,6 +93,11 @@ canonica de seguridad es `reference/owasp-baseline.md`.
 ### Verificacion obligatoria
 - Cada tarea se verifica contra sus criterios Gherkin con los comandos del perfil
   antes de pasar a la siguiente. Commit por tarea con `[T-xxx]`.
+- Al terminar la ultima tarea, **cierre de feature**: los criterios de aceptacion de
+  los **requisitos** del brief (`RF-xxx/AC-xxx`) se demuestran completos — incluido
+  el flujo punta a punta que ninguna tarea cubre por si sola. La feature no es la
+  suma de sus tareas; el `build-reviewer` audita ese cierre por requisito
+  (`requirements_closure` en su veredicto).
 - `build-reviewer` comprueba (no cree): corre tests y lint sobre el diff. Hallazgos
   `high`/`medium` rebotan al implementador en modo correccion, con tope de 3 rondas;
   lo que no pasa (o no es corregible) se bloquea y se escala al usuario.
@@ -107,7 +112,8 @@ canonica de seguridad es `reference/owasp-baseline.md`.
 
 ### Trazabilidad
 - La cadena llega hasta el codigo: commit `[T-xxx]` -> tarea -> requisito ->
-  escenario -> simbolo del LEL -> fuente. Los PRs citan `FG-xx` y sus tareas; los
+  escenario -> simbolo del LEL -> fuente. Los PRs citan `FG-xx`, sus tareas y los
+  requisitos que cierran; los
   reviews quedan en `.dev/build/reviews/` y los veredictos de seguridad en
   `.dev/build/security/`. Los hallazgos de seguridad citan su categoria OWASP (`owasp_id`).
 

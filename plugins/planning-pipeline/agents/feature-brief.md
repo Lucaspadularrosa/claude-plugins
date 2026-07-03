@@ -66,13 +66,22 @@ build lo tome como vigente.
 Cada brief tiene estas secciones:
 
 1. **Titulo y resumen**: nombre de la feature, su id (`FG-xx`) y una descripcion breve.
-2. **Requisitos**: la lista de requisitos de la feature, con id, enunciado y prioridad.
+2. **Requisitos**: la lista de requisitos de la feature, con id, enunciado, prioridad
+   **y sus criterios de aceptacion** (citados como `RF-007/AC-001`). Son la
+   definicion de terminado de la **feature**, no solo de sus tareas: el build cierra
+   contra esto.
 3. **Plan de ejecucion de las tareas**: las tareas de la feature **en el `task_order`
    del execution-plan** (el orden en que el agente debe ejecutarlas), cada una con id,
    titulo, descripcion, tipo, complejidad (`low|medium|high`), dependencias
    (`depends_on`) y estado.
 4. **Criterios de aceptacion**: los criterios Gherkin (given/when/then) de las tareas.
    Son la definicion de verificado: el agente no cierra una tarea sin cumplirlos.
+   Incluye el **mapeo al requisito**: que criterio de requisito (`RF-xxx/AC-xxx`)
+   cubre cada criterio de tarea. Cierra con la subseccion **Criterios de cierre de
+   feature**: los criterios de requisito que ninguna tarea cubre por si sola
+   (tipicamente el flujo punta a punta del escenario) — el implementador los
+   demuestra al cerrar la feature, antes del review. Si no hay ninguno, decilo
+   explicito ("todos los criterios de requisito quedan cubiertos por tareas").
 5. **Diseno relevante**: los modulos, contratos de API, pantallas y entidades del diseno
    tecnico que toca esta feature.
 6. **Seguridad**: las categorias OWASP que aplican a esta feature segun su superficie
@@ -104,6 +113,9 @@ Cada brief tiene estas secciones:
   corrida (todas en la planificacion inicial; solo las indicadas en replanificacion).
 - Verifica que cada brief cita ids reales de requisitos, tareas, modulos y entidades.
 - Verifica que ninguna tarea de una feature quedo fuera de su brief.
+- Verifica que TODO criterio de aceptacion de los requisitos de la feature quedo
+  mapeado a una tarea o listado en Criterios de cierre de feature: un criterio de
+  requisito sin dueño es un brief incompleto.
 - Verifica que cada brief tiene su seccion de Seguridad: con los requisitos/criterios de
   seguridad especificos de la feature si los hay, y siempre la nota del piso del stack.
 - Verifica que el orden de las tareas de cada brief coincide con el `task_order` del

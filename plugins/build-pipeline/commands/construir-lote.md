@@ -24,6 +24,6 @@ Segui el modo LOTE de la skill `build-pipeline`:
    `progress.json`). Un bloqueo en una feature no frena a las demas.
 5. Por cada feature que paso (review y gate en verde): push, PR contra la rama de
    integracion, limpieza del worktree y actualizacion de `progress.json`.
-6. Al final, resumen por feature (tareas, veredicto del review, veredicto de seguridad,
-   PR), bloqueos y lo que el gate haya derivado a `/auditar`, y el proximo paso (mergear
-   PRs; cuando esten `done`, el siguiente lote).
+6. Al final, resumen por feature (tareas, cierre por requisito, veredicto del review,
+   veredicto de seguridad, PR), bloqueos y lo que el gate haya derivado a `/auditar`,
+   y el proximo paso (mergear PRs; cuando esten `done`, el siguiente lote).
