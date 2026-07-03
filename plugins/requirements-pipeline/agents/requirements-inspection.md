@@ -87,7 +87,11 @@ no contra el mapa completo.
 - `REQ-CHECK-012`: coherencia con el mapa (solo si existe `product-map.json`). Toda
   feature `elaborated` o `baselined` del mapa tiene al menos un requisito; todo
   `feature_group` de `requirements.json` existe en el mapa; ningun requisito pertenece
-  a una feature que el mapa tiene en `stub` o `deprecated`. Ademas, no quedan
+  a una feature que el mapa tiene en `stub` o `deprecated`. Nota: las features del
+  incremento en curso deben llegar a esta inspeccion ya marcadas `elaborated` por el
+  orquestador; si encontras una en `stub` con requisitos, el defecto es de
+  orquestacion del mapa (defecto `medium` apuntando a `product-map.json`), no de la
+  especificacion — no lo rebotes a `requirements-specification`. Ademas, no quedan
   `proposed_baseline_changes` con `status: pending` (un cambio propuesto sobre lo
   baselineado sin resolver es defecto `medium`: falta la confirmacion del usuario).
 

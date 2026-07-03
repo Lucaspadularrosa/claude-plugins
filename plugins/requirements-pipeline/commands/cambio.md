@@ -16,7 +16,7 @@ Ejecuta el modo CAMBIO de la skill `requirements-pipeline` para: `$ARGUMENTS`
    `modified` ni `deprecated` se aplica sin mi OK explicito, uno por uno.
 4. Aplica los confirmados con los agentes en modo actualizacion, preservando ids; lo
    deprecado cambia de status, nunca se borra. Corre `requirements-inspection` (y
-   `design-inspection` si el diseno cambio) con sus lazos.
+   `design-inspection` si el diseno cambio) con sus lazos (tope: 3 pasadas).
 5. Cierra la entrada del changelog con los veredictos confirmados y las versiones.
    Si el cambio afecta features ya planificadas o en construccion, decimelo explicito
    en el resumen.

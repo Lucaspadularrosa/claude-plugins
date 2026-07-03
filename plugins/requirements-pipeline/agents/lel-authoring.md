@@ -66,7 +66,7 @@ incremental.
   citaba). No deben quedar referencias colgadas a preguntas ya resueltas.
 - En cada simbolo que toques, escribi en `revision.last_changed_reason` el motivo
   (que defecto corregiste, que `QST-xxx` aplicaste, o el id de la corrida que el
-  orquestador te indique: `DSC-xxx`, `INC-xxx` o `CR-xxx`).
+  orquestador te indique: `DSC-xxx`, `INC-xxx`, `CR-xxx` o `REC-xxx`).
 - Si el intake marco candidatos con `matches_existing_symbol_id`, enriquece ese simbolo
   existente (nuevas nociones, impactos o alias citando la evidencia nueva) en vez de
   crear uno duplicado.

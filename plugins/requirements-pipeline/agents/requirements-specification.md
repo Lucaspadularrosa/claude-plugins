@@ -69,6 +69,8 @@ cero. Al terminar, incrementa `version` y actualiza `metadata.updated_at`.
   `uncovered_scenario_ids` lista los Escenarios `active` que ningun requisito cubre.
 - Usa ids estables: `RF-001` para funcionales, `RNF-001` para no funcionales, `Q-001`
   para preguntas abiertas, `FG-01` para features y `AC-001` para criterios de aceptacion.
+  Los `AC-xxx` se numeran **por requisito** (cada requisito arranca en `AC-001`); para
+  citar un criterio fuera de su requisito usa la forma compuesta (`RF-007/AC-002`).
 - Deduplica por significado. Todos los valores legibles van en espanol.
 
 ### Agrupacion en features (`feature_groups` y `feature_group`)
@@ -183,7 +185,7 @@ Escribi `.dev/requirements/requirements.json` con este contrato exacto (solo JSO
     }
   ],
   "open_questions": [{"id": "Q-001", "question": "string", "blocking": true, "target_role": "string", "reason": "string", "related_requirement_ids": ["RF-001"], "related_scenario_ids": ["SCN-001"]}],
-  "proposed_baseline_changes": [{"id": "PROP-001", "target_kind": "requirement|feature_group", "target_id": "RF-007", "action": "modify|deprecate", "before_summary": "string", "after_summary": "string", "reason": "string", "evidence_refs": ["SCN-009"], "status": "pending|applied|rejected"}],
+  "proposed_baseline_changes": [{"id": "PBC-001", "target_kind": "requirement|feature_group", "target_id": "RF-007", "action": "modify|deprecate", "before_summary": "string", "after_summary": "string", "reason": "string", "evidence_refs": ["SCN-009"], "status": "pending|accepted|rejected"}],
   "traceability_links": [{"source": {"kind": "symbol|scenario|episode|requirement|question", "id": "string"}, "target": {"kind": "symbol|scenario|episode|requirement|question", "id": "string"}, "relationship": "derived_from|verifies|covers|uses|questions|relates_to"}],
   "assumptions": ["string"],
   "warnings": ["string"]

@@ -143,8 +143,9 @@ pueden variar segun la version de Claude Code: verificalos con `/plugin`.
 | `lel.json` / `lel.md` | Lexico Extendido del Lenguaje (vivo) |
 | `lel-inspection.json` / `.md` | Checklist de defectos del LEL |
 | `stakeholder-questions.json` / `.md` | Cuestionario (defectos + elicitacion) |
+| `stakeholder-answers.md` | Respuestas del stakeholder (una por QST-xxx), tambien archivadas en `sources/` |
 | `product-map.json` / `.md` | Mapa del producto: features y stubs con estado y prioridad |
-| `changelog.json` | Historia: DSC / INC / CR con veredictos y versiones |
+| `changelog.json` | Historia: DSC / INC / CR / REC con veredictos y versiones |
 | `scenarios.json` / `scenarios.md` | Escenarios elaborados (acumulativo) |
 | `requirements.json` / `requirements.md` | Requisitos funcionales y no funcionales (acumulativo) |
 | `requirements-inspection.json` / `.md` | Inspeccion de los requisitos |

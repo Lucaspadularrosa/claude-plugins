@@ -11,14 +11,16 @@ Ejecuta el modo INCREMENTO de la skill `requirements-pipeline` para: `$ARGUMENTS
 2. Corre `scenario-modeling` en modo profundizacion: elabora solo los escenarios de
    esas features, conservando los ids `SCN-xx` del mapa.
 3. Corre `requirements-specification` en modo incremento: requisitos solo de esas
-   features, conservando los `FG-xx`; lo de incrementos anteriores queda intacto.
+   features, conservando los `FG-xx`; lo de incrementos anteriores queda intacto. Al
+   cerrar, marca esas features y sus escenarios como `elaborated` en el mapa.
 4. Si la elaboracion propone modificar o deprecar algo ya baselineado, hace la PAUSA
    DE CONFIRMACION: mostrame el antes/despues de cada cambio y espera mi OK uno por
    uno. Sin mi confirmacion no se toca nada baselineado.
-5. Corre `requirements-inspection` y su lazo de correccion hasta que pase.
-6. Si las features tienen pantallas, preguntame si hay mockups de UI. Corre
-   `technical-design` en modo incremental y `design-inspection` con su lazo, hasta que
-   pase.
+5. Corre `requirements-inspection` y su lazo de correccion (tope: 3 pasadas; si no
+   pasa, mostrame los defectos remanentes y decido yo).
+6. Corre `technical-design` en modo incremental SIEMPRE (tambien sin pantallas: el
+   diseño alimenta la planificacion) y `design-inspection` con su lazo (mismo tope).
+   Solo si las features tienen pantallas, preguntame antes si hay mockups de UI.
 7. Marca las features como `baselined` en el mapa, cierra la entrada del changelog con
    los veredictos y versiones, y mostrame el resumen. Sugerime el paso siguiente:
    `/planificar` si todavia no hay plan, o re-planificar si ya existe.

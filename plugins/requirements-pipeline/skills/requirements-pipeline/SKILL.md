@@ -66,7 +66,7 @@ La historia de la linea de base. Una entrada por corrida:
       "sources": ["sources/vision.txt"],
       "feature_ids": ["FG-01"],
       "verdicts": [
-        {"kind": "new|modified|deprecated|already_covered", "target_kind": "requirement|scenario|feature|symbol|entity", "target_id": "RF-007", "covered_by": "RF-012", "confirmed_by_user": true}
+        {"kind": "new|modified|deprecated|already_covered", "target_kind": "requirement|scenario|feature|symbol|entity", "target_id": "RF-007", "covered_by": "RF-012", "confirmed_by_user": true, "resolution": "applied|rejected"}
       ],
       "artifact_versions": {"lel.json": {"before": "2", "after": "3"}},
       "notes": "string"
@@ -79,7 +79,11 @@ Ids consecutivos por tipo: `DSC-001` descubrimientos, `INC-001` incrementos, `CR
 cambios, `REC-001` recuperaciones (las escribe `recovery-pipeline` cuando reconstruye
 la linea de base desde codigo existente). Registra la entrada con
 `status: in_progress` al arrancar la corrida y cerrala (`applied` o `rejected`) al
-terminar, con las versiones antes/despues de cada artefacto tocado. El changelog es lo
+terminar, con las versiones antes/despues de cada artefacto tocado. En los
+`verdicts`, `resolution` registra si ese cambio confirmado quedo `applied` o
+`rejected` (el rechazo tambien se conserva); `target_kind: feature` cubre tanto las
+features del mapa como los `feature_group` de la especificacion (son el mismo
+objeto). El changelog es lo
 que le permite al pipeline de planificacion saber **que** cambio, no solo que algo
 cambio.
 
@@ -132,10 +136,10 @@ el vocabulario; nunca modifica lo baselineado (eso queda como propuesta).
 5. **PAUSA OBLIGATORIA**: presenta `stakeholder-questions.md` al usuario y espera.
    - Si responde: guarda las respuestas en `.dev/requirements/stakeholder-answers.md`
      (una respuesta por `QST-xxx`) y archiva una copia en `sources/`
-     (`entrevista-NNN.txt`): las respuestas son una fuente mas. Si las respuestas
-     traen dominio nuevo sustancial (tipico sin documento), pasalas tambien por
-     `requirements-intake` incremental; despues aplica con `lel-authoring` (update) y
-     reinspecciona. Si el dominio sigue fino, podes ofrecer otra ronda de preguntas;
+     (`entrevista-NNN.txt`): las respuestas son una fuente mas. Aplicalas SIEMPRE al
+     LEL con `lel-authoring` (update) y reinspecciona; si ademas traen dominio nuevo
+     sustancial (tipico sin documento), pasalas antes por `requirements-intake`
+     incremental. Si el dominio sigue fino, podes ofrecer otra ronda de preguntas;
      no fuerces mas de dos rondas seguidas sin avanzar al mapa.
    - Si dice que no hay dudas: segui.
    - Nunca inventes respuestas.
@@ -163,20 +167,28 @@ existe o esta `deprecated`, frena y aclaralo.
    esas features, conservando los `FG-xx` del mapa. `requirements.json` es acumulativo:
    lo de incrementos anteriores se preserva intacto. Si la elaboracion implica
    **modificar o deprecar algo baselineado**, el agente NO lo aplica: lo reporta en
-   `proposed_baseline_changes`.
-4. **PAUSA DE CONFIRMACION** (solo si hay `proposed_baseline_changes` o
-   `pending_proposals` aceptadas que tocan esto): mostra el antes/despues de cada
+   `proposed_baseline_changes`. Al cerrar esta etapa, marca en `product-map.json` las
+   features del incremento y sus escenarios como `elaborated`: la inspeccion
+   (REQ-CHECK-012) valida contra ese estado.
+4. **PAUSA DE CONFIRMACION** (solo si hay `proposed_baseline_changes` — `PBC-xxx` de
+   la especificacion — o `pending_proposals` — `PROP-xxx` del mapa — aceptadas que
+   tocan esto; son la misma pausa): mostra el antes/despues de cada
    cambio propuesto sobre lo baselineado y espera el OK del usuario por cada uno. Los
    confirmados se aplican re-invocando al agente que corresponda con la lista exacta;
    los rechazados quedan `rejected` en el changelog. Lo nuevo no requiere confirmacion.
 5. Invoca `requirements-inspection` (audita todo lo elaborado, no solo este
    incremento). Lazo de correccion: defectos `high`/`medium` rebotan a
-   `requirements-specification` (modo correccion) y se reinspecciona hasta pasar.
-6. Si alguna feature del incremento tiene pantallas: pregunta al usuario si hay mockups
-   de UI (HTML, CSS, wireframes, capturas) para ellas. Invoca `technical-design` en
-   modo incremental (extiende modelo de datos y diseno solo con lo que estas features
-   necesitan, preservando ids y decisiones previas) y despues `design-inspection`, con
-   su lazo de correccion hasta pasar.
+   `requirements-specification` (modo correccion) y se reinspecciona, con tope de
+   **3 pasadas**: si no pasa, presenta los defectos remanentes al usuario y decidi
+   con el (aceptar anotado, corregir a mano, abortar).
+6. Diseño tecnico, SIEMPRE — tambien si el incremento no tiene pantallas: el modelo
+   de datos y el diseño son precondicion de `/planificar`.
+   - Solo si alguna feature del incremento tiene pantallas: pregunta antes al usuario
+     si hay mockups de UI (HTML, CSS, wireframes, capturas) para ellas.
+   - Invoca `technical-design` en modo incremental (extiende modelo de datos y diseno
+     solo con lo que estas features necesitan, preservando ids y decisiones previas)
+     y despues `design-inspection`, con su lazo de correccion (mismo tope de 3
+     pasadas).
 7. Cierra: marca las features y escenarios del incremento como `baselined` en
    `product-map.json`, cierra la entrada `INC-xxx` (`applied`, con verdicts y
    versiones). Informa el resumen y sugeri el paso siguiente: `/planificar` (primera
@@ -204,7 +216,7 @@ modifica algo existente).
    `technical-design`), siempre preservando ids; lo deprecado cambia a
    `status: deprecated`, **nunca se borra**.
 5. Corre `requirements-inspection` (y `design-inspection` si el diseno cambio), con sus
-   lazos de correccion.
+   lazos de correccion (mismo tope de 3 pasadas que el incremento).
 6. Cierra la entrada `CR-xxx` con los verdicts (incluyendo `confirmed_by_user`) y las
    versiones. Si el cambio afecta features ya planificadas o construidas, decilo
    explicito en el resumen: el pipeline de planificacion lo va a levantar del changelog.
@@ -214,7 +226,9 @@ modifica algo existente).
 El flujo clasico en cascada, util para proyectos chicos o documentos cerrados:
 equivale a DESCUBRIR + un unico INCREMENTO con **todas** las features del mapa.
 Registra igual su `DSC-xxx` e `INC-xxx` en el changelog: si despues llega material
-nuevo, el proyecto sigue por los modos incrementales sin fricciones.
+nuevo, el proyecto sigue por los modos incrementales sin fricciones. Si el proyecto
+ya tiene features baselineadas, no las re-elabores: el modo completo aplica solo a lo
+no baselineado (ante la duda, deriva a los modos incrementales).
 
 ---
 
@@ -233,6 +247,10 @@ nuevo, el proyecto sigue por los modos incrementales sin fricciones.
 - Si un subagente falla o produce un archivo vacio, detene el pipeline e informa, no
   continues con datos incompletos. Despues de cada etapa valida que la salida sea JSON
   valido y que los ids referenciados existan.
+- Si al arrancar encontras en `changelog.json` una entrada previa con
+  `status: in_progress` (una corrida interrumpida), no abras otra en silencio:
+  mostrasela al usuario y pregunta si retomarla o cerrarla como `rejected` antes de
+  empezar la nueva.
 - El pipeline de planificacion consume lo `baselined` (via `requirements.json` +
   `technical-design.json` + `data-model.json`) y usa `changelog.json` para detectar que
   incrementos aun no absorbio.
@@ -248,6 +266,7 @@ nuevo, el proyecto sigue por los modos incrementales sin fricciones.
   lel.json / lel.md             Lexico Extendido del Lenguaje (vivo)
   lel-inspection.json / .md     checklist de defectos del LEL
   stakeholder-questions.json/.md cuestionario (defectos + elicitacion)
+  stakeholder-answers.md         respuestas del stakeholder (una por QST-xxx)
   product-map.json / .md        mapa del producto: features y stubs con estado
   changelog.json                historia: DSC / INC / CR con veredictos y versiones
   scenarios.json / scenarios.md Escenarios elaborados (acumulativo)

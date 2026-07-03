@@ -34,7 +34,7 @@ vision sin doc-+        -> [lel-inspection] -> [stakeholder-questionnaire]
                 [scenario-modeling]  (profundiza SOLO esas features, ids estables)
                 [requirements-specification]  (requisitos solo de esas features)
                         -> PAUSA DE CONFIRMACION si algo baselineado cambiaria
-                [requirements-inspection]  -> lazo de correccion hasta pasar
+                [requirements-inspection]  -> lazo de correccion (tope 3 pasadas)
                 consulta de mockups de UI (si las features tienen pantallas)
                 [technical-design] (modo incremental) -> [design-inspection] -> lazo
                                 |
@@ -87,7 +87,8 @@ La orquestacion vive en la skill `skills/requirements-pipeline/SKILL.md` del plu
 - Los ids `FG-xx` y `SCN-xx` nacen en el product-map y nunca se renumeran. Los demas
   ids continuan sus secuencias. Nada se borra: lo eliminado se deprecia.
 - Toda corrida queda registrada en `changelog.json`: `DSC-xxx` (descubrimientos),
-  `INC-xxx` (incrementos), `CR-xxx` (cambios), con veredictos
+  `INC-xxx` (incrementos), `CR-xxx` (cambios), `REC-xxx` (recuperaciones desde
+  codigo, las escribe `recovery-pipeline`), con veredictos
   (`new|modified|deprecated|already_covered`), confirmaciones del usuario y versiones
   antes/despues de cada artefacto.
 - La cadena de trazabilidad se conserva en ambas direcciones: requisito -> escenario ->
@@ -104,7 +105,8 @@ La orquestacion vive en la skill `skills/requirements-pipeline/SKILL.md` del plu
 ### Lazos de correccion - condicionales
 - `requirements-inspection` y `design-inspection` rebotan defectos `high`/`medium` a
   `requirements-specification` y `technical-design` respectivamente, en modo
-  correccion, hasta que pasen.
+  correccion, con tope de 3 pasadas: los defectos remanentes los decide el usuario,
+  no el lazo.
 
 ### Versionado
 - Toda reescritura de un artefacto incrementa su `version`; los `*_version_ref` citan

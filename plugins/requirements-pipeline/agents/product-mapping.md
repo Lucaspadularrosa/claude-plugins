@@ -40,7 +40,8 @@ Si existen (re-ejecucion del descubrimiento con material nuevo):
 - `status` de features y escenarios: `stub` (solo en el mapa), `elaborated` (un
   incremento ya genero sus escenarios y requisitos), `baselined` (paso las inspecciones
   y su incremento cerro), `deprecated`. **Vos solo asignas `stub` a lo nuevo**; los
-  demas estados los actualiza el orquestador al cerrar cada incremento. Nunca cambies
+  demas estados los actualiza el orquestador (`elaborated` al cerrar la
+  especificacion del incremento, `baselined` al cerrar el incremento). Nunca cambies
   el estado de algo que no creaste en esta corrida.
 - Un escenario stub se justifica con evidencia: simbolos `verbo` del LEL (procesos),
   secciones de la fuente, o respuestas de elicitacion. No inventes features sin
@@ -57,7 +58,8 @@ Cuando recibis un `product-map.json` previo:
 - No reconstruyas: actualiza incremental. Preserva todas las features y stubs
   existentes con sus ids y estados.
 - Lo nuevo entra con ids que continuan la secuencia, `status: stub` y `discovered_in`
-  citando el id de descubrimiento (`DSC-xxx`) que te indique el orquestador.
+  citando el id de la corrida que te indique el orquestador (`DSC-xxx`, o `REC-xxx`
+  cuando el mapa lo reconstruye `recovery-pipeline` desde codigo).
 - Si el material nuevo **se solapa con algo `elaborated` o `baselined`** (un documento
   nuevo que redefine un comportamiento ya elaborado, agrega campos a una entidad ya
   disenada, contradice un requisito), **no lo apliques**: registralo en

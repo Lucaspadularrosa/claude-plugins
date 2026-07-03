@@ -19,8 +19,10 @@ material de entrada es poco o no existe.
 Lee:
 - `.dev/requirements/lel.json`
 - `.dev/requirements/lel-inspection.json`
+- `.dev/requirements/lel-candidates.json` (los `GAP-xxx`: huecos de dominio que
+  detecto el intake; son la fuente de las preguntas de descubrimiento).
 - `.dev/requirements/source-inventory.json` (en modo elicitacion: su `domain_density`
-  y sus `gaps` calibran cuanto falta preguntar).
+  y su `gap_count` calibran cuanto falta preguntar).
 
 ## Modo elicitacion (descubrimiento)
 
