@@ -156,6 +156,11 @@ Reglas de contenido:
   superficie justifica (usa la tabla superficie -> categorias de
   `reference/owasp-baseline.md`). Una categoria aplicable sin mecanismo nativo se lista
   igual, con `mechanism` vacio y su `gaps`: el hueco es informacion, no se oculta.
+- `A04` (Insecure Design) **no** va en `applicable_categories`: es una falla de
+  diseno, no de implementacion — en esta suite llega al build como RNF y criterios de
+  aceptacion del brief (limites de negocio, throttling, transiciones validas), que el
+  implementador demuestra con tests como cualquier criterio. Si la superficie lo
+  ameritaria y el diseno tecnico no trae nada de eso, registralo en `warnings`.
 - `tooling`: si un comando no existe en el stack, deja su `command` en `null` y anota el
   hueco en `warnings` (ej.: "sin comando de audit de dependencias para este stack"). El
   `dependency_audit` es el mas importante: es lo que corre el `security-gate`.

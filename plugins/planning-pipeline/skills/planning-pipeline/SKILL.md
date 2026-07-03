@@ -78,9 +78,11 @@ El estado de ejecucion del plan. Lo inicializas vos al cerrar `/planificar` (tod
 ```
 
 Semantica: feature `done` = mergeada a la rama de integracion. El build marca cada
-tarea `in_progress` al arrancarla y `done` al verificarla; `blocked` (con el motivo
-en `notes`) si quedo a medias — para la replanificacion, `blocked` cuenta como
-trabajo empezado, igual que `in_progress`. Las tareas de ajuste sobre una feature
+tarea `done` cuando el reporte del implementador la da por verificada y `blocked`
+(con el motivo en `notes`) si quedo a medias; `in_progress` cuando un agente la esta
+trabajando de forma dirigida (p. ej. una correccion) — para la replanificacion,
+`blocked` cuenta como trabajo empezado, igual que `in_progress`. Las tareas de
+ajuste sobre una feature
 `done` entran como `pending` en `tasks`; la feature conserva su `done` (el merge
 original no se reescribe).
 

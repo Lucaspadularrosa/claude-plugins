@@ -21,7 +21,9 @@ Segui el modo FEATURE de la skill `build-pipeline`:
    corre `feature-implementer` en modo ejecucion. Tarea terminada y verificada =
    tarea `done` en progress.
 5. Corre `build-reviewer` y `security-gate` (piso OWASP + audit de dependencias);
-   hallazgos high/medium de cualquiera rebotan al implementador hasta que ambos pasen.
+   hallazgos high/medium de cualquiera rebotan al implementador en modo correccion,
+   con tope de 3 rondas: si no pasa, o algo es no corregible (p. ej. vulnerabilidad
+   de dependencia sin fix), bloquea y mostrame el caso.
 6. Crea el PR contra la rama de integracion y mostrame el resumen (tareas, criterios
    verificados, veredicto del review, veredicto de seguridad, PR). La feature queda
    `done` recien cuando el PR mergea.

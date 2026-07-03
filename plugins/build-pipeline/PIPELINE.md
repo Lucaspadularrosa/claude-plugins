@@ -46,8 +46,8 @@ categorias y defensas es `reference/owasp-baseline.md`.
    [feature-implementer, modo ejecucion]                 un worktree por feature
      tarea por tarea, en task_order:                     [feature-implementer x N]
      implementar con piso OWASP ->                       EN PARALELO, modo ejecucion
-     verificar Gherkin + dep-audit ->                    (sin pausas)
-     lint -> commit [T-xxx]                                     |
+     verificar Gherkin (dep-audit                        (sin pausas)
+     si toco deps) -> lint -> commit [T-xxx]                    |
         |                                                        |
    [build-reviewer] + [security-gate]                    [build-reviewer + security-gate
         -> lazo de correccion                             x N] -> lazos
@@ -94,10 +94,11 @@ canonica de seguridad es `reference/owasp-baseline.md`.
 - Cada tarea se verifica contra sus criterios Gherkin con los comandos del perfil
   antes de pasar a la siguiente. Commit por tarea con `[T-xxx]`.
 - `build-reviewer` comprueba (no cree): corre tests y lint sobre el diff. Hallazgos
-  `high`/`medium` rebotan al implementador hasta pasar.
+  `high`/`medium` rebotan al implementador en modo correccion, con tope de 3 rondas;
+  lo que no pasa (o no es corregible) se bloquea y se escala al usuario.
 - `security-gate` es la otra compuerta del PR: revisa el diff contra la base de
-  seguridad (piso OWASP) y corre el audit de dependencias. Sus `high`/`medium` tambien
-  rebotan al implementador hasta pasar; lo que excede el piso lo deriva a `/auditar`.
+  seguridad (piso OWASP) y corre el audit de dependencias. Sus `high`/`medium`
+  rebotan igual, con el mismo tope; lo que excede el piso lo deriva a `/auditar`.
 
 ### progress.json
 - `in_progress` al arrancar (con la rama); tareas `done` a medida que se verifican;

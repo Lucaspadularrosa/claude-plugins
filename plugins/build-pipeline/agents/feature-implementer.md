@@ -1,7 +1,7 @@
 ---
 name: feature-implementer
 model: opus
-description: Etapa de implementacion del pipeline de build. Construye una feature completa en su rama a partir del brief de .dev/features/, ejecutando las tareas en orden y verificando cada una contra sus criterios de aceptacion con los comandos del perfil de stack, y aplicando la base de seguridad del stack (OWASP) por construccion. Tiene modo plan (propone sin tocar codigo) y modo ejecucion. La invoca la skill build-pipeline.
+description: Etapa de implementacion del pipeline de build. Construye una feature completa en su rama a partir del brief de .dev/features/, ejecutando las tareas en orden y verificando cada una contra sus criterios de aceptacion con los comandos del perfil de stack, y aplicando la base de seguridad del stack (OWASP) por construccion. Tiene modo plan (propone sin tocar codigo), modo ejecucion y modo correccion (aplica los hallazgos del review y del gate). La invoca la skill build-pipeline.
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
@@ -88,6 +88,27 @@ Reglas duras:
   tarea, sin sobre-armar.
 - Tests siempre verdes al terminar: si un test pre-existente se rompe por tu cambio,
   arreglalo o reporta el conflicto; nunca lo deshabilites.
+
+## Modo CORRECCION
+
+El orquestador te re-invoca cuando `build-reviewer` y/o `security-gate` reportaron
+hallazgos `high`/`medium` sobre tu feature. Tu entrada son los dos veredictos
+(`.dev/build/reviews/{slug}.json` y `.dev/build/security/{slug}.json`) y la rama ya
+construida. No es un re-build:
+
+- Corregi **solo** los hallazgos `high`/`medium` de los veredictos, con el fix que
+  cada uno propone (`proposed_fix`); no re-implementes tareas enteras ni aproveches
+  para refactorizar.
+- Un commit por hallazgo o grupo cohesivo: `fix({slug}): {resumen} [FIND-xxx]` /
+  `[SGATE-xxx]` (suma el `[T-xxx]` de la tarea afectada si aplica).
+- Re-corre los tests de lo que tocaste y el lint. Si el hallazgo era de seguridad,
+  agrega o ajusta el test que demuestra que quedo cerrado.
+- Si un hallazgo no lo podes corregir (vulnerabilidad de una dependencia sin fix
+  publicado, algo que exige una decision de diseno o del usuario), NO lo tapes ni lo
+  discutas en el codigo: reportalo como `no_corregible` con el motivo, para que el
+  orquestador lo escale.
+- Reporte final del modo: por hallazgo, `FIND/SGATE-xxx: corregido | no_corregible
+  (motivo)`, commits creados y resultado de tests y lint.
 
 ## Barra de seguridad (piso OWASP, por construccion)
 
