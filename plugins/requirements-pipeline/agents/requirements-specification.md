@@ -198,6 +198,11 @@ Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archi
 `lel.json` y `scenarios.json`, como string (ej. `"3"`). Las etapas posteriores usan
 estas referencias para detectar cuando la especificacion quedo desactualizada.
 
+Extensiones validas en lineas de base reconstruidas por `recovery-pipeline` (los
+consumidores las ignoran si no las usan): `"origin": "recovered"` por requisito y
+`"code_refs": ["ruta/archivo.ext:123"]` opcional en cualquier item — la traza al
+codigo.
+
 Tambien escribi `.dev/requirements/requirements.md`: la especificacion legible con un
 resumen, las features y, por cada requisito, su id, enunciado, feature, prioridad,
 esfuerzo estimado, dependencias, criterios de aceptacion (Given/When/Then) y trazabilidad

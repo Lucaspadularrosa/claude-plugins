@@ -20,6 +20,22 @@ nada.
 - `.dev/recovery/behavior-map.json` (estados de implementacion, preguntas).
 - Los artefactos reconstruidos en `.dev/requirements/` (mapa, requisitos con
   `proposed`, preguntas abiertas de cada artefacto).
+- Si existen de una corrida anterior: `.dev/recovery/state-report.json`,
+  `owner-questions.json` y `owner-answers.md` (ver Modo actualizacion).
+
+## Modo actualizacion (re-corrida o respuestas del dueño)
+
+Cuando el orquestador te indica que hay reporte y cuestionario previos:
+
+- **Conserva los ids** `GAP-xxx` y `OWN-xxx` existentes; los nuevos continuan la
+  secuencia. `owner-answers.md` traza por `OWN-xxx`: si renumeras, las respuestas
+  quedan huerfanas.
+- Las preguntas respondidas no se borran: marcalas `"status": "answered"` (las
+  abiertas quedan `"status": "open"`) y no las repitas en el `.md` salvo como
+  registro. Un hueco resuelto por una respuesta pasa a `"resolved"` citando la
+  respuesta.
+- Re-evalua los huecos contra el estado actual de los artefactos; no reconstruyas
+  de cero.
 
 ## Que buscar
 
@@ -67,7 +83,7 @@ nada.
     {"feature_id": "FG-01", "name": "string", "state": "complete|partial|skeleton", "missing": ["string"], "evidence_refs": ["CAP-001"]}
   ],
   "gaps": [
-    {"id": "GAP-001", "kind": "half_built|loose_end|inconsistency|structural_absence|unconfirmed_decision", "description": "string", "feature_ids": ["FG-01"], "evidence_refs": ["CAP-003", "ruta/archivo.ext:45"], "suggested_resolution": "string"}
+    {"id": "GAP-001", "kind": "half_built|loose_end|inconsistency|structural_absence|unconfirmed_decision", "status": "open|resolved", "description": "string", "feature_ids": ["FG-01"], "evidence_refs": ["CAP-003", "ruta/archivo.ext:45"], "suggested_resolution": "string"}
   ],
   "audit_signals": [
     {"signal": "string (señal para audit-pipeline: posible bug/seguridad/deuda)", "evidence_refs": ["string"]}
@@ -85,7 +101,7 @@ de respuesta debajo de cada pregunta. Estructura JSON:
 {
   "version": 1,
   "questions": [
-    {"id": "OWN-001", "question": "string", "feature_ids": ["FG-01"], "source_gap_ids": ["GAP-001"], "priority": "high|medium|low", "expected_answer_type": "free_text|yes_no|choice", "choices": ["string"]}
+    {"id": "OWN-001", "question": "string", "status": "open|answered", "feature_ids": ["FG-01"], "source_gap_ids": ["GAP-001"], "priority": "high|medium|low", "expected_answer_type": "free_text|yes_no|choice", "choices": ["string"]}
   ]
 }
 ```

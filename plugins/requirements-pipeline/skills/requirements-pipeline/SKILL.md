@@ -207,6 +207,11 @@ modifica algo existente).
    del CR determina el veredicto: `new` (no existia: va al mapa o directo al
    incremento), `modified` (toca algo baselineado), `deprecated` (elimina algo) o
    `already_covered` (ya estaba cubierto; el CR queda respondido sin tocar nada).
+   Si la descripcion cita ids de auditoria (`BUG-`, `SEC-`, `IMP-`, o compuestos
+   `AUD-xxx/...`), no trabajes con el string suelto: lee
+   `.dev/audit/audit-report.json` (o el `cr-input-*.md` indicado), toma esos
+   hallazgos completos como fuente del CR (archivalos en `sources/cr/`) y usa sus
+   `related_requirement_ids` para preseleccionar los targets de los veredictos.
    Si el alcance amerita vocabulario nuevo, corre `requirements-intake` +
    `lel-authoring` (update) + `lel-inspection` sobre la fuente del CR.
 3. **PAUSA DE CONFIRMACION**: presenta los veredictos con antes/despues. Nada

@@ -10,8 +10,9 @@ Ejecuta el modo CAMBIO de la skill `requirements-pipeline` para: `$ARGUMENTS`
 2. Lee lo existente (LEL, mapa, requisitos, diseno) y determina el veredicto de cada
    pedido: `new` (no existia), `modified` (toca algo baselineado), `deprecated`
    (elimina algo) o `already_covered` (ya estaba cubierto: el CR queda respondido sin
-   tocar nada). Si hay vocabulario nuevo, pasa la fuente por intake + LEL +
-   inspeccion.
+   tocar nada). Si cito ids de auditoria (`BUG-`/`SEC-`/`IMP-` o `AUD-xxx/...`), lee
+   los hallazgos completos de `.dev/audit/` como fuente del CR en vez del string
+   suelto. Si hay vocabulario nuevo, pasa la fuente por intake + LEL + inspeccion.
 3. PAUSA DE CONFIRMACION: mostrame los veredictos con el antes/despues. Nada
    `modified` ni `deprecated` se aplica sin mi OK explicito, uno por uno.
 4. Aplica los confirmados con los agentes en modo actualizacion, preservando ids; lo

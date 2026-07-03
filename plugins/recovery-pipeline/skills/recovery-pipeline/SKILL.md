@@ -35,13 +35,20 @@ changelog.
 ### Paso 0 - Contexto
 
 Si `.dev/requirements/` ya tiene artefactos (proyecto que ya uso la suite), avisale al
-usuario que la comprension va a actualizar incremental sin pisar lo baselineado. Si el
-usuario indico una ruta distinta a la raiz actual, pasasela a los subagentes.
+usuario que la comprension va a actualizar incremental sin pisar lo baselineado. Si
+existe `.dev/recovery/owner-questions.md` sin su `owner-answers.md` (cuestionario
+pendiente de una corrida anterior), ofrece retomar directo la PAUSA del Paso 4 con
+las respuestas, en vez de re-inventariar todo. Si el usuario indico una ruta distinta
+a la raiz actual, pasasela a los subagentes.
 
 ### Paso 1 - Inventario y comportamiento
 
 Invoca `code-inventory` y despues `behavior-extraction`, en orden y de a uno. Valida
-que cada salida sea JSON valido antes de seguir.
+que cada salida sea JSON valido antes de seguir. Si la app es grande (cientos de
+entry points en el inventario), particiona `behavior-extraction` en tandas por
+modulo o grupo de entry points — su salida es acumulativa — priorizando los modulos
+core; lo que quede sin cubrir debe figurar en las `open_questions` del behavior-map,
+nunca omitido en silencio.
 
 ### Paso 2 - Reconstruccion de la linea de base
 
@@ -63,7 +70,8 @@ Presenta `owner-questions.md` y espera respuestas explicitas. Nunca las inventes
   `OWN-xxx`) y re-invoca `baseline-reconstruction` en modo actualizacion para
   aplicarlas (features que se confirman, se recortan o se deprecian; requisitos
   `proposed` que pasan a `active` o se descartan). Si las respuestas redefinen huecos,
-  re-invoca `gap-analysis` para actualizar el reporte.
+  re-invoca `gap-analysis` en modo actualizacion (conserva los ids `GAP`/`OWN`
+  existentes y marca las preguntas respondidas).
 - Si dice que respondera despues: deja el cuestionario pendiente y cerra igual; la
   proxima corrida de `/comprender` retoma.
 

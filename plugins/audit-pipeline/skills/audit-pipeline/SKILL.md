@@ -62,7 +62,12 @@ JSON.
 Para **cada hallazgo `high` y `medium`** de las tres dimensiones, lanza un
 `finding-verifier` (en paralelo, tandas de hasta ~6 para no saturar) con el hallazgo
 completo. Los `low` no se verifican (no justifican el costo): se reportan como
-`unverified`.
+`unverified`. **Techo de costo**: si hay mas de ~15 hallazgos a verificar, frena
+antes de lanzar y mostrale al usuario el conteo por dimension con las opciones
+(verificar todos, solo los `high`, o acotar el alcance) — cada verificacion es una
+pasada de agente leyendo codigo. Podes agrupar en un mismo verificador hallazgos del
+mismo archivo o modulo (pasale la lista) para bajar el costo sin perder el
+adversarial.
 
 - `confirmed`: entra al reporte final, con la severidad ajustada si el verificador la
   cambio.
@@ -77,7 +82,7 @@ Escribi vos (orquestador) `.dev/audit/audit-report.json` y `.dev/audit/audit-rep
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "scope": "string", "dimensions": ["bugs", "security", "improvements"], "baseline_available": false},
+  "metadata": {"created_at": "string", "run_id": "AUD-001", "scope": "string", "dimensions": ["bugs", "security", "improvements"], "baseline_available": false},
   "summary": {
     "confirmed": {"high": 0, "medium": 0, "low_unverified": 0},
     "refuted": 0, "needs_human": 0
@@ -94,16 +99,23 @@ El `.md` arranca con el resumen ejecutivo (confirmados por severidad y dimension
 mas grave primero), despues cada hallazgo confirmado con su evidencia, veredicto y fix
 propuesto; al final, los que necesitan tu respuesta y los descartados con su razon.
 
-Versionado: `version` +1 por reescritura (re-auditorias).
+Versionado: `version` +1 por reescritura (re-auditorias). Cada corrida tiene su
+`run_id` consecutivo (`AUD-001`, `AUD-002`, ...): los ids de hallazgos
+(`BUG/SEC/IMP-xxx`) son unicos **dentro de una corrida**, asi que toda cita externa
+(un CR, un commit) usa la forma compuesta `AUD-002/BUG-003` — esa referencia no se
+recicla nunca.
 
 ### Paso 5 - Cierre y conversion en trabajo
 
 Mostrale al usuario el resumen y ofrece los caminos para los confirmados:
 
 - **Arreglar via la suite** (si hay linea de base): los hallazgos que elija se
-  registran como change request — sugerile `/requerimientos:cambio` citando los ids
-  (`BUG-xxx`/`SEC-xxx`/`IMP-xxx`) — y de ahi `/replanificar` + `/construir`. Asi el
-  fix queda trazable de punta a punta.
+  registran como change request. Genera `.dev/audit/cr-input-{run_id}.md` con los
+  hallazgos elegidos **completos** (id compuesto `AUD-xxx/BUG-xxx`, descripcion,
+  evidencia, fix propuesto y `related_requirement_ids`) y sugerile
+  `/requerimientos:cambio .dev/audit/cr-input-{run_id}.md` — y de ahi
+  `/replanificar` + `/construir`. Asi el fix queda trazable de punta a punta sin
+  copiar hallazgos a mano.
 - **Arreglar directo** (sin suite): priorizar los `high` y encarar; los hallazgos
   tienen fix propuesto y evidencia.
 - Responder los `needs_human` para destrabar esos veredictos.
@@ -117,8 +129,11 @@ Mostrale al usuario el resumen y ofrece los caminos para los confirmados:
 - Seguridad es **defensiva**: vectores e impacto si, exploits funcionales no; secretos
   señalados, nunca copiados.
 - Si una dimension falla, reporta las otras igual y deja constancia.
-- Re-auditorias: los archivos se reescriben completos (la auditoria es una foto, no un
-  historial); el changelog de la suite no se toca — la conversion en trabajo pasa por
+- Re-auditorias: antes de reescribir, archiva la corrida anterior completa en
+  `.dev/audit/history/{run_id}/` (audit-report + findings-*) y asigna el `run_id`
+  siguiente. Los archivos vivos se reescriben completos (la auditoria es una foto);
+  la historia queda en `history/` y las citas externas usan el id compuesto. El
+  changelog de la suite no se toca — la conversion en trabajo pasa por
   `/requerimientos:cambio`.
 
 ## Estructura resultante
@@ -129,4 +144,6 @@ Mostrale al usuario el resumen y ofrece los caminos para los confirmados:
   findings-security.json        hallazgos crudos de seguridad
   findings-improvements.json    hallazgos crudos de mejoras
   audit-report.json / .md       reporte consolidado y verificado (lo que se lee)
+  cr-input-{run_id}.md          hallazgos elegidos, listos para /requerimientos:cambio
+  history/{run_id}/             corridas anteriores archivadas (ids citables siempre)
 ```

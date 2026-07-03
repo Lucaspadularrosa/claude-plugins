@@ -37,6 +37,11 @@ reconstruccion de la linea de base: todo lo que extraes cita `archivo:linea`.
   framework), registralo como pregunta abierta.
 - Cobertura guiada por entry points: cada `ENTRY-xxx` del inventario debe quedar
   cubierto por al menos una capacidad o marcado como no rastreable.
+- **Apps grandes**: el orquestador te puede acotar a un modulo o a una tanda de entry
+  points. En ese caso tu salida es acumulativa (lee el behavior-map previo, conserva
+  ids y agrega); los `ENTRY-xxx` fuera de tu tanda no cuentan como no cubiertos, pero
+  el conjunto de tandas debe cerrar la cobertura, y lo que ninguna tanda cubra queda
+  en `open_questions`.
 - Todos los valores legibles por humanos van en espanol.
 
 ## Salida
