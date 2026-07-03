@@ -9,10 +9,13 @@ Segui el modo REPLANIFICACION de la skill `planning-pipeline`:
 
 1. Verifica que exista el plan (`.dev/plan/tasks.json`, `execution-plan.json`) y la
    linea de base de requisitos. Si no hay plan, esto es un `/planificar` normal.
-2. Calcula el delta: entradas `INC-xxx` / `CR-xxx` con `status: applied` en
-   `.dev/requirements/changelog.json` que NO esten en `metadata.applied_changelog_ids`
-   de `tasks.json` (si pase ids como argumento, limita a esos). Si no hay delta y las
-   versiones coinciden, informa que el plan esta al dia y termina.
+2. Calcula el delta: entradas `INC-xxx` / `CR-xxx` / `REC-xxx` con `status: applied`
+   en `.dev/requirements/changelog.json` que NO esten en
+   `metadata.applied_changelog_ids` ni en `metadata.deferred_changelog_ids` de
+   `tasks.json`. Si pase ids como argumento, limita el delta a esos y registra el
+   resto como postergado (`deferred_changelog_ids`), avisandome que quedo pendiente.
+   Si no hay delta y las versiones coinciden, informa que el plan esta al dia y
+   termina.
 3. Lee `.dev/plan/progress.json` (estado del build). Si no existe, preguntame que
    features/tareas estan hechas o en curso antes de seguir; no asumas que nada se
    construyo sin confirmarmelo.
@@ -24,7 +27,8 @@ Segui el modo REPLANIFICACION de la skill `planning-pipeline`:
 6. Corre `execution-planning` en modo replanificacion: recalcula los lotes solo del
    trabajo restante (lo `done` queda fuera del grafo, lo `in_progress` conserva su
    lote).
-7. Corre `plan-inspection` y su lazo de correccion hasta que el plan pase.
+7. Corre `plan-inspection` y su lazo de correccion (tope: 3 pasadas; si no pasa,
+   mostrame los defectos remanentes y decido yo).
 8. Corre `feature-brief` solo para las features afectadas, marcando que cambio.
 9. Al final: resumen de que se agrego/modifico/cancelo, los nuevos lotes del trabajo
    restante, el paralelismo resultante y los `applied_changelog_ids` actualizados.

@@ -33,10 +33,22 @@ y recalcula los lotes **solo del trabajo restante**:
 - Las features `done` salen del grafo: no van en ningun lote nuevo. Listalas en
   `metadata.completed_feature_ids`. Las dependencias hard que apuntan a ellas cuentan
   como **satisfechas** (su codigo ya esta mergeado).
-- Las features `in_progress` conservan su lote y su composicion del plan previo: no
-  las muevas ni les cambies el id de lote. Una feature nueva puede compartir su lote
-  solo si no tiene dependencias hard pendientes contra nada de ese lote ni de lotes
-  no terminados.
+- **Tareas de ajuste sobre features completadas**: si una feature `done` recibio
+  tareas nuevas del delta (tipicamente de ajuste, con `adjusts_task_id`), mantenela
+  en `completed_feature_ids` (su construccion original esta mergeada) y ademas
+  emitila en el primer lote que las dependencias de esas tareas permitan, con **solo
+  esas tareas** en `task_ids`/`task_order` y `"adjustment": true` en la entrada de la
+  feature; el `rationale` explica que es un ajuste sobre una feature ya construida.
+  Una tarea de ajuste que no cae en ningun lote no la construye nadie.
+- Las features `in_progress` conservan su lote (mismo `BATCH-id`): no las muevas. Su
+  `task_ids`/`task_order` si se actualiza con las tareas vigentes de `tasks.json`:
+  las nuevas o reescritas del delta entran en su orden topologico (se construyen en
+  la misma rama ya abierta). Si una tarea nueva de esa feature depende `hard` de
+  trabajo aun no mergeado de otro lote, no muevas la feature ni pierdas la tarea:
+  registra el conflicto en `warnings` para que el orquestador lo resuelva con el
+  usuario. Una feature nueva puede compartir el lote de una `in_progress` solo si no
+  tiene dependencias hard pendientes contra nada de ese lote ni de lotes no
+  terminados.
 - Las features `pending` y las nuevas se reasignan por niveles, como siempre, sobre el
   grafo restante. Los ids de lotes nuevos continuan la numeracion existente (si el
   plan previo llego a `BATCH-3`, lo nuevo arranca en `BATCH-4`).
@@ -48,21 +60,14 @@ y recalcula los lotes **solo del trabajo restante**:
 - Registra en `metadata.replanned: true` y conserva `tasks_version_ref` apuntando a la
   version nueva de `tasks.json`.
 
-### Formato de `depends_on` (acepta ambas variantes)
+### Formato de `depends_on`
 
-El campo `tasks[].depends_on` puede venir en dos formatos. Aceptalos los dos y
-normalizalos internamente a `{task_id, kind}` antes de construir el grafo:
-
-1. **Array de strings** (formato legacy/simple): cada entrada es el id de la tarea
-   predecesora (ej. `"T-022"`). En este caso, `kind` se asume **`hard`** por defecto.
-   Si `tasks.json` tiene `metadata.depends_on_convention.kind_default`, respeta ese
-   valor; si no, usa `"hard"`.
-2. **Array de objetos** (formato extendido): cada entrada es `{"task_id": "...", "kind":
-   "hard"|"contract"}`. Usa el `kind` declarado.
-
-Registra en `metadata.depends_on_convention_used` cual de los dos formatos detectaste y
-el `kind_default` aplicado, para que el lector del plan sepa bajo que supuesto se
-calculo el paralelismo.
+`tasks[].depends_on` es siempre un array de objetos `{"task_id": "...", "kind":
+"hard"|"contract"}` — el contrato de salida de `task-derivation`. Si encontras
+entradas en otro formato (por ejemplo strings sueltos de un `tasks.json` editado a
+mano), no adivines el `kind`: trata esas aristas como `hard` (la lectura
+conservadora, que nunca inventa paralelismo) y registra un warning para que la
+inspeccion exija migrar al formato objeto.
 
 ## Reglas de armado
 
@@ -121,11 +126,7 @@ cercas):
     "updated_at": "string",
     "tasks_version_ref": "string",
     "replanned": false,
-    "completed_feature_ids": ["FG-02"],
-    "depends_on_convention_used": {
-      "format": "string-array | object-array",
-      "kind_default": "hard"
-    }
+    "completed_feature_ids": ["FG-02"]
   },
   "summary": {
     "max_parallel_degree": 0,
@@ -146,6 +147,7 @@ cercas):
       "features": [
         {
           "feature_id": "FG-01",
+          "adjustment": false,
           "task_ids": ["T-002", "T-003"],
           "task_order": ["T-002", "T-003"],
           "waits_for": [
@@ -172,6 +174,9 @@ Convenciones del contrato:
 - `unlocks_after`: lotes que tienen que terminar antes de que este arranque
   (normalmente el inmediato anterior; cita los que correspondan por `waits_for`).
 - `rationale`: texto breve y chequeable contra `tasks.json`.
+- `adjustment`: solo en replanificacion; `true` marca que la entrada re-emite una
+  feature completada con **solo** sus tareas de ajuste pendientes (la feature sigue
+  ademas en `completed_feature_ids`). Omitilo o dejalo `false` en el resto.
 - `warnings`: para paralelismo bajo y sus causas concretas (ver abajo).
 
 ### Sugerencias de extraccion de contratos (warnings accionables)
@@ -204,7 +209,8 @@ warnings accionables en formato legible.
 
 - Verifica que `execution-plan.json` es JSON valido.
 - Verifica que cada feature con tareas esta en exactamente un lote (en
-  replanificacion: o en `metadata.completed_feature_ids`).
+  replanificacion: o en `metadata.completed_feature_ids`; una feature completada con
+  tareas de ajuste esta en ambos, con `adjustment: true`).
 - Verifica que la union de `task_ids` de la ronda de contratos y de todos los lotes es
   exactamente el conjunto de tareas de `tasks.json`, sin repetidos (en
   replanificacion: excluyendo las tareas `cancelled` y las de features completadas).
@@ -216,8 +222,8 @@ warnings accionables en formato legible.
 - Verifica que cada `task_order` cubre exactamente las tareas de su feature y respeta
   las dependencias intra-feature.
 - Verifica que las metricas del `summary` se corresponden con los lotes emitidos.
-- Verifica que `metadata.depends_on_convention_used` esta poblado con el formato
-  detectado y el `kind_default` aplicado.
+- En replanificacion: verifica que toda tarea pendiente con `adjusts_task_id` quedo
+  en algun lote (una tarea de ajuste sin lote no la construye nadie).
 
 ## Barra de calidad
 

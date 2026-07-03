@@ -25,7 +25,18 @@ existan en el proyecto:
 - `.dev/requirements/data-model.json`
 
 Si falta alguno, detente e indicale al usuario que primero corra el pipeline de
-requisitos (`requirements-pipeline`).
+requisitos (`requirements-pipeline`). Verifica ademas que los tres sean JSON parseable
+y que `requirements.json` tenga al menos un requisito `active`: si no, detente con un
+mensaje accionable en vez de derivar tareas sobre datos rotos.
+
+**Guard de re-ejecucion**: si ya existe `.dev/plan/tasks.json`, `/planificar` no es la
+via por defecto — los ids de tareas no son estables entre derivaciones completas. Si
+`.dev/plan/progress.json` registra cualquier feature o tarea fuera de `pending`,
+frena y ofrece `/replanificar` (absorbe los cambios sin tocar lo construido);
+regenera todo solo ante confirmacion explicita del usuario, y en ese caso
+re-inicializa tambien `progress.json` (el progreso viejo pierde sentido con ids
+nuevos). Si hay plan pero todo esta `pending`, avisa igual que vas a pisar el plan y
+pedi el OK antes.
 
 ## Subagentes (en `agents/` del plugin)
 
@@ -33,17 +44,20 @@ requisitos (`requirements-pipeline`).
 |---|---|---|---|
 | 1 | `task-derivation` | requisitos + diseno (+ changelog y plan previo en replanificacion) | `.dev/plan/tasks.json` (+ `.md`) |
 | 2 | `execution-planning` | `tasks.json` (+ `progress.json` y plan previo en replanificacion) | `.dev/plan/execution-plan.json` (+ `.md`) |
-| 3 | `plan-inspection` | `tasks.json`, `execution-plan.json`, requisitos | `.dev/plan/plan-inspection.json` (+ `.md`) |
+| 3 | `plan-inspection` | `tasks.json`, `execution-plan.json`, requisitos, changelog | `.dev/plan/plan-inspection.json` (+ `.md`) |
 | 4 | `feature-brief` | plan + execution-plan + requisitos + diseno | `.dev/features/{feature}.md` |
 
 ## Artefactos de control
 
 ### `metadata.applied_changelog_ids` (en `tasks.json`)
 
-La lista de entradas del changelog de requisitos (`INC-xxx`, `CR-xxx` con
+La lista de entradas del changelog de requisitos (`INC-xxx`, `CR-xxx`, `REC-xxx` con
 `status: applied`) que este plan ya absorbio. Es el contrato con el pipeline de
 requisitos: si en `.dev/requirements/changelog.json` hay entradas aplicadas que no
-estan en esta lista, el plan esta desactualizado y corresponde replanificar.
+estan en esta lista, el plan esta desactualizado y corresponde replanificar. Su
+companera `metadata.deferred_changelog_ids` lista las entradas aplicadas que el
+usuario decidio postergar en una replanificacion parcial: la inspeccion las reporta
+como informativas, no como olvido.
 
 ### `progress.json` (en `.dev/plan/`; lo escribis vos y el pipeline de build)
 
@@ -58,10 +72,17 @@ El estado de ejecucion del plan. Lo inicializas vos al cerrar `/planificar` (tod
     {"feature_id": "FG-01", "status": "pending|in_progress|done", "branch": "string", "notes": "string"}
   ],
   "tasks": [
-    {"task_id": "T-001", "status": "pending|in_progress|done|cancelled"}
+    {"task_id": "T-001", "status": "pending|in_progress|done|blocked|cancelled", "notes": "string"}
   ]
 }
 ```
+
+Semantica: feature `done` = mergeada a la rama de integracion. El build marca cada
+tarea `in_progress` al arrancarla y `done` al verificarla; `blocked` (con el motivo
+en `notes`) si quedo a medias — para la replanificacion, `blocked` cuenta como
+trabajo empezado, igual que `in_progress`. Las tareas de ajuste sobre una feature
+`done` entran como `pending` en `tasks`; la feature conserva su `done` (el merge
+original no se reescribe).
 
 La replanificacion lo necesita para no tocar lo construido. Si no existe al
 replanificar, pregunta al usuario el estado real antes de seguir.
@@ -86,16 +107,23 @@ en la ronda inicial).
 
 Invoca `plan-inspection`. Es la compuerta de auditoria del plan.
 
-- Si devuelve `passed: true`, el plan cierra.
-- Si reporta defectos `high` o `medium`, volve a invocar la etapa que corresponda en modo
-  correccion, indicandole que lea `.dev/plan/plan-inspection.json` y aplique las
-  correcciones propuestas:
+- Si devuelve `passed: true`, el plan cierra (los defectos no confirmados o `low` se
+  presentan al usuario en el cierre; no frenan).
+- Si reporta defectos **confirmados** `high` o `medium`, volve a invocar la etapa que
+  corresponda en modo correccion, indicandole que lea `.dev/plan/plan-inspection.json`
+  y aplique las correcciones propuestas:
   - `task-derivation` para defectos de cobertura, tareas huerfanas, dependencias,
-    granularidad/complejidad, criterios de aceptacion, staleness o extraccion de
-    contratos: checks 001, 002, 003, 004, 005, 006, 007, 011.
+    granularidad/complejidad, criterios de aceptacion o extraccion de contratos:
+    checks 001, 002, 003, 004, 005, 006, 011.
   - `execution-planning` para defectos de completitud, orden, metricas o lotes
     seriales sin justificar: checks 008, 009, 010, 012.
-  Despues volve a invocar `plan-inspection`. Repeti hasta que el plan pase.
+  - `PLAN-CHECK-007` (desactualizacion) NO se corrige en este lazo: corta e indicale
+    al usuario correr `/replanificar`. Si solo señala entradas postergadas a
+    proposito (`deferred_changelog_ids`), es informativo y no frena.
+  Despues volve a invocar `plan-inspection`. Tope del lazo: **3 pasadas de
+  inspeccion**. Si al tercer intento el plan sigue sin pasar, no sigas iterando:
+  presenta los defectos remanentes al usuario con las opciones (aceptarlos anotados,
+  corregir a mano, o abortar) y espera su decision.
 
 ### Paso 4 - Emitir los briefs de feature
 
@@ -105,8 +133,10 @@ alimentar un pipeline de desarrollo de features.
 
 ### Paso 5 - Cierre
 
-Inicializa `.dev/plan/progress.json` con todas las features y tareas en `pending` (si
-ya existia, no lo pises). Informa al usuario los archivos generados en `.dev/plan/` y
+Inicializa `.dev/plan/progress.json` con todas las features y tareas en `pending`. Si
+ya existia, no lo pises — salvo que esta corrida haya sido una regeneracion total
+confirmada por el usuario (ver guard de re-ejecucion): ahi re-inicializalo, porque
+los ids viejos ya no significan nada. Informa al usuario los archivos generados en `.dev/plan/` y
 `.dev/features/`, y resalta: el conteo de features y tareas, el maximo paralelismo
 (`max_parallel_degree`: cuantos agentes a la vez aprovecha el plan), el critical path
 en turnos (`critical_path_length`), la cantidad de contratos en la ronda inicial y las
@@ -119,8 +149,12 @@ plan se actualiza quirurgicamente: solo las features afectadas, sin tocar lo
 construido.
 
 1. **Delta**: lee `.dev/requirements/changelog.json` y compara sus entradas `INC-xxx`
-   / `CR-xxx` con `status: applied` contra `metadata.applied_changelog_ids` de
-   `tasks.json`. Las no aplicadas son el delta. Si no hay delta y los `*_version_ref`
+   / `CR-xxx` / `REC-xxx` con `status: applied` contra
+   `metadata.applied_changelog_ids` y `metadata.deferred_changelog_ids` de
+   `tasks.json`. Las no registradas en ninguna de las dos son el delta. Si el usuario
+   acota el delta (ids por argumento), lo excluido se registra como postergado en
+   `deferred_changelog_ids` (lo hace `task-derivation`); avisale que quedo pendiente.
+   Si no hay delta y los `*_version_ref`
    coinciden con las versiones actuales, el plan esta al dia: informalo y termina. Si
    las versiones no coinciden pero no hay changelog (linea de base anterior al
    versionado), adverti que la replanificacion va a ser completa, no quirurgica.
@@ -147,7 +181,8 @@ construido.
 ## Reglas de orquestacion
 
 - El pipeline es secuencial: no lances una etapa sin el archivo de entrada de la anterior.
-- El lazo de correccion del Paso 3 se repite hasta que el plan pase.
+- El lazo de correccion del Paso 3 tiene tope de 3 pasadas de inspeccion; los
+  defectos remanentes los decide el usuario, no el lazo.
 - Trazabilidad: ninguna tarea sin requisito; ningun requisito sin tarea. El plan registra
   de que version de los requisitos y del diseno se construyo, para detectar cuando quedo
   desactualizado.

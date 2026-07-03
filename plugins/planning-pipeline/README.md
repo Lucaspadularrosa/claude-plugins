@@ -97,7 +97,7 @@ verifica todo eso.
 | `.dev/plan/tasks.json` / `.md` | Tareas trazables a los requisitos, agrupadas por feature, con `complexity` (low/medium/high) para una pasada de agente. Las dependencias entre tareas se clasifican en `hard` (necesita el codigo mergeado) o `contract` (alcanza con la firma) |
 | `.dev/plan/execution-plan.json` / `.md` | Ronda de contratos inicial + lotes paralelos de features, con el orden de tareas de cada feature (`task_order`) y las metricas de paralelismo |
 | `.dev/plan/plan-inspection.json` / `.md` | Auditoria del plan |
-| `.dev/plan/progress.json` | Estado de ejecucion del plan (pending / in_progress / done); lo actualiza el pipeline de build o el usuario |
+| `.dev/plan/progress.json` | Estado de ejecucion del plan (features: pending / in_progress / done; tareas suman blocked y cancelled); lo actualiza el pipeline de build o el usuario |
 | `.dev/features/{feature}.md` | Un brief por feature (con su lote, su orden de tareas y sus contratos), para el pipeline de build |
 
 ## Como se ejecuta el plan con agentes en paralelo

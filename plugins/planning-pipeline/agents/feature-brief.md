@@ -38,12 +38,22 @@ actualizacion: que entrada del changelog lo cambio (`INC-xxx`/`CR-xxx`) y que ca
 `cancelled` en el plan de ejecucion del brief; listalas aparte como canceladas con su
 motivo.
 
+Si la feature ya estaba construida y re-entra solo por tareas de ajuste (entrada de
+lote con `adjustment: true` en el execution-plan), el brief lo dice arriba: la
+construccion original esta mergeada y estas tareas ajustan sobre esa base. Si una
+feature quedo sin tareas activas (todas canceladas o la feature deprecada), no borres
+su brief: reescribilo con un encabezado `CANCELADO` y el motivo, para que ningun
+build lo tome como vigente.
+
 ## Reglas
 
 - Tu output son los briefs por feature. No generes codigo ni reescribas el plan.
 - Emiti un archivo por cada feature (`feature_group`) que tenga tareas:
   `.dev/features/{slug}.md`, donde `{slug}` es el nombre de la feature en kebab-case
-  (minusculas, sin acentos, palabras unidas por guiones).
+  (minusculas, sin acentos, palabras unidas por guiones). El slug de una feature es
+  **estable**: en replanificacion usa el del brief ya existente de esa `FG-xx` aunque
+  el nombre haya cambiado (actualiza el titulo adentro; no generes un segundo archivo
+  para la misma feature).
 - El brief debe ser autosuficiente: el agente que lo lea debe poder construir la feature
   sin abrir los otros artefactos. Incluye lo necesario, pero no copies todo el plan.
 - Toda afirmacion del brief debe ser trazable: cita ids de requisitos, tareas, modulos y
@@ -90,7 +100,8 @@ Cada brief tiene estas secciones:
 
 ## Antes de terminar
 
-- Verifica que escribiste un archivo por cada feature con tareas.
+- Verifica que escribiste un archivo por cada feature con tareas del alcance de esta
+  corrida (todas en la planificacion inicial; solo las indicadas en replanificacion).
 - Verifica que cada brief cita ids reales de requisitos, tareas, modulos y entidades.
 - Verifica que ninguna tarea de una feature quedo fuera de su brief.
 - Verifica que cada brief tiene su seccion de Seguridad: con los requisitos/criterios de

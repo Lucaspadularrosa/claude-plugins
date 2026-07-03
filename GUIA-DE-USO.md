@@ -49,9 +49,9 @@ proyecto y solo generan salidas en `.dev/requirements/` y `.dev/plan/`.
 | **LEL** | El vocabulario del dominio (sujetos, objetos, verbos, estados), con definiciones trazables a las fuentes. Es un artefacto vivo: crece con cada documento o entrevista. |
 | **Mapa del producto** | Todas las features candidatas (`FG-xx`) con sus escenarios en borrador (`stub`), priorizadas. Amplitud completa, profundidad cero: se elabora solo lo que decidas. |
 | **Incremento** | Elaborar y *baselinear* un grupo de features: escenarios completos, requisitos con criterios Gherkin, inspección y diseño técnico. Lo baselineado es lo único que se planifica. |
-| **Changelog** | La historia de la línea de base: cada descubrimiento (`DSC`), incremento (`INC`) y cambio (`CR`), con qué agregó/modificó y qué versiones quedaron. Es lo que conecta requisitos con planificación. |
+| **Changelog** | La historia de la línea de base: cada descubrimiento (`DSC`), incremento (`INC`), cambio (`CR`) y recuperación desde código (`REC`), con qué agregó/modificó y qué versiones quedaron. Es lo que conecta requisitos con planificación. |
 | **Lotes** | El plan agrupa las features en lotes (`BATCH-1`, `BATCH-2`...): todas las del mismo lote se construyen **en paralelo**, una rama y un agente por feature. Antes del primer lote se mergea la **ronda de contratos** (las firmas/API que las features comparten). |
-| **progress.json** | El estado del build (`pending`/`in_progress`/`done` por feature y tarea). Es lo que protege lo construido cuando los requisitos cambian. |
+| **progress.json** | El estado del build: `pending`/`in_progress`/`done` por feature; las tareas suman `blocked` y `cancelled`. Es lo que protege lo construido cuando los requisitos cambian. |
 
 Regla de oro del sistema: **los ids nunca cambian, nada se borra** (lo eliminado se
 deprecia) y **nada baselineado se modifica sin tu confirmación**.

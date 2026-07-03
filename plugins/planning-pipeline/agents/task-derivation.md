@@ -22,13 +22,13 @@ Lee:
 - `.dev/requirements/technical-design.json` (modulos, contratos de API, decisiones).
 - `.dev/requirements/data-model.json` (entidades; para asociar tareas a entidades).
 - `.dev/requirements/changelog.json` (si existe: registra en
-  `metadata.applied_changelog_ids` que entradas `INC-xxx`/`CR-xxx` aplicadas cubre este
-  plan).
+  `metadata.applied_changelog_ids` que entradas `INC-xxx`/`CR-xxx`/`REC-xxx` aplicadas
+  cubre este plan).
 
 ## Modo replanificacion
 
 El orquestador te puede indicar que ya existe un plan y que hay un **delta** de
-changelog para absorber (entradas `INC-xxx`/`CR-xxx` no aplicadas). En ese caso, ademas
+changelog para absorber (entradas `INC-xxx`/`CR-xxx`/`REC-xxx` no aplicadas). En ese caso, ademas
 de lo anterior lee `.dev/plan/tasks.json` (el plan previo) y `.dev/plan/progress.json`
 (estado del build), y trabaja quirurgicamente:
 
@@ -39,17 +39,21 @@ de lo anterior lee `.dev/plan/tasks.json` (el plan previo) y `.dev/plan/progress
 - Requisito **modificado**:
   - sus tareas `pending` (segun progress) -> reescribilas para reflejar la version
     nueva, conservando sus ids;
-  - sus tareas `in_progress` -> NO las toques: reporta el conflicto;
+  - sus tareas `in_progress` o `blocked` (segun progress) -> NO las toques: reporta
+    el conflicto;
   - sus tareas `done` -> NO las toques: crea una **tarea de ajuste** nueva
     (`adjusts_task_id` apuntando a la tarea original, evidencia citando el `CR/INC`).
 - Requisito **deprecado**:
   - sus tareas `pending` -> marcalas `status: "cancelled"` (no las borres);
-  - sus tareas `in_progress` o `done` -> NO las toques: reporta el conflicto (hay
+  - sus tareas `in_progress`, `blocked` o `done` -> NO las toques: reporta el conflicto (hay
     trabajo construido sobre un requisito que ya no existe; lo decide el usuario).
 - Los **conflictos** van en `warnings` con formato fijo:
   `CONFLICTO [INC/CR-xxx]: <requisito> <verdicto> pero <task> esta <estado>.
   Sugerencia: <accion>`. El orquestador los presenta al usuario y te re-invoca con las
   decisiones; aplicalas tal cual.
+- Si el orquestador te indica un delta acotado (el usuario postergo entradas
+  aplicadas), registra las postergadas en `metadata.deferred_changelog_ids`; cuando
+  una replanificacion posterior las absorba, movelas a `applied_changelog_ids`.
 - Al terminar, agrega las entradas del delta a `metadata.applied_changelog_ids`,
   actualiza los `*_version_ref` e incrementa `version`.
 
@@ -170,7 +174,7 @@ Escribi `.dev/plan/tasks.json` con este contrato exacto (solo JSON valido, sin c
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "requirements_version_ref": "string", "technical_design_version_ref": "string", "applied_changelog_ids": ["INC-001"]},
+  "metadata": {"created_at": "string", "updated_at": "string", "requirements_version_ref": "string", "technical_design_version_ref": "string", "applied_changelog_ids": ["INC-001"], "deferred_changelog_ids": ["CR-002"]},
   "summary": {
     "feature_count": 0, "task_count": 0,
     "covered_requirement_ids": ["RF-001"], "uncovered_requirement_ids": ["RF-002"],
@@ -212,9 +216,11 @@ Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archi
 siempre. `requirements_version_ref` y `technical_design_version_ref` citan el numero de
 `version` actual de `requirements.json` y `technical-design.json`, como string
 (ej. `"3"`): son la base de la deteccion de desactualizacion del plan. En la
-derivacion inicial, `applied_changelog_ids` lista todas las entradas `INC-xxx`/`CR-xxx`
-con `status: applied` del changelog de requisitos al momento de planificar (vacia si
-no hay changelog); en replanificacion se le suman las entradas del delta absorbido.
+derivacion inicial, `applied_changelog_ids` lista todas las entradas
+`INC-xxx`/`CR-xxx`/`REC-xxx` con `status: applied` del changelog de requisitos al
+momento de planificar (vacia si no hay changelog); en replanificacion se le suman las
+entradas del delta absorbido. `deferred_changelog_ids` lista las entradas aplicadas
+que el usuario decidio postergar en una replanificacion parcial (vacia si no hay).
 
 Tambien escribi `.dev/plan/tasks.md`: un resumen legible con, por cada feature, sus tareas
 (id, titulo, prioridad, complejidad, dependencias y requisitos que cubre).
