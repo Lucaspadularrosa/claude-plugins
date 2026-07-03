@@ -99,12 +99,16 @@ El material de dominio puede llegar como:
 Extraccion: para cada archivo, crea `.dev/requirements/sources/` y corre:
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/scripts/extract_document.py" \
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/requirements-pipeline/scripts/extract_document.py" \
   "<ruta-del-archivo>" ".dev/requirements/sources/<nombre>.txt"
 ```
 
-Si `${CLAUDE_SKILL_DIR}` no estuviera definida, ubica `extract_document.py` en la
+Si `python3` no existe (tipico en Windows), proba `python` y despues `py -3`. Si
+`${CLAUDE_PLUGIN_ROOT}` no estuviera definida, ubica `extract_document.py` en la
 subcarpeta `scripts/` de esta skill. Para PDF puede hacer falta `pip install pypdf`.
+Si la extraccion de un archivo falla (dependencia ausente, archivo ilegible), informa
+el error y pregunta al usuario si continuar sin ese archivo o resolverlo primero;
+nunca sigas en silencio con una fuente a medias.
 La vision sin documento y las respuestas de entrevistas se guardan tambien en
 `sources/` (`vision-001.txt`, `entrevista-001.txt`): toda fuente queda archivada.
 

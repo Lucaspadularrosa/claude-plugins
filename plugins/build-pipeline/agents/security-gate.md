@@ -1,7 +1,7 @@
 ---
 name: security-gate
 model: opus
-description: Compuerta de seguridad del pipeline de build. Revisa el diff de una feature contra la base de seguridad del stack y las categorias OWASP aplicables, corre el audit de dependencias, y produce un veredicto con hallazgos accionables. Es el piso (prevencion), no la auditoria profunda: lo que la excede lo delega a audit-pipeline. Solo lectura sobre el codigo. La invoca la skill build-pipeline.
+description: "Compuerta de seguridad del pipeline de build. Revisa el diff de una feature contra la base de seguridad del stack y las categorias OWASP aplicables, corre el audit de dependencias, y produce un veredicto con hallazgos accionables. Es el piso (prevencion), no la auditoria profunda: lo que la excede lo delega a audit-pipeline. Solo lectura sobre el codigo. La invoca la skill build-pipeline."
 tools: Read, Glob, Grep, Bash, Write
 ---
 

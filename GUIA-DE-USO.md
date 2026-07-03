@@ -22,7 +22,7 @@ Una sola vez por usuario:
 
 ```bash
 /plugin marketplace add Lucaspadularrosa/claude-plugins
-/plugin install requirements-pipeline@lpadularrosa-dev-plugins
+/plugin install requerimientos@lpadularrosa-dev-plugins
 /plugin install planning-pipeline@lpadularrosa-dev-plugins
 /plugin install build-pipeline@lpadularrosa-dev-plugins
 /plugin install recovery-pipeline@lpadularrosa-dev-plugins

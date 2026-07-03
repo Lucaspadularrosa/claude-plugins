@@ -1,5 +1,5 @@
 ---
-description: Comprende una aplicacion existente (aunque no tenga documentacion): que hace, en que estado esta, que falta y que hay que decidir. Reconstruye la linea de base de requisitos para engancharla con la suite.
+description: "Comprende una aplicacion existente (aunque no tenga documentacion): que hace, en que estado esta, que falta y que hay que decidir. Reconstruye la linea de base de requisitos para engancharla con la suite."
 argument-hint: "[opcional: ruta al repo; por defecto, el proyecto actual]"
 ---
 

@@ -107,7 +107,7 @@ Este plugin se distribuye en el marketplace `lpadularrosa-dev-plugins`. Con el
 marketplace agregado:
 
 ```bash
-claude plugin install requirements-pipeline@lpadularrosa-dev-plugins
+claude plugin install requerimientos@lpadularrosa-dev-plugins
 ```
 
 Por defecto queda disponible en todos los proyectos. Los comandos exactos del CLI

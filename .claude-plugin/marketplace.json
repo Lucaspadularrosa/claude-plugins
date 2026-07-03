@@ -1,8 +1,8 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "lpadularrosa-dev-plugins",
-  "version": "1.0.0",
-  "description": "Plugins de desarrollo para proyectos Next.js/TypeScript. Incluye pipeline de features end-to-end con Stack Specialist agent.",
+  "version": "2.0.0",
+  "description": "Suite de pipelines para el ciclo completo de software con agentes IA: ingenieria de requisitos (LEL y Escenarios), planificacion para agentes, build agnostico de stack con piso de seguridad OWASP, comprension de apps existentes (brownfield) y auditoria con verificacion adversarial.",
   "owner": {
     "name": "lucas_padularrosa",
     "email": ""
@@ -64,9 +64,9 @@
       "category": "development"
     },
     {
-      "name": "requirements-pipeline",
+      "name": "requerimientos",
       "description": "Pipeline iterativo de ingenieria de requisitos (LEL y Escenarios): descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; y absorbe cambios con confirmacion y changelog, todo trazable.",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"

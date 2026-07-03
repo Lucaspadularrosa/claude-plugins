@@ -11,3 +11,6 @@ __pycache__/
 
 # Salidas de pipeline, por si lo corres de prueba desde esta carpeta
 .dev/
+
+# Estado local de sesiones de Claude Code (nunca se comitea)
+**/.claude/settings.local.json
