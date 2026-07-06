@@ -13,7 +13,9 @@ Segui el modo FEATURE de la skill `build-pipeline`:
 2. Asegura el perfil de stack y la base de seguridad (`.dev/build/stack-profile.json` y
    `.dev/build/security-baseline.json`); si es la primera vez o quedaron stale, corre
    `stack-profiler` (emite ambos). Si el perfil tiene preguntas abiertas (comando de
-   test, rama de integracion), resolvelas conmigo antes de seguir.
+   test, rama de integracion), resolvelas conmigo antes de seguir. Si el proyecto no
+   tiene CI que corra test y lint, bootstrapealo en la primera rama que construyas:
+   los checks del PR verifican independiente del reporte del agente.
 3. Corre `feature-implementer` en modo plan y mostrame el plan de implementacion
    (enfoque por tarea, archivos, como se verifica cada criterio). **Espera mi
    aprobacion**; si pido cambios, ajustalo.

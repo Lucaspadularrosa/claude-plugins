@@ -31,7 +31,7 @@ categorias y defensas es `reference/owasp-baseline.md`.
         |
         v  [stack-profiler]  (primera vez, o si el diseno cambio)
 .dev/build/stack-profile.json       (stack, comandos test/lint/build, layout,
-                                     convenciones, rama de integracion - por evidencia)
+                                     convenciones, rama de integracion, CI - por evidencia)
 .dev/build/security-baseline.json   (superficie, categorias OWASP, mecanismo nativo por
                                      control, comando de audit de dependencias)
         |
@@ -104,6 +104,10 @@ canonica de seguridad es `reference/owasp-baseline.md`.
 - `security-gate` es la otra compuerta del PR: revisa el diff contra la base de
   seguridad (piso OWASP) y corre el audit de dependencias. Sus `high`/`medium`
   rebotan igual, con el mismo tope; lo que excede el piso lo deriva a `/auditar`.
+- Los PRs se verifican tambien **sin agentes**: si el proyecto no tiene CI que corra
+  test y lint, el orquestador lo bootstrapea (workflow minimo con los comandos del
+  perfil) en la primera rama de la corrida. El reporte del implementador se comprueba
+  tres veces: reviewer, gate y checks del PR.
 
 ### progress.json
 - `in_progress` al arrancar (con la rama); tareas `done` a medida que se verifican;

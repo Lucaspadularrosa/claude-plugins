@@ -105,6 +105,7 @@ Contrato exacto:
     {"rule": "string (ej. tests junto al codigo, nombres en ingles, sin tipos any)", "evidence": "string"}
   ],
   "integration_branch": "string (rama base de los PRs: develop o main, segun evidencia)",
+  "ci": {"exists": false, "provider": "string|null (github-actions, gitlab-ci, ... segun forja/config)", "runs_tests": false, "runs_lint": false, "evidence": "string"},
   "warnings": ["string"],
   "open_questions": ["string"]
 }
@@ -185,6 +186,10 @@ Si el stack cambia, ambos se regeneran juntos.
   como `open_question`: el orquestador lo va a preguntar antes de construir. Lo mismo si
   no hay comando de audit de dependencias (deja el hueco en `warnings`: no bloquea el
   build, pero el `security-gate` lo va a reportar).
+- Completa `ci` por evidencia (workflows/pipelines existentes y **que** corren). Si no
+  hay CI, o el CI no corre el test/lint del perfil, registralo en `warnings`: el
+  orquestador del build va a bootstrapear el workflow minimo en la primera rama que
+  construya, para que los PRs tengan checks independientes del reporte de los agentes.
 
 ## Barra de calidad
 

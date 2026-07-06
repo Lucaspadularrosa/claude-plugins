@@ -43,6 +43,16 @@ Si falta el plan, indicale al usuario que primero corra `/planificar`
   de construir: sin verificacion no hay build. Si la base de seguridad quedo con huecos
   (ej.: sin comando de audit de dependencias), no bloquea el build, pero avisale al
   usuario: el `security-gate` lo va a reportar.
+- **CI del proyecto (checks independientes)**: los checks del PR verifican el codigo
+  sin depender del reporte de ningun agente. Si el perfil dice que no hay CI
+  (`ci.exists: false`) o que el CI no corre test/lint, bootstrapealo vos: en la
+  primera rama que construyas en la corrida (la ronda de contratos si esta pendiente;
+  si no, la primera feature), agrega con un commit propio (`ci: test y lint en PRs`)
+  el workflow minimo del proveedor de la forja (por evidencia del remote; GitHub ->
+  `.github/workflows/`) que corra `commands.test` y `commands.lint` del perfil sobre
+  los PRs a la rama de integracion. Nada mas: sin caches, matrices ni deploys — es el
+  piso de verificacion, no la infraestructura del proyecto. Actualiza `ci` en el
+  perfil. Si no hay remote/forja detectable, avisale al usuario y segui sin CI.
 - **Compuerta de lote**: una feature solo puede construirse si su lote esta
   desbloqueado: todos los lotes de su `unlocks_after` tienen sus features `done` en
   `progress.json` (un lote de ajustes cuenta como terminado cuando sus tareas estan

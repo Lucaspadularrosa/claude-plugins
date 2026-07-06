@@ -12,7 +12,9 @@ Segui el modo LOTE de la skill `build-pipeline`:
    la ronda de contratos esta pendiente, ejecutala y mergeala primero, con review y
    security-gate: bloquea todo lo demas.
 2. Asegura el perfil de stack y la base de seguridad (los emite `stack-profiler`);
-   resolve conmigo sus preguntas abiertas si las hay. En greenfield sin esqueleto,
+   resolve conmigo sus preguntas abiertas si las hay. Si el proyecto no tiene CI que
+   corra test y lint, bootstrapealo en la primera rama de la corrida (checks de PR
+   independientes del reporte de los agentes). En greenfield sin esqueleto,
    construi una primera feature en secuencia antes de paralelizar.
 3. Prepara un git worktree por feature (limpiando restos de corridas anteriores y
    corriendo el install del perfil en cada uno) y lanza los `feature-implementer`
