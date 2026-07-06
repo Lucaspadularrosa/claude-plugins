@@ -21,6 +21,10 @@ Lee:
 - `.dev/requirements/lel.json` (fuente de vocabulario).
 - `.dev/requirements/product-map.json` (las features y sus estados, si existe).
 - `.dev/requirements/requirements.json` previo (si existe: el archivo es acumulativo).
+- `.dev/requirements/stakeholder-questions.json` y las respuestas archivadas (si
+  existen): la seccion de no funcionales (`source_kind: "nfr_checklist"`) alimenta
+  los RNF — la respuesta del stakeholder es evidencia de metrica; la pregunta sin
+  responder aporta su `default_assumption`.
 
 ### Modo incremento
 
@@ -58,8 +62,13 @@ cero. Al terminar, incrementa `version` y actualiza `metadata.updated_at`.
   episodios y excepciones de los Escenarios.
 - Los requisitos no funcionales describen como debe comportarse: rendimiento, seguridad,
   usabilidad, confiabilidad, disponibilidad, mantenibilidad, portabilidad, escalabilidad
-  o cumplimiento. Completa `metric` con un objetivo cuantificable cuando haya evidencia;
-  si no la hay, registra una pregunta abierta en vez de inventar un numero.
+  o cumplimiento. Completa `metric` con un objetivo cuantificable cuando haya evidencia:
+  la fuente, o una respuesta de la seccion de no funcionales del cuestionario. Si la
+  pregunta de la checklist quedo **sin responder**, usa su `default_assumption` como
+  metrica y declaralo en `assumptions` del RNF ("metrica asumida por falta de
+  respuesta a QST-xxx: ..."): un supuesto declarado no es un numero inventado — es
+  corregible y auditable. Solo si no hay ni evidencia ni default, registra una
+  pregunta abierta.
 - Cada requisito tiene `priority` (`high`, `medium`, `low`) y `verification_method`
   (`test`, `demonstration`, `inspection` o `analysis`).
 - No inventes vocabulario: usa nombres canonicos y alias del LEL.

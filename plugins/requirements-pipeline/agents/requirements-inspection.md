@@ -74,8 +74,11 @@ no contra el mapa completo.
   voz activa ("El sistema debe ..."). Un requisito que enuncia varias capacidades es un
   defecto con la particion propuesta. No hay requisitos duplicados por significado.
 - `REQ-CHECK-008`: no funcionales. Cada RNF tiene `category` valida y `metric`
-  cuantificable, o una pregunta abierta que explique la falta de metrica. Un numero sin
-  evidencia en las fuentes es un defecto (metrica inventada).
+  cuantificable, o una pregunta abierta que explique la falta de metrica. La metrica
+  vale si la respalda una de tres cosas: evidencia en las fuentes, una respuesta del
+  cuestionario, o un `default_assumption` de la checklist de no funcionales declarado
+  en `assumptions` del RNF. Un numero sin ninguna de las tres es un defecto (metrica
+  inventada).
 - `REQ-CHECK-009`: vocabulario. Los enunciados usan nombres canonicos o alias del LEL;
   no introducen vocabulario de dominio nuevo sin evidencia.
 - `REQ-CHECK-010`: desactualizacion. `metadata.lel_version_ref` y
