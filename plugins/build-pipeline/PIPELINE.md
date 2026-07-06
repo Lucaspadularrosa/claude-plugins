@@ -116,7 +116,10 @@ canonica de seguridad es `reference/owasp-baseline.md`.
 
 ### Trazabilidad
 - La cadena llega hasta el codigo: commit `[T-xxx]` -> tarea -> requisito ->
-  escenario -> simbolo del LEL -> fuente. Los PRs citan `FG-xx`, sus tareas y los
+  escenario -> simbolo del LEL -> fuente. Y hasta los **nombres**: los identificadores
+  del dominio usan el vocabulario del LEL (el brief lo trae; `domain_naming` del
+  perfil define idioma y forma; el reviewer lo comprueba) — desde cualquier
+  identificador se llega al requisito. Los PRs citan `FG-xx`, sus tareas y los
   requisitos que cierran; los
   reviews quedan en `.dev/build/reviews/` y los veredictos de seguridad en
   `.dev/build/security/`. Los hallazgos de seguridad citan su categoria OWASP (`owasp_id`).

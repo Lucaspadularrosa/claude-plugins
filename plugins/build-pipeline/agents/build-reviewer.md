@@ -49,7 +49,11 @@ El orquestador te indica la feature (slug), la rama y la ruta de trabajo. Lee:
    "verde" se comprueba, no se cree. Tests que no afirman nada (sin asserts, siempre
    verdes) son hallazgo.
 6. **Convenciones**: estilo y layout del perfil y de CLAUDE.md; consistencia con el
-   codigo circundante.
+   codigo circundante. Incluye el **vocabulario del dominio**: los conceptos del
+   dominio se nombran con los terminos del LEL del brief (seccion Trazabilidad y
+   vocabulario) segun el `domain_naming` del perfil; dos nombres distintos para el
+   mismo simbolo — o un termino inventado que el LEL no conoce — es hallazgo: corta
+   la cadena LEL -> codigo.
 
 La **seguridad** no la revisas vos: la cubre el `security-gate` (piso OWASP) en un
 veredicto propio (`.dev/build/security/{slug}.json`), y el audit de dependencias lo corre

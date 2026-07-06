@@ -104,6 +104,7 @@ Contrato exacto:
   "conventions": [
     {"rule": "string (ej. tests junto al codigo, nombres en ingles, sin tipos any)", "evidence": "string"}
   ],
+  "domain_naming": {"code_language": "string (idioma de los identificadores del dominio, por evidencia)", "rule": "string (como se nombra un concepto del dominio en el codigo: casing, singular/plural, traduccion consistente)", "evidence": "string"},
   "integration_branch": "string (rama base de los PRs: develop o main, segun evidencia)",
   "ci": {"exists": false, "provider": "string|null (github-actions, gitlab-ci, ... segun forja/config)", "runs_tests": false, "runs_lint": false, "evidence": "string"},
   "warnings": ["string"],
@@ -190,6 +191,11 @@ Si el stack cambia, ambos se regeneran juntos.
   hay CI, o el CI no corre el test/lint del perfil, registralo en `warnings`: el
   orquestador del build va a bootstrapear el workflow minimo en la primera rama que
   construya, para que los PRs tengan checks independientes del reporte de los agentes.
+- Completa `domain_naming` por evidencia de los identificadores existentes (modelos,
+  entidades, rutas, tablas): en que idioma se nombra el dominio y con que forma. En
+  greenfield, derivalo de la convencion del stack y de las entidades del diseno
+  tecnico. Es lo que permite que los terminos del LEL lleguen al codigo con un unico
+  nombre consistente.
 
 ## Barra de calidad
 

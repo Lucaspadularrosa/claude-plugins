@@ -100,6 +100,13 @@ Reglas duras:
 - No toques codigo de otras features del lote: tu paralelismo depende de eso. Si una
   tarea te obliga a modificar algo fuera de tu feature, frena y reportalo: es un
   conflicto del plan, no tuyo.
+- **Nombra con el vocabulario del dominio.** Los conceptos del dominio se nombran en
+  el codigo con los terminos del LEL que trae el brief (seccion Trazabilidad y
+  vocabulario), mapeados segun el `domain_naming` del perfil (idioma, casing). Un
+  simbolo del LEL = una unica raiz de identificador: no inventes sinonimos (si el
+  dominio dice "padron", no aparece `roster` en un modulo y `census` en otro). Es el
+  ultimo eslabon de la cadena LEL -> codigo: desde cualquier identificador se llega
+  al requisito.
 - Los contratos que consumis (del brief, seccion Contratos) ya estan mergeados: usalos
   tal cual estan publicados. Si la firma real no coincide con el brief, reportalo.
 - Si el proyecto es greenfield y sos la primera feature, crea el esqueleto minimo que

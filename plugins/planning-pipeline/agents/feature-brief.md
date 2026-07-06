@@ -24,6 +24,8 @@ Lee:
 - `.dev/requirements/technical-design.json` (modulos, API con su `auth_required`,
   pantallas, decisiones — incluidos los ADRs de seguridad).
 - `.dev/requirements/data-model.json` (entidades).
+- `.dev/requirements/lel.json` (solo los simbolos que los requisitos de la feature
+  citan: alimentan el Vocabulario del brief).
 
 Corres solo despues de que el plan paso la inspeccion. No corras si el plan tiene
 defectos `high` o `medium` sin resolver.
@@ -104,8 +106,11 @@ Cada brief tiene estas secciones:
 9. **Dependencias entre features**: si alguna tarea depende de tareas de otra feature.
    Distingui `hard` (necesita el codigo mergeado) de `contract` (alcanza con la firma ya
    mergeada en la ronda de contratos). Cita los `task_id` de cada dependencia.
-10. **Trazabilidad**: de que escenarios y simbolos del LEL viene la feature (via los
-   requisitos), y preguntas abiertas que la afectan.
+10. **Trazabilidad y vocabulario**: de que escenarios y simbolos del LEL viene la
+   feature (via los requisitos), y preguntas abiertas que la afectan. Incluye el
+   **Vocabulario**: cada simbolo del LEL que la feature toca, con su nombre y su
+   nocion en una linea — el implementador nombra el codigo con esos terminos (un
+   simbolo, un nombre), asi el brief alcanza sin abrir el LEL.
 
 ## Antes de terminar
 
@@ -118,6 +123,8 @@ Cada brief tiene estas secciones:
   requisito sin dueño es un brief incompleto.
 - Verifica que cada brief tiene su seccion de Seguridad: con los requisitos/criterios de
   seguridad especificos de la feature si los hay, y siempre la nota del piso del stack.
+- Verifica que cada brief trae su Vocabulario con los simbolos del LEL que sus
+  requisitos citan (nombre + nocion): sin el, el implementador inventa nombres.
 - Verifica que el orden de las tareas de cada brief coincide con el `task_order` del
   execution-plan.
 
