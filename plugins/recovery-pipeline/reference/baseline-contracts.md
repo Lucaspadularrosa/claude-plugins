@@ -17,7 +17,8 @@ Convenciones transversales de la suite (aplican a todos los archivos):
 - Ids estables, nunca renumerar ni borrar (lo eliminado se deprecia). Formatos:
   `FG-01` features, `SCN-001` escenarios, `EP/ACT/RES/EXC-001` partes del escenario,
   `SYM/NOT/IMP-001` LEL, `RF/RNF-001` requisitos, `AC-001` criterios (numerados POR
-  requisito; cita compuesta `RF-007/AC-002`), `ENT/REL-001` modelo de datos,
+  requisito; cita compuesta `RF-007/AC-002`), `BR-001` reglas de negocio,
+  `ENT/REL-001` modelo de datos,
   `MOD/API/SCR/ADR-001` diseno, `Q-001` preguntas abiertas.
 - Estados del mapa: `stub|elaborated|baselined|deprecated`. Estados de requisitos y
   escenarios: `active|proposed|deprecated`.
@@ -143,7 +144,7 @@ Los `evidence_refs` de escenarios apuntan a simbolos/impactos del LEL existentes
   "summary": {
     "total_requirements": 0, "functional_count": 0, "non_functional_count": 0,
     "high_priority": 0, "medium_priority": 0, "low_priority": 0,
-    "feature_count": 0,
+    "feature_count": 0, "business_rule_count": 0,
     "covered_scenario_ids": ["SCN-001"], "uncovered_scenario_ids": ["SCN-002"], "blocking_questions": 0
   },
   "feature_groups": [
@@ -183,6 +184,16 @@ Los `evidence_refs` de escenarios apuntan a simbolos/impactos del LEL existentes
       "rationale": "string", "assumptions": ["string"], "open_questions": ["string"], "evidence_refs": ["SCN-001"]
     }
   ],
+  "business_rules": [
+    {
+      "id": "BR-001", "statement": "string (invariante del dominio, en voz declarativa)",
+      "kind": "invariant|constraint|derivation",
+      "status": "active|proposed|deprecated",
+      "lel_symbol_ids": ["SYM-001"], "source_scenario_ids": ["SCN-001"],
+      "enforced_by": ["RF-007/AC-002"],
+      "rationale": "string", "open_questions": ["string"], "evidence_refs": ["SCN-001"]
+    }
+  ],
   "open_questions": [{"id": "Q-001", "question": "string", "blocking": true, "target_role": "string", "reason": "string", "related_requirement_ids": ["RF-001"], "related_scenario_ids": ["SCN-001"]}],
   "proposed_baseline_changes": [],
   "traceability_links": [{"source": {"kind": "symbol|scenario|episode|requirement|question", "id": "string"}, "target": {"kind": "symbol|scenario|episode|requirement|question", "id": "string"}, "relationship": "derived_from|verifies|covers|uses|questions|relates_to"}],
@@ -195,6 +206,11 @@ Campos que la planificacion consume si o si (no pueden faltar): `feature_groups[
 completo, y por requisito `feature_group`, `priority`, `status`, `estimated_effort`,
 `depends_on`, `verification_method`, `acceptance_criteria` Gherkin, y los
 `metadata.*_version_ref`.
+
+`business_rules`: en reconstruccion, deriva las reglas evidentes en el codigo
+(validaciones, constraints de esquema, guards repetidos entre modulos) con su
+evidencia en `code_refs`; si no hay reglas claras, deja el array vacio — no inventes
+invariantes que el codigo no demuestra.
 
 ## 5. `data-model.json`
 

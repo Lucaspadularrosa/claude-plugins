@@ -71,7 +71,10 @@ Cada brief tiene estas secciones:
 2. **Requisitos**: la lista de requisitos de la feature, con id, enunciado, prioridad
    **y sus criterios de aceptacion** (citados como `RF-007/AC-001`). Son la
    definicion de terminado de la **feature**, no solo de sus tareas: el build cierra
-   contra esto.
+   contra esto. Incluye las **reglas de negocio** (`BR-xxx` de `requirements.json`)
+   que los requisitos de la feature hacen cumplir, con su enunciado completo: son
+   invariantes que el implementador respeta en TODO el codigo de la feature, no solo
+   donde un criterio las muestrea.
 3. **Plan de ejecucion de las tareas**: las tareas de la feature **en el `task_order`
    del execution-plan** (el orden en que el agente debe ejecutarlas), cada una con id,
    titulo, descripcion, tipo, complejidad (`low|medium|high`), dependencias

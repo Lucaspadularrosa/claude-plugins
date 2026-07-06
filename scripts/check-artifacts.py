@@ -32,6 +32,7 @@ ID_RE = {
     "T": re.compile(r"^T-\d+$"),
     "BATCH": re.compile(r"^BATCH-\d+$"),
     "CHG": re.compile(r"^(DSC|INC|CR|REC)-\d+$"),
+    "BR": re.compile(r"^BR-\d+$"),
 }
 
 MAP_STATUSES = {"stub", "elaborated", "baselined", "deprecated"}
@@ -177,6 +178,19 @@ def check_requirements_stage(dev):
                 check_refs(r.get("source_scenario_ids"), ctx["scenarios"], "requirements.json", str(rid))
             if "symbols" in ctx:
                 check_refs(r.get("lel_symbol_ids"), ctx["symbols"], "requirements.json", str(rid))
+        ac_by_req = {r.get("id"): {ac.get("id") for ac in r.get("acceptance_criteria", [])} for r in all_reqs}
+        rules = reqs.get("business_rules", [])
+        unique_ids(rules, "id", ID_RE["BR"], "requirements.json/business_rules")
+        for br in rules:
+            bid = br.get("id")
+            if br.get("kind") not in {"invariant", "constraint", "derivation"}:
+                problem("requirements.json", "{}: kind invalido {!r}".format(bid, br.get("kind")))
+            for ref in br.get("enforced_by", []):
+                parts = ref.split("/", 1)
+                if len(parts) != 2 or parts[0] not in ac_by_req or parts[1] not in ac_by_req[parts[0]]:
+                    problem("requirements.json", "{}: enforced_by cita {} que no existe".format(bid, ref))
+            if not br.get("enforced_by") and not br.get("open_questions"):
+                warn("requirements.json", "{}: regla sin criterio que la demuestre ni pregunta abierta".format(bid))
     elif elaborated:
         problem("requirements.json", "no existe pero el mapa tiene features elaboradas/baselineadas")
 

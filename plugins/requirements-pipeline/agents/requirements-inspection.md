@@ -94,6 +94,14 @@ no contra el mapa completo.
   especificacion — no lo rebotes a `requirements-specification`. Ademas, no quedan
   `proposed_baseline_changes` con `status: pending` (un cambio propuesto sobre lo
   baselineado sin resolver es defecto `medium`: falta la confirmacion del usuario).
+- `REQ-CHECK-013`: reglas de negocio. Cada `business_rule` tiene enunciado declarativo
+  con limites explicitos, `kind` valido y `enforced_by` citando criterios existentes
+  (`RF-xxx/AC-yyy`); una regla con `enforced_by` vacio y sin pregunta abierta es
+  defecto `medium` (regla sin dueño: nadie la demuestra). A la inversa: una regla
+  evidente en las excepciones/condiciones de los escenarios elaborados o en los
+  impactos del LEL (limites, plazos, exclusiones) que no esta capturada en
+  `business_rules` es defecto `medium` — quedaria muestreada por ejemplos sin
+  enunciado unico, y puede divergir entre requisitos.
 
 ## Salida
 
