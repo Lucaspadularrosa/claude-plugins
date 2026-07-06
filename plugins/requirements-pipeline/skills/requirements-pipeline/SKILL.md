@@ -212,6 +212,11 @@ modifica algo existente).
    `.dev/audit/audit-report.json` (o el `cr-input-*.md` indicado), toma esos
    hallazgos completos como fuente del CR (archivalos en `sources/cr/`) y usa sus
    `related_requirement_ids` para preseleccionar los targets de los veredictos.
+   Lo mismo con los **desvios del build** (`.dev/build/cr-input-*.md`): cada desvio
+   trae la feature (`FG-xx`) y el requisito afectado (`RF-xxx/AC-xxx`); el veredicto
+   tipico es `modified` sobre ese requisito — el codigo ya se construyo distinto, y
+   el CR decide si el requisito se actualiza al comportamiento construido o si el
+   desvio se rechaza y se revierte en el codigo.
    Si el alcance amerita vocabulario nuevo, corre `requirements-intake` +
    `lel-authoring` (update) + `lel-inspection` sobre la fuente del CR.
 3. **PAUSA DE CONFIRMACION**: presenta los veredictos con antes/despues. Nada

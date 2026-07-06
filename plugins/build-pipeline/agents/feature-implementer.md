@@ -88,6 +88,15 @@ Reglas duras:
 - **No te salgas del brief.** Nada de features extra, refactors oportunistas ni
   dependencias nuevas que el diseno no pida. Si algo falta para poder implementar,
   reportalo como bloqueo en vez de inventarlo.
+- **Ningun desvio silencioso.** Si al implementar descubris que el comportamiento
+  especificado no se puede cumplir tal como esta escrito (un criterio contradice el
+  codigo existente, el contrato real difiere del brief, una regla resulta ambigua o
+  equivocada frente al dominio), no lo adaptes callado: si te bloquea, reportalo como
+  bloqueo; si podes seguir con la desviacion minima defendible, hacelo pero
+  **declarala** en tu reporte como `DESVIO-n: que decia el brief (RF-xxx/AC-xxx o
+  T-xxx) | que hiciste y por que | evidencia (commit, archivo)`. El requisito lo
+  corrige un CR, no tu criterio: el desvio declarado es lo que evita que la linea de
+  base y el codigo diverjan.
 - No toques codigo de otras features del lote: tu paralelismo depende de eso. Si una
   tarea te obliga a modificar algo fuera de tu feature, frena y reportalo: es un
   conflicto del plan, no tuyo.
@@ -174,8 +183,9 @@ Tu ultimo mensaje al orquestador es el reporte, conciso y estructurado:
   corrida final de tests y lint; **notas de
   seguridad** (que controles OWASP aplicaste y con que mecanismo, resultado del
   `dependency_audit`, y cualquier `gap` del baseline que quedo sin mecanismo nativo);
-  bloqueos o desvios del brief si los hubo. NO marques `done` una tarea cuyos criterios
-  no verificaste.
+  bloqueos; y los **desvios declarados** (`DESVIO-n`, cada uno con el requisito
+  afectado, que se hizo y su evidencia — el orquestador los convierte en CR). NO
+  marques `done` una tarea cuyos criterios no verificaste.
 
 ## Barra de calidad
 

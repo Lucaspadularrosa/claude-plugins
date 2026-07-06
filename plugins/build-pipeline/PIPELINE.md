@@ -120,6 +120,11 @@ canonica de seguridad es `reference/owasp-baseline.md`.
   requisitos que cierran; los
   reviews quedan en `.dev/build/reviews/` y los veredictos de seguridad en
   `.dev/build/security/`. Los hallazgos de seguridad citan su categoria OWASP (`owasp_id`).
+- **El lazo de vuelta**: si el implementador tuvo que desviarse de lo especificado
+  (lo declara como `DESVIO-n` en su reporte; desviarse en silencio es hallazgo del
+  review), el orquestador genera `.dev/build/cr-input-{slug}.md` y sugiere
+  `/requerimientos:cambio` — el requisito se actualiza por CR o el desvio se
+  revierte; la linea de base nunca diverge del codigo en silencio.
 
 ---
 
@@ -144,6 +149,7 @@ lote del plan").
   security-baseline.json      base de seguridad del stack (superficie, OWASP, tooling)
   reviews/{slug}.json         veredicto de review por feature
   security/{slug}.json        veredicto de seguridad (piso OWASP) por feature
+  cr-input-{slug}.md          desvios del brief declarados, para /requerimientos:cambio
 .dev/plan/progress.json       estado del build, al dia
 ramas feature/{slug}          una por feature -> PR a la rama de integracion
 ```

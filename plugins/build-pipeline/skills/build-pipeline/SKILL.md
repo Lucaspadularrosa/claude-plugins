@@ -75,6 +75,13 @@ Si falta el plan, indicale al usuario que primero corra `/planificar`
   feature, con `gh` si esta disponible (si no, deja la rama lista y las instrucciones).
   El cuerpo del PR cita la feature (`FG-xx`), las tareas (`T-xxx`) y el resultado del
   review.
+- **Desvios del brief -> CR**: si un implementador declaro desvios (`DESVIO-n`) en su
+  reporte, no los dejes morir en el resumen: genera `.dev/build/cr-input-{slug}.md`
+  con cada desvio completo (feature `FG-xx`, requisito afectado `RF-xxx/AC-xxx`, que
+  decia el brief, que se construyo y por que, evidencia commit/archivo) y sugerile al
+  usuario `/requerimientos:cambio .dev/build/cr-input-{slug}.md`. La linea de base no
+  se corrige a mano: o el CR actualiza el requisito, o el desvio se revierte — el
+  codigo y los requisitos no divergen en silencio.
 - Si un subagente falla o reporta bloqueo, no improvises: mostra el bloqueo al usuario
   con el contexto del brief.
 
@@ -119,7 +126,9 @@ Construye una feature, con aprobacion del plan de implementacion antes de codear
    construidas, criterios verificados, **cierre por requisito** (cada RF/RNF del
    brief con sus criterios demostrados, del `requirements_closure` del review),
    veredicto del review, **veredicto de seguridad**
-   (piso OWASP: passed, hallazgos, resultado del audit de dependencias) y link del PR. La
+   (piso OWASP: passed, hallazgos, resultado del audit de dependencias), los
+   **desvios declarados** (con su `cr-input-{slug}.md` y la sugerencia de
+   `/requerimientos:cambio`) y link del PR. La
    feature queda `in_progress` hasta que el PR mergee (anota el PR en `notes`); si el
    usuario lo mergea en la sesion, marcala `done`.
 
@@ -184,7 +193,8 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
    que no queden huerfanos invisibles.
 7. Resumen final: por feature, tareas construidas, cierre por requisito, veredicto
    del review, veredicto de
-   seguridad (piso OWASP + audit de dependencias) y PR; bloqueos con su worktree y
+   seguridad (piso OWASP + audit de dependencias), desvios declarados (con su
+   `cr-input-{slug}.md` y la sugerencia de `/requerimientos:cambio`) y PR; bloqueos con su worktree y
    como retomarlos (resolver el motivo y re-correr `/construir-lote`: las toma como
    retome) y `deferred_to_audit`
    si los hubo; y el proximo paso (mergear los PRs y, cuando esten `done`, el siguiente
@@ -221,6 +231,7 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
   security-baseline.json      base de seguridad del stack (superficie, OWASP, tooling)
   reviews/{slug}.json         veredicto de review por feature
   security/{slug}.json        veredicto de seguridad (piso OWASP) por feature
+  cr-input-{slug}.md          desvios del brief declarados, listos para /requerimientos:cambio
 .dev/plan/progress.json       actualizado en cada transicion
 ramas feature/{slug}          una por feature, PR contra la rama de integracion
 ```

@@ -29,4 +29,5 @@ Segui el modo FEATURE de la skill `build-pipeline`:
    de dependencia sin fix), bloquea y mostrame el caso.
 6. Crea el PR contra la rama de integracion y mostrame el resumen (tareas, criterios
    verificados, cierre por requisito, veredicto del review, veredicto de seguridad,
-   PR). La feature queda `done` recien cuando el PR mergea.
+   desvios del brief declarados — con su `cr-input-{slug}.md` y la sugerencia de
+   `/requerimientos:cambio` — y PR). La feature queda `done` recien cuando el PR mergea.

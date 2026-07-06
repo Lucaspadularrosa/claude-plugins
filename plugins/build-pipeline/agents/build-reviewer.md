@@ -41,7 +41,10 @@ El orquestador te indica la feature (slug), la rama y la ruta de trabajo. Lee:
    dependencias nuevas sin respaldo en el diseno, archivos de otras features del lote
    tocados (rompe el paralelismo: hallazgo `high`).
 4. **Correctitud**: bugs evidentes, casos de error de los criterios no manejados,
-   contratos consumidos con la firma equivocada.
+   contratos consumidos con la firma equivocada. Si el codigo se aparta del
+   comportamiento que un criterio especifica y el implementador no lo declaro como
+   desvio (`DESVIO-n`) en su reporte, es hallazgo (`medium` como minimo): un desvio
+   silencioso rompe la trazabilidad requisito -> codigo.
 5. **Verificacion real**: corre los tests y el lint del perfil; un reporte que dice
    "verde" se comprueba, no se cree. Tests que no afirman nada (sin asserts, siempre
    verdes) son hallazgo.
