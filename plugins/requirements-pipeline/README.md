@@ -142,12 +142,12 @@ pueden variar segun la version de Claude Code: verificalos con `/plugin`.
 | `supporting-context.json` | Contexto de soporte (modelo de datos, API, UI, stack) |
 | `lel.json` / `lel.md` | Lexico Extendido del Lenguaje (vivo) |
 | `lel-inspection.json` / `.md` | Checklist de defectos del LEL |
-| `stakeholder-questions.json` / `.md` | Cuestionario (defectos + elicitacion) |
+| `stakeholder-questions.json` / `.md` | Cuestionario (defectos + elicitacion + checklist de no funcionales con supuestos por defecto) |
 | `stakeholder-answers.md` | Respuestas del stakeholder (una por QST-xxx), tambien archivadas en `sources/` |
-| `product-map.json` / `.md` | Mapa del producto: features y stubs con estado y prioridad |
+| `product-map.json` / `.md` | Mapa del producto: features y stubs con estado, prioridad y valor de negocio |
 | `changelog.json` | Historia: DSC / INC / CR / REC con veredictos y versiones |
 | `scenarios.json` / `scenarios.md` | Escenarios elaborados (acumulativo) |
-| `requirements.json` / `requirements.md` | Requisitos funcionales y no funcionales (acumulativo) |
+| `requirements.json` / `requirements.md` | Requisitos funcionales y no funcionales + reglas de negocio `BR-xxx` (acumulativo) |
 | `requirements-inspection.json` / `.md` | Inspeccion de los requisitos |
 | `data-model.json` / `data-model.md` | Modelo de datos: entidades, campos y relaciones |
 | `technical-design.json` / `technical-design.md` | Arquitectura, API, pantallas y decisiones (ADRs) |

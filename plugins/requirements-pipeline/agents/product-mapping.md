@@ -36,7 +36,8 @@ Si existen (re-ejecucion del descubrimiento con material nuevo):
   renumeran nunca.
 - Cada feature del mapa tiene: nombre, descripcion breve, simbolos del LEL que la
   sostienen, sus escenarios stub (titulo, objetivo, actores; **sin** episodios), una
-  prioridad propuesta (`high|medium|low`) con su rationale, y `status`.
+  prioridad propuesta (`high|medium|low`) con su rationale, un **valor de negocio**
+  (`value`, `high|medium|low`) con su rationale, y `status`.
 - `status` de features y escenarios: `stub` (solo en el mapa), `elaborated` (un
   incremento ya genero sus escenarios y requisitos), `baselined` (paso las inspecciones
   y su incremento cerro), `deprecated`. **Vos solo asignas `stub` a lo nuevo**; los
@@ -49,6 +50,14 @@ Si existen (re-ejecucion del descubrimiento con material nuevo):
 - Prioridad propuesta: derivala de la evidencia (que enfatiza la fuente, que es
   fundacional para el resto). Es una propuesta para que el usuario elija que elaborar
   primero; no decide nada sola.
+- **Valor y prioridad no son lo mismo.** `value` mide el impacto en el objetivo del
+  stakeholder (el dolor que resuelve, lo que genera o protege ingresos, el riesgo que
+  mitiga), independiente de lo tecnico; cita en `value_rationale` la evidencia de la
+  fuente (que dolor enfatiza, que pidio primero). `priority` es la sintesis operativa
+  (valor + que es fundacional + urgencia). Una feature de plomeria puede ser
+  `priority: high` con `value: low` (nadie la pidio, pero sostiene al resto) — esa
+  distincion es la que permite elegir incrementos por valor/esfuerzo sin perder de
+  vista los cimientos.
 - Todos los valores legibles por humanos van en espanol.
 
 ## Modo actualizacion (re-descubrimiento con material nuevo)
@@ -90,6 +99,8 @@ valido, sin cercas):
       "description": "string",
       "priority": "high|medium|low",
       "priority_rationale": "string",
+      "value": "high|medium|low",
+      "value_rationale": "string",
       "status": "stub|elaborated|baselined|deprecated",
       "lel_symbol_ids": ["SYM-001"],
       "scenario_stubs": [

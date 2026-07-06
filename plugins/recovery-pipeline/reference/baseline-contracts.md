@@ -50,6 +50,8 @@ Convenciones transversales de la suite (aplican a todos los archivos):
       "description": "string",
       "priority": "high|medium|low",
       "priority_rationale": "string",
+      "value": "high|medium|low",
+      "value_rationale": "string (en reconstruccion: derivalo de la centralidad en el codigo — que protege datos o ingresos, que usa todo el mundo)",
       "status": "stub|elaborated|baselined|deprecated",
       "lel_symbol_ids": ["SYM-001"],
       "scenario_stubs": [

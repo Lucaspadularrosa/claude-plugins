@@ -122,6 +122,8 @@ def check_requirements_stage(dev):
                 problem("product-map.json", "{}: status invalido {!r}".format(fid, f.get("status")))
             elif f.get("status") in {"elaborated", "baselined"}:
                 elaborated = True
+            if f.get("value") not in {"high", "medium", "low", None}:
+                problem("product-map.json", "{}: value invalido {!r}".format(fid, f.get("value")))
             if "symbols" in ctx:
                 check_refs(f.get("lel_symbol_ids"), ctx["symbols"], "product-map.json", str(fid))
         counts = {s: sum(1 for f in features if f.get("status") == s) for s in MAP_STATUSES}

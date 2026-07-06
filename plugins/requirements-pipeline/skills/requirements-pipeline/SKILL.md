@@ -158,6 +158,13 @@ es la **feature** (calza con los lotes, briefs y ramas del pipeline de planifica
 Si el usuario nombra features en lenguaje natural, resolvelas contra el mapa; si una no
 existe o esta `deprecated`, frena y aclaralo.
 
+Si el usuario pide el incremento **sin elegir features** (o pide una recomendacion),
+presentale los candidatos del mapa ordenados por **valor**: por cada feature `stub`,
+su `value` y `value_rationale`, su `priority` (si difieren, deci por que: lo
+fundacional puede ir primero aunque valga menos), y el esfuerzo estimado si sus
+requisitos ya existen. Recomenda el incremento que maximiza valor entregado — y deci
+que quedo afuera y por que. El usuario decide; vos no elaboras nada sin su eleccion.
+
 1. Registra `INC-xxx` (`in_progress`) con las `feature_ids`.
 2. Invoca `scenario-modeling` en modo profundizacion: indicale las features y que lea
    `product-map.json`. Elabora **solo** los escenarios stub de esas features,
