@@ -17,3 +17,5 @@ jobs:
         run: pip install pyyaml
       - name: Validar plugins y frontmatters
         run: python scripts/validate.py
+      - name: Self-test del verificador de artefactos
+        run: python scripts/check-artifacts.py --self-test

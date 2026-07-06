@@ -58,3 +58,15 @@ Requisitos: Python 3.8+ (extracción de documentos); para PDF, `pip install pypd
 Ver la [guía de uso](GUIA-DE-USO.md) para los flujos completos (arrancar sin
 documento, material nuevo a mitad del build, cambios puntuales) y los README de cada
 plugin para el detalle técnico.
+
+## QA de la suite
+
+- `python scripts/validate.py` — todo **carga**: marketplace, plugin.json y los
+  frontmatters de agentes/comandos/skills (corre en CI; atrapa el YAML que
+  des-registra un comando o le da todas las tools a un agente).
+- `python scripts/check-artifacts.py <proyecto>` — todo **cumple contrato**: verifica
+  los artefactos `.dev/` que una corrida real generó (ids, enums, referencias
+  cruzadas, cobertura de lotes).
+- [`tests/golden/`](tests/golden/README.md) — todo **funciona**: el test dorado, una
+  corrida completa de la suite sobre una visión fija, con checklist por etapa. Se
+  corre a mano antes de mergear cambios de comportamiento en los prompts.
