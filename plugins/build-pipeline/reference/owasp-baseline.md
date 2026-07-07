@@ -12,7 +12,7 @@ Los agentes llevan una versión concisa de estas categorías inline; **este arch
 versión completa y el que se mantiene sincronizado**. Si cambia la base, se cambia acá
 primero.
 
-Las etapas de `requirements-pipeline` y `planning-pipeline` usan esta referencia solo de
+Las etapas de `requerimientos` y `planning-pipeline` usan esta referencia solo de
 forma liviana: para tratar la seguridad **específica del dominio** como requisito no
 funcional, ADR y tarea/criterio trazables. El **piso genérico** (las 10 categorías de
 abajo) no se enumera como requisito: lo garantiza el build por construcción.

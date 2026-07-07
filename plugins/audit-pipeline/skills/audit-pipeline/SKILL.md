@@ -12,7 +12,7 @@ intenta refutarlo leyendo el codigo real antes de que llegue al reporte. El resu
 es señal, no ruido.
 
 Funciona standalone en cualquier repo. Si el proyecto tiene la linea de base de la
-suite (`.dev/requirements/`, generada por `requirements-pipeline` o reconstruida por
+suite (`.dev/requirements/`, generada por `requerimientos` o reconstruida por
 `recovery-pipeline`), la auditoria la usa: divergencias codigo-requisito, permisos que
 los requisitos no otorgan, y los hallazgos confirmados pueden convertirse en trabajo
 planificable.

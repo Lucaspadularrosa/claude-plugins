@@ -16,7 +16,7 @@ decisiones se tomaron en el camino.
    completa, a medias, esqueleto o muerta.
 3. **La linea de base reconstruida**: mapa del producto, LEL, escenarios, requisitos,
    modelo de datos y diseno tecnico en `.dev/requirements/` — **el mismo formato que
-   produce `requirements-pipeline`**, con la trazabilidad apuntando al codigo. Lo que
+   produce `requerimientos`**, con la trazabilidad apuntando al codigo. Lo que
    el codigo demuestra completo queda baselineado; lo incompleto queda en stub.
 4. **El estado honesto y las preguntas**: un reporte de estado por feature (que falta
    exactamente) y un cuestionario para el dueño redactado sin tecnicismos ("la
@@ -72,7 +72,7 @@ recovery-pipeline/
 
 ## Relacion con los otros plugins
 
-- `requirements-pipeline`: produce el mismo tipo de linea de base desde documentos;
+- `requerimientos`: produce el mismo tipo de linea de base desde documentos;
   este la produce desde codigo. Conviven: una app comprendida puede seguir creciendo
   con `:descubrir` / `:incremento` / `:cambio`.
 - `audit-pipeline`: la comprension releva *señales* (algo huele mal aca) y las deja en

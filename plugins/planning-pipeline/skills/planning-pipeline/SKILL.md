@@ -25,7 +25,7 @@ existan en el proyecto:
 - `.dev/requirements/data-model.json`
 
 Si falta alguno, detente e indicale al usuario que primero corra el pipeline de
-requisitos (`requirements-pipeline`). Verifica ademas que los tres sean JSON parseable
+requisitos (`requerimientos`). Verifica ademas que los tres sean JSON parseable
 y que `requirements.json` tenga al menos un requisito `active`: si no, detente con un
 mensaje accionable en vez de derivar tareas sobre datos rotos.
 

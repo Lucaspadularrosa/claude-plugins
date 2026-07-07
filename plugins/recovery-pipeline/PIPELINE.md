@@ -1,6 +1,6 @@
 # Pipeline: Comprension (recovery de apps existentes)
 
-El camino inverso de `requirements-pipeline`: del **codigo** hacia una linea de base
+El camino inverso de `requerimientos`: del **codigo** hacia una linea de base
 de requisitos formal. Para apps con documentacion baja o nula (vibe-coding, legacy,
 prototipos que crecieron).
 

@@ -5,7 +5,7 @@ description: Comprende una aplicacion ya desarrollada (con documentacion baja o 
 
 # Pipeline de Comprension (recovery de apps existentes)
 
-Esta skill hace el camino inverso de `requirements-pipeline`: en vez de partir de
+Esta skill hace el camino inverso de `requerimientos`: en vez de partir de
 documentos hacia el codigo, parte del **codigo** hacia una linea de base de requisitos
 formal. Esta pensada para apps con documentacion baja o nula — el caso tipico del
 vibe-coding: alguien tuvo una idea, la prompteo, y hoy tiene un codebase que funciona
@@ -54,7 +54,7 @@ nunca omitido en silencio.
 
 Registra la entrada `REC-xxx` (kind `recovery`) en `.dev/requirements/changelog.json`
 con `status: in_progress` (crealo si no existe; mismo esquema que usa
-`requirements-pipeline`). Invoca `baseline-reconstruction`. Al terminar, valida las
+`requerimientos`). Invoca `baseline-reconstruction`. Al terminar, valida las
 referencias cruzadas de los artefactos emitidos.
 
 ### Paso 3 - Estado y huecos
@@ -89,7 +89,7 @@ reconstruidas). Resumen al usuario:
     son su punto de partida)
   - construir lo planificado -> `/planificar` + `/construir-lote`
   - validar lo reconstruido con mas rigor -> correr `requirements-inspection` y
-    `design-inspection` de `requirements-pipeline` sobre los artefactos.
+    `design-inspection` de `requerimientos` sobre los artefactos.
 
 ## Reglas de orquestacion
 

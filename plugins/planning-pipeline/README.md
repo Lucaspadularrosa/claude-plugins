@@ -5,7 +5,7 @@ agentes IA**: tareas trazables a los requisitos y dimensionadas para una pasada 
 agente, lotes de features que pueden construirse en paralelo (una rama por feature) y un
 documento por feature listo para alimentar un pipeline de build.
 
-Es la continuacion del plugin `requirements-pipeline`: arranca donde aquel termina.
+Es la continuacion del plugin `requerimientos`: arranca donde aquel termina.
 
 A diferencia de un plan clasico, **no hay sprints, fases ni estimaciones en tiempo
 humano**. El ejecutor del plan no es un equipo con velocidad fija: es una flota de
@@ -42,7 +42,7 @@ planning-pipeline/
 
 ## Instalacion
 
-Este plugin se distribuye en el mismo marketplace que `requirements-pipeline`
+Este plugin se distribuye en el mismo marketplace que `requerimientos`
 (`lpadularrosa-dev-plugins`). Con el marketplace agregado:
 
 ```bash
@@ -60,7 +60,7 @@ debe tener generados:
 - `.dev/requirements/technical-design.json`
 - `.dev/requirements/data-model.json`
 
-Esos los produce el plugin `requirements-pipeline`. Si faltan, corre primero ese pipeline.
+Esos los produce el plugin `requerimientos`. Si faltan, corre primero ese pipeline.
 
 ## Uso
 
@@ -133,7 +133,7 @@ partir features densamente acopladas.
 
 ## Replanificacion: cuando los requisitos cambian a mitad del build
 
-El pipeline de requisitos (`requirements-pipeline`) es iterativo: llegan incrementos y
+El pipeline de requisitos (`requerimientos`) es iterativo: llegan incrementos y
 change requests despues de planificar. `/replanificar` los absorbe sin regenerar el
 plan ni tocar lo construido:
 

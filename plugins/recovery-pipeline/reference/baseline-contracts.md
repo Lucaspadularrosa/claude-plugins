@@ -1,9 +1,9 @@
 # Contratos de la linea de base — copia de referencia para la reconstruccion
 
 `baseline-reconstruction` corre sin acceso a los archivos del plugin
-`requirements-pipeline`, asi que los contratos que debe emitir estan **embebidos aca**.
+`requerimientos`, asi que los contratos que debe emitir estan **embebidos aca**.
 
-> **Fuente canonica**: los agentes de `requirements-pipeline`
+> **Fuente canonica**: los agentes de `requerimientos`
 > (`product-mapping.md`, `lel-authoring.md`, `scenario-modeling.md`,
 > `requirements-specification.md`, `technical-design.md`). Si esos contratos
 > cambian, esta copia debe actualizarse en el mismo PR — es el precio de que la
@@ -133,7 +133,7 @@ citan simbolos del LEL (`SYM-xxx`); la traza al codigo va en `code_refs`.
 ```
 
 Los `evidence_refs` de escenarios apuntan a simbolos/impactos del LEL existentes
-(los validadores de `requirements-pipeline` lo exigen). En reconstruccion,
+(los validadores de `requerimientos` lo exigen). En reconstruccion,
 `scenario_type` es `"current"`.
 
 ## 4. `requirements.json`
@@ -281,6 +281,6 @@ invariantes que el codigo no demuestra.
 ## 7. Entrada del changelog (la escribe el ORQUESTADOR, no el agente)
 
 Una entrada `REC-xxx`, `kind: "recovery"`, con el mismo esquema del changelog de la
-suite (definido en la skill de `requirements-pipeline`): `status`
+suite (definido en la skill de `requerimientos`): `status`
 `in_progress|applied|rejected`, `sources`, `feature_ids`, `verdicts` y
 `artifact_versions` (before/after por archivo tocado).
