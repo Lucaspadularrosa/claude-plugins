@@ -22,14 +22,14 @@ Segui la skill de punta a punta:
 4. Corre `product-mapping` para dejar el mapa del producto registrado, y continua con
    `scenario-modeling` y `requirements-specification` sobre TODAS las features.
 5. Corre `requirements-inspection` y su lazo de correccion: si reporta defectos `high`
-   o `medium`, volve a `requirements-specification` en modo correccion y reinspecciona,
-   hasta que la especificacion pase.
+   o `medium`, volve a `requirements-specification` en modo correccion y reinspecciona
+   (tope: 3 pasadas; si no pasa, mostrame los defectos remanentes y decido yo).
 6. Preguntame si tengo mockups de UI (HTML, CSS, wireframes o capturas) para las
    pantallas. Despues corre `technical-design` (con los mockups como diseno
    autoritativo si los hay).
 7. Cierra con `design-inspection` y su lazo de correccion: si reporta defectos `high` o
-   `medium`, volve a `technical-design` en modo correccion y reinspecciona, hasta que el
-   diseno pase.
+   `medium`, volve a `technical-design` en modo correccion y reinspecciona (mismo tope
+   de 3 pasadas).
 8. Marca todo el mapa como `baselined`, cierra las entradas del changelog y lista los
    archivos generados en `.dev/requirements/` con un resumen del conteo de simbolos,
    defectos (LEL, requisitos y diseno), escenarios, requisitos, entidades del modelo de

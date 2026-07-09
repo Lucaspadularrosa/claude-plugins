@@ -45,21 +45,14 @@ Checks sobre las tareas (`tasks.json`):
 - `PLAN-CHECK-002`: cada tarea cita al menos un `requirement_ids` y todos existen; no hay
   tareas huerfanas. Excepcion: las tareas `type: "contract"` deben citar
   `requirement_ids` de al menos dos features distintas.
-- `PLAN-CHECK-003`: dependencias validas. Cada entrada de `depends_on` apunta a una tarea
-  existente y no forma ciclos. **Acepta ambos formatos** del campo: array de strings
-  (`["T-001"]`) o array de objetos (`[{"task_id": "T-001", "kind": "..."}]`); normaliza
-  antes de validar. El `kind` **efectivo** se determina asi:
-    1. Entrada objeto: `kind` debe estar presente y ser `hard` o `contract`. Faltante o
-       invalido: defecto `high`.
-    2. Entrada string: el `kind` efectivo es
-       `metadata.depends_on_convention.kind_default` de `tasks.json`; si esa declaracion
-       no existe, asume `hard` y registra defecto `medium` con correccion propuesta
-       "declarar `metadata.depends_on_convention.kind_default` o migrar al formato
-       objeto".
-    3. Mezclar strings y objetos dentro del mismo `tasks.json`: defecto `medium`.
-  Ademas: toda dependencia con `kind` efectivo `contract` apunta a una tarea
-  `type: "contract"` (si no: defecto `high`), y ninguna tarea `type: "contract"` tiene
-  `depends_on` de `kind` efectivo `hard` (si no: defecto `medium`).
+- `PLAN-CHECK-003`: dependencias validas. Cada entrada de `depends_on` es un objeto
+  `{"task_id": ..., "kind": "hard"|"contract"}` — el unico formato del contrato —,
+  apunta a una tarea existente y no forma ciclos. Entradas en otro formato (strings
+  sueltos) o con `kind` faltante o invalido: defecto `high` con correccion propuesta
+  "migrar al formato objeto {task_id, kind}" (rebota a `task-derivation`). Ademas:
+  toda dependencia `contract` apunta a una tarea `type: "contract"` (si no: defecto
+  `high`), y ninguna tarea `type: "contract"` tiene `depends_on` de `kind` `hard`
+  (si no: defecto `medium`).
 - `PLAN-CHECK-004`: granularidad para agentes. Cada tarea tiene `complexity` valida
   (`low|medium|high`). Ningun requisito con `estimated_effort: "xl"` quedo cubierto por
   una sola tarea (defecto `medium`: rebota a `task-derivation` para partirlo). Una tarea
@@ -73,21 +66,26 @@ Checks sobre las tareas (`tasks.json`):
 - `PLAN-CHECK-007`: desactualizacion. `requirements_version_ref` y
   `technical_design_version_ref` del plan coinciden con la `version` actual de
   `requirements.json` y del diseno. Ademas, si existe
-  `.dev/requirements/changelog.json`, toda entrada `INC-xxx`/`CR-xxx` con
-  `status: applied` esta en `metadata.applied_changelog_ids` de `tasks.json`. Si algo
-  no coincide, el plan quedo stale: defecto `high` con correccion propuesta "correr
-  /replanificar".
+  `.dev/requirements/changelog.json`, toda entrada `INC-xxx`/`CR-xxx`/`REC-xxx` con
+  `status: applied` esta en `metadata.applied_changelog_ids` de `tasks.json` o en
+  `metadata.deferred_changelog_ids` (delta que el usuario decidio postergar). Si algo
+  falta en ambas listas o las versiones no coinciden, el plan quedo stale: defecto
+  `high` con correccion propuesta "correr /replanificar" — este defecto no se corrige
+  en el lazo de correccion del pipeline. Una entrada presente solo en
+  `deferred_changelog_ids` es defecto `low` informativo: no bloquea.
 
 Checks sobre el plan de ejecucion (`execution-plan.json`):
 
 - `PLAN-CHECK-008`: completitud. Cada feature con tareas esta en exactamente un lote
-  (o, si el plan fue replanificado, en `metadata.completed_feature_ids`); la union de
-  `task_ids` de `contract_round` y de todos los lotes es exactamente el conjunto de
-  tareas de `tasks.json` — excluyendo las `cancelled` y las de features completadas —
-  sin repetidos; toda tarea `type: "contract"` esta en `contract_round`, en un lote de
-  contratos de replanificacion anterior a sus consumidores, o su excepcion esta
-  justificada en `warnings`; `metadata.depends_on_convention_used` refleja el formato
-  real de `tasks.json`. Inconsistencia: defecto `high`.
+  o (plan replanificado) en `metadata.completed_feature_ids`; una feature completada
+  que recibio tareas de ajuste aparece en **ambos**: en `completed_feature_ids` y en
+  un lote con solo sus tareas pendientes, marcado `"adjustment": true`. Sin contar
+  las `cancelled`, toda tarea esta en exactamente un lote o pertenece a una feature
+  completada; y toda tarea pendiente con `adjusts_task_id` esta en algun lote — si
+  no, nadie la construye: defecto `high`. Toda tarea `type: "contract"` esta en
+  `contract_round`, en un lote de contratos de replanificacion anterior a sus
+  consumidores, o su excepcion esta justificada en `warnings`. Inconsistencia:
+  defecto `high`.
 - `PLAN-CHECK-009`: orden. Ninguna feature comparte lote con otra de la que depende
   `hard` (con `kind` efectivo segun PLAN-CHECK-003); toda feature esta en un lote
   posterior al de todas sus `waits_for`; `unlocks_after` referencia lotes existentes y

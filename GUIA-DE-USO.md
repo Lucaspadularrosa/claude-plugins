@@ -22,7 +22,7 @@ Una sola vez por usuario:
 
 ```bash
 /plugin marketplace add Lucaspadularrosa/claude-plugins
-/plugin install requirements-pipeline@lpadularrosa-dev-plugins
+/plugin install requerimientos@lpadularrosa-dev-plugins
 /plugin install planning-pipeline@lpadularrosa-dev-plugins
 /plugin install build-pipeline@lpadularrosa-dev-plugins
 /plugin install recovery-pipeline@lpadularrosa-dev-plugins
@@ -38,7 +38,8 @@ de documentos. Para leer PDF: `pip install pypdf`. Word (`.docx`), Markdown y te
 plano no necesitan nada.
 
 En tus proyectos no hay que copiar ninguna carpeta: los plugins viven fuera del
-proyecto y solo generan salidas en `.dev/requirements/` y `.dev/plan/`.
+proyecto y solo generan salidas bajo `.dev/` (requirements, plan, features, build,
+recovery, audit — ver la tabla de la sección 7).
 
 ---
 
@@ -49,9 +50,9 @@ proyecto y solo generan salidas en `.dev/requirements/` y `.dev/plan/`.
 | **LEL** | El vocabulario del dominio (sujetos, objetos, verbos, estados), con definiciones trazables a las fuentes. Es un artefacto vivo: crece con cada documento o entrevista. |
 | **Mapa del producto** | Todas las features candidatas (`FG-xx`) con sus escenarios en borrador (`stub`), priorizadas. Amplitud completa, profundidad cero: se elabora solo lo que decidas. |
 | **Incremento** | Elaborar y *baselinear* un grupo de features: escenarios completos, requisitos con criterios Gherkin, inspección y diseño técnico. Lo baselineado es lo único que se planifica. |
-| **Changelog** | La historia de la línea de base: cada descubrimiento (`DSC`), incremento (`INC`) y cambio (`CR`), con qué agregó/modificó y qué versiones quedaron. Es lo que conecta requisitos con planificación. |
+| **Changelog** | La historia de la línea de base: cada descubrimiento (`DSC`), incremento (`INC`), cambio (`CR`) y recuperación desde código (`REC`), con qué agregó/modificó y qué versiones quedaron. Es lo que conecta requisitos con planificación. |
 | **Lotes** | El plan agrupa las features en lotes (`BATCH-1`, `BATCH-2`...): todas las del mismo lote se construyen **en paralelo**, una rama y un agente por feature. Antes del primer lote se mergea la **ronda de contratos** (las firmas/API que las features comparten). |
-| **progress.json** | El estado del build (`pending`/`in_progress`/`done` por feature y tarea). Es lo que protege lo construido cuando los requisitos cambian. |
+| **progress.json** | El estado del build: `pending`/`in_progress`/`done` por feature; las tareas suman `blocked` y `cancelled`. Es lo que protege lo construido cuando los requisitos cambian. |
 
 Regla de oro del sistema: **los ids nunca cambian, nada se borra** (lo eliminado se
 deprecia) y **nada baselineado se modifica sin tu confirmación**.
@@ -243,8 +244,10 @@ Dos formas de ejecutar, combinables:
 En ambos modos: cada tarea se implementa **con el piso de seguridad OWASP aplicado por
 construcción** y **se verifica contra sus criterios Gherkin** (tests con el framework del
 proyecto) antes de pasar a la siguiente, con un commit `[T-xxx]` por tarea; antes del PR,
-un agente revisor audita el diff contra el brief (cobertura, scope, tests corridos de
-verdad) y un `security-gate` verifica el piso de seguridad (OWASP + audit de
+un agente revisor audita el diff contra el brief (cobertura, **cierre por requisito**
+— cada requisito del brief con sus criterios de aceptación demostrados, no solo los
+de las tareas —, scope, tests corridos de verdad) y un `security-gate` verifica el
+piso de seguridad (OWASP + audit de
 dependencias); y `progress.json` se actualiza en cada transición (`done` = mergeado), que
 es lo que le permite a `/replanificar` no pisar lo construido. La auditoría profunda de
 seguridad sigue estando en `/auditar` (`audit-pipeline`), al que el gate deriva lo que
@@ -325,6 +328,5 @@ feature.
   comprensión (inventario, extracción de comportamiento, reconstrucción, estado).
 - `plugins/audit-pipeline/README.md` y `PIPELINE.md` — detalle del pipeline de
   auditoría (tres dimensiones, verificación adversarial, conversión en trabajo).
-- `plugins/feature-pipeline/README.md` — pipeline de build independiente (lee
-  requerimientos de `/features/` con su propio formato; hoy no engancha directo con
-  los briefs de `.dev/features/`).
+- `archive/feature-pipeline/` — el pipeline de build de la primera generación,
+  retirado del marketplace (su rol lo cubren `build-pipeline` y `audit-pipeline`).

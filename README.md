@@ -14,18 +14,17 @@ cómo ejecutar el plan con agentes en paralelo.
 
 | Plugin | Qué hace |
 |---|---|
-| `requirements-pipeline` | Pipeline iterativo de ingeniería de requisitos (método LEL y Escenarios de Leite, Hadad, Kaplan y Doorn). Descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; absorbe cambios con confirmación y changelog. |
+| `requerimientos` | Pipeline iterativo de ingeniería de requisitos (método LEL y Escenarios de Leite, Hadad, Kaplan y Doorn). Descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; absorbe cambios con confirmación y changelog. |
 | `planning-pipeline` | Convierte la línea de base de requisitos en un plan de ejecución para agentes IA: tareas dimensionadas para una pasada de agente, lotes de features paralelas (ronda de contratos + lotes), inspección del plan y un brief por feature. `/replanificar` absorbe cambios de requisitos sin tocar lo construido. |
 | `build-pipeline` | Ejecuta el plan en cualquier lenguaje o framework: detecta el stack y su base de seguridad por evidencia, implementa cada feature en su rama con un **piso de seguridad OWASP por construcción**, verifica los criterios de aceptación y ese piso (un `security-gate` + audit de dependencias) antes de cada PR, construye lotes completos en paralelo (un agente por feature en worktrees) y mantiene el progreso para la replanificación. |
 | `recovery-pipeline` | Comprende una app ya desarrollada (aunque no tenga documentación): qué hace, en qué estado está, qué falta y qué hay que decidir. Reconstruye la línea de base de requisitos con evidencia `archivo:línea`, compatible con toda la suite. |
 | `audit-pipeline` | Audita el codebase en tres dimensiones — bugs, seguridad defensiva y mejoras — con verificación adversarial de cada hallazgo antes de reportarlo. Los confirmados se convierten en change requests planificables. |
-| `feature-pipeline` | Pipeline de build end-to-end independiente (spec → branch → código → tests → review → PR) para proyectos con requerimientos en `/features/`. |
 
 ## Instalación
 
 ```bash
 /plugin marketplace add Lucaspadularrosa/claude-plugins
-/plugin install requirements-pipeline@lpadularrosa-dev-plugins
+/plugin install requerimientos@lpadularrosa-dev-plugins
 /plugin install planning-pipeline@lpadularrosa-dev-plugins
 /plugin install build-pipeline@lpadularrosa-dev-plugins
 /plugin install recovery-pipeline@lpadularrosa-dev-plugins
@@ -59,3 +58,15 @@ Requisitos: Python 3.8+ (extracción de documentos); para PDF, `pip install pypd
 Ver la [guía de uso](GUIA-DE-USO.md) para los flujos completos (arrancar sin
 documento, material nuevo a mitad del build, cambios puntuales) y los README de cada
 plugin para el detalle técnico.
+
+## QA de la suite
+
+- `python scripts/validate.py` — todo **carga**: marketplace, plugin.json y los
+  frontmatters de agentes/comandos/skills (corre en CI; atrapa el YAML que
+  des-registra un comando o le da todas las tools a un agente).
+- `python scripts/check-artifacts.py <proyecto>` — todo **cumple contrato**: verifica
+  los artefactos `.dev/` que una corrida real generó (ids, enums, referencias
+  cruzadas, cobertura de lotes).
+- [`tests/golden/`](tests/golden/README.md) — todo **funciona**: el test dorado, una
+  corrida completa de la suite sobre una visión fija, con checklist por etapa. Se
+  corre a mano antes de mergear cambios de comportamiento en los prompts.

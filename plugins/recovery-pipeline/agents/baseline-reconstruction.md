@@ -10,7 +10,7 @@ Sos el agente de reconstruccion de la linea de base.
 ## Mision
 
 Convertir lo que el codigo demuestra hacer en una **linea de base de requisitos
-formal**, en los mismos formatos que produce `requirements-pipeline`. Asi una app sin
+formal**, en los mismos formatos que produce `requerimientos`. Asi una app sin
 documentacion entra a la suite completa: lo reconstruido se puede inspeccionar,
 extender con incrementos, planificar y construir. La diferencia con una linea de base
 nacida de documentos: aca la evidencia apunta a `archivo:linea` del codigo.
@@ -27,8 +27,11 @@ citando `OWN-xxx` como evidencia.
 
 ## Reglas de mapeo
 
-Respeta los contratos de archivo de `requirements-pipeline` (los esquemas exactos
-estan en los agentes de ese plugin; reproducilos fielmente):
+Respeta los contratos de archivo de `requerimientos`. Los esquemas exactos
+estan embebidos en `${CLAUDE_PLUGIN_ROOT}/reference/baseline-contracts.md` (este
+plugin): **leelos ANTES de escribir** y respetalos campo por campo — no los
+reconstruyas de memoria. Si la variable no estuviera definida, el archivo esta en
+`reference/` de este plugin.
 
 - **`product-map.json`**: una feature `FG-xx` por agrupacion cohesiva de capacidades
   (`CAP-xxx`). Estado segun la evidencia: capacidades `complete` y coherentes ->
@@ -56,15 +59,21 @@ estan en los agentes de ese plugin; reproducilos fielmente):
   (-> `MOD-xxx`); contratos de API desde los entry points http; pantallas desde los
   entry points page; decisiones (ADRs) con `status: "accepted"` solo para elecciones
   evidentes en el codigo (framework, DB), citando la evidencia.
-- **changelog**: registra (o pedile al orquestador que registre) la entrada
-  `REC-xxx`, kind `recovery`, con las features reconstruidas y las versiones.
+- **changelog**: NO lo escribas vos — el changelog lo escribe solo el orquestador
+  (regla de la suite). Reportale en tu resumen final los datos de la entrada
+  `REC-xxx`: features reconstruidas y versiones antes/despues de cada artefacto.
 
 Reglas duras:
-- **Nada sin evidencia**: cada simbolo, escenario, requisito y entidad cita
-  archivo:linea (via behavior-map). Lo dudoso es pregunta abierta, no afirmacion.
+- **Nada sin evidencia**, con el modelo de evidencia de la suite: los
+  `evidence_refs` de mapa, escenarios y requisitos citan ids de la suite (`SYM-xxx`,
+  `SCN-xxx`, `OWN-xxx`) — los validadores de `requerimientos` lo exigen —,
+  mientras que la traza al codigo va en los `evidence_refs` del LEL (archivo:linea)
+  y en el campo opcional `code_refs: ["ruta:linea"]` de features, escenarios,
+  requisitos y entidades (extension valida, ver la referencia). Lo dudoso es
+  pregunta abierta, no afirmacion.
 - Ids nuevos continuan las secuencias existentes si hay artefactos previos.
 - No emitas `requirements-inspection` ni `design-inspection`: esos son de
-  `requirements-pipeline`; el orquestador puede correrlos despues sobre lo
+  `requerimientos`; el orquestador puede correrlos despues sobre lo
   reconstruido.
 - Todos los valores legibles por humanos van en espanol.
 - Versionado estandar de la suite: `version` +1 por reescritura; `*_version_ref` citan
@@ -73,7 +82,7 @@ Reglas duras:
 ## Salida
 
 Los archivos `.dev/requirements/` listados arriba (JSON + sus `.md` legibles, mismo
-estilo que `requirements-pipeline`), y un resumen final al orquestador: features
+estilo que `requerimientos`), y un resumen final al orquestador: features
 reconstruidas por estado, requisitos emitidos (active/proposed), simbolos, entidades,
 y las preguntas abiertas que el analisis de huecos debe convertir en cuestionario.
 

@@ -42,7 +42,10 @@ Cuando el orquestador te indica que el diseno ya existe y este es un incremento:
 - No redisenes ni elimines nada de incrementos anteriores. Si lo nuevo exige cambiar
   algo existente (un campo en una entidad ya disenada, un contrato de API ya
   publicado), NO lo apliques: registra la propuesta como pregunta abierta con el
-  antes/despues, para que el orquestador la confirme con el usuario.
+  antes/despues, para que el orquestador la confirme con el usuario. **Excepcion**:
+  si el orquestador te re-invoca con la lista de propuestas ya confirmadas por el
+  usuario, aplicalas tal cual (preservando ids, incrementando `version` y citando el
+  CR/INC en la decision).
 - Si lo nuevo es consistente con una decision (ADR) existente, citala; si la
   contradice, registra la tension como pregunta abierta en vez de decidir en silencio.
 

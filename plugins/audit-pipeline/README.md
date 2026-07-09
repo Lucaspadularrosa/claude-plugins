@@ -34,7 +34,7 @@ solo lectura: no modifica un archivo (correr tus tests existentes si esta permit
 ## Integrado con la suite (opcional, recomendado)
 
 Si el proyecto tiene la linea de base (`.dev/requirements/`, generada por
-`requirements-pipeline` o reconstruida por `recovery-pipeline`), la auditoria sube de
+`requerimientos` o reconstruida por `recovery-pipeline`), la auditoria sube de
 nivel:
 
 - **Audita contra lo que el sistema deberia hacer**: divergencias codigo-requisito,

@@ -21,6 +21,10 @@ Lee:
 - `.dev/requirements/lel.json` (fuente de vocabulario).
 - `.dev/requirements/product-map.json` (las features y sus estados, si existe).
 - `.dev/requirements/requirements.json` previo (si existe: el archivo es acumulativo).
+- `.dev/requirements/stakeholder-questions.json` y las respuestas archivadas (si
+  existen): la seccion de no funcionales (`source_kind: "nfr_checklist"`) alimenta
+  los RNF — la respuesta del stakeholder es evidencia de metrica; la pregunta sin
+  responder aporta su `default_assumption`.
 
 ### Modo incremento
 
@@ -58,8 +62,13 @@ cero. Al terminar, incrementa `version` y actualiza `metadata.updated_at`.
   episodios y excepciones de los Escenarios.
 - Los requisitos no funcionales describen como debe comportarse: rendimiento, seguridad,
   usabilidad, confiabilidad, disponibilidad, mantenibilidad, portabilidad, escalabilidad
-  o cumplimiento. Completa `metric` con un objetivo cuantificable cuando haya evidencia;
-  si no la hay, registra una pregunta abierta en vez de inventar un numero.
+  o cumplimiento. Completa `metric` con un objetivo cuantificable cuando haya evidencia:
+  la fuente, o una respuesta de la seccion de no funcionales del cuestionario. Si la
+  pregunta de la checklist quedo **sin responder**, usa su `default_assumption` como
+  metrica y declaralo en `assumptions` del RNF ("metrica asumida por falta de
+  respuesta a QST-xxx: ..."): un supuesto declarado no es un numero inventado — es
+  corregible y auditable. Solo si no hay ni evidencia ni default, registra una
+  pregunta abierta.
 - Cada requisito tiene `priority` (`high`, `medium`, `low`) y `verification_method`
   (`test`, `demonstration`, `inspection` o `analysis`).
 - No inventes vocabulario: usa nombres canonicos y alias del LEL.
@@ -69,6 +78,8 @@ cero. Al terminar, incrementa `version` y actualiza `metadata.updated_at`.
   `uncovered_scenario_ids` lista los Escenarios `active` que ningun requisito cubre.
 - Usa ids estables: `RF-001` para funcionales, `RNF-001` para no funcionales, `Q-001`
   para preguntas abiertas, `FG-01` para features y `AC-001` para criterios de aceptacion.
+  Los `AC-xxx` se numeran **por requisito** (cada requisito arranca en `AC-001`); para
+  citar un criterio fuera de su requisito usa la forma compuesta (`RF-007/AC-002`).
 - Deduplica por significado. Todos los valores legibles van en espanol.
 
 ### Agrupacion en features (`feature_groups` y `feature_group`)
@@ -108,6 +119,28 @@ cero. Al terminar, incrementa `version` y actualiza `metadata.updated_at`.
 - Cubri el camino principal y, cuando el Escenario tenga excepciones relevantes, agrega
   un criterio para el camino de error.
 
+### Reglas de negocio (`business_rules`, BR-xxx)
+
+Una regla de negocio es un **invariante del dominio**: algo que debe cumplirse
+siempre, atraviese los escenarios que atraviese ("nunca dos turnos solapados para el
+mismo recurso", "tres ausencias en seis meses bloquean la reserva"). Los criterios
+Gherkin la *muestrean* (un caso concreto); la regla la *enuncia* una sola vez.
+
+- Deriva las reglas de los impactos del LEL, las condiciones y excepciones de los
+  Escenarios y el supporting-context. Si una regla aparece implicita en varios
+  escenarios, es exactamente el caso que `business_rules` existe para capturar:
+  enunciala UNA vez y que los requisitos la citen.
+- Cada regla se redacta en voz declarativa, con sus limites explicitos (cantidades,
+  plazos, condiciones). `kind`: `invariant` (siempre debe cumplirse), `constraint`
+  (limite sobre una accion) o `derivation` (calculo o clasificacion derivada).
+- `enforced_by` lista los criterios que la demuestran, en forma compuesta
+  (`RF-007/AC-002`). Una regla sin ningun criterio que la haga cumplir es una regla
+  sin dueño: registrala igual con `enforced_by` vacio y una pregunta abierta — la
+  inspeccion la va a levantar.
+- No dupliques: si una "regla" solo aplica a un requisito y ya esta completa en su
+  criterio, no la asciendas a BR. A `business_rules` suben las que cruzan requisitos
+  o escenarios, o las que un stakeholder enunciaria como politica del negocio.
+
 ### Requisitos de seguridad (RNF `category: security`)
 
 La seguridad tiene dos niveles y solo uno vive aca:
@@ -143,7 +176,7 @@ Escribi `.dev/requirements/requirements.json` con este contrato exacto (solo JSO
   "summary": {
     "total_requirements": 0, "functional_count": 0, "non_functional_count": 0,
     "high_priority": 0, "medium_priority": 0, "low_priority": 0,
-    "feature_count": 0,
+    "feature_count": 0, "business_rule_count": 0,
     "covered_scenario_ids": ["SCN-001"], "uncovered_scenario_ids": ["SCN-002"], "blocking_questions": 0
   },
   "feature_groups": [
@@ -182,8 +215,18 @@ Escribi `.dev/requirements/requirements.json` con este contrato exacto (solo JSO
       "rationale": "string", "assumptions": ["string"], "open_questions": ["string"], "evidence_refs": ["SCN-001"]
     }
   ],
+  "business_rules": [
+    {
+      "id": "BR-001", "statement": "string (invariante en voz declarativa, con sus limites explicitos)",
+      "kind": "invariant|constraint|derivation",
+      "status": "active|proposed|deprecated",
+      "lel_symbol_ids": ["SYM-001"], "source_scenario_ids": ["SCN-001"],
+      "enforced_by": ["RF-007/AC-002"],
+      "rationale": "string", "open_questions": ["string"], "evidence_refs": ["SCN-001"]
+    }
+  ],
   "open_questions": [{"id": "Q-001", "question": "string", "blocking": true, "target_role": "string", "reason": "string", "related_requirement_ids": ["RF-001"], "related_scenario_ids": ["SCN-001"]}],
-  "proposed_baseline_changes": [{"id": "PROP-001", "target_kind": "requirement|feature_group", "target_id": "RF-007", "action": "modify|deprecate", "before_summary": "string", "after_summary": "string", "reason": "string", "evidence_refs": ["SCN-009"], "status": "pending|applied|rejected"}],
+  "proposed_baseline_changes": [{"id": "PBC-001", "target_kind": "requirement|feature_group", "target_id": "RF-007", "action": "modify|deprecate", "before_summary": "string", "after_summary": "string", "reason": "string", "evidence_refs": ["SCN-009"], "status": "pending|accepted|rejected"}],
   "traceability_links": [{"source": {"kind": "symbol|scenario|episode|requirement|question", "id": "string"}, "target": {"kind": "symbol|scenario|episode|requirement|question", "id": "string"}, "relationship": "derived_from|verifies|covers|uses|questions|relates_to"}],
   "assumptions": ["string"],
   "warnings": ["string"]
@@ -196,8 +239,14 @@ Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archi
 `lel.json` y `scenarios.json`, como string (ej. `"3"`). Las etapas posteriores usan
 estas referencias para detectar cuando la especificacion quedo desactualizada.
 
+Extensiones validas en lineas de base reconstruidas por `recovery-pipeline` (los
+consumidores las ignoran si no las usan): `"origin": "recovered"` por requisito y
+`"code_refs": ["ruta/archivo.ext:123"]` opcional en cualquier item — la traza al
+codigo.
+
 Tambien escribi `.dev/requirements/requirements.md`: la especificacion legible con un
-resumen, las features y, por cada requisito, su id, enunciado, feature, prioridad,
+resumen, las **reglas de negocio** (id, enunciado y que criterios las hacen cumplir),
+las features y, por cada requisito, su id, enunciado, feature, prioridad,
 esfuerzo estimado, dependencias, criterios de aceptacion (Given/When/Then) y trazabilidad
 a Escenarios y LEL.
 
@@ -210,6 +259,9 @@ a Escenarios y LEL.
   `lel_symbol_ids` apunta a un id existente; no dejes referencias colgadas.
 - Verifica que cada feature de `feature_groups` lista en `requirement_ids` exactamente los
   requisitos que la referencian.
+- Verifica que cada `enforced_by` de las reglas de negocio cita criterios que existen
+  (`RF-xxx/AC-yyy` reales), y que ninguna regla evidente en las excepciones o
+  condiciones de los escenarios elaborados quedo sin capturar.
 
 ## Barra de calidad
 

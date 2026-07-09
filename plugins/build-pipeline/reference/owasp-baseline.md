@@ -12,7 +12,7 @@ Los agentes llevan una versión concisa de estas categorías inline; **este arch
 versión completa y el que se mantiene sincronizado**. Si cambia la base, se cambia acá
 primero.
 
-Las etapas de `requirements-pipeline` y `planning-pipeline` usan esta referencia solo de
+Las etapas de `requerimientos` y `planning-pipeline` usan esta referencia solo de
 forma liviana: para tratar la seguridad **específica del dominio** como requisito no
 funcional, ADR y tarea/criterio trazables. El **piso genérico** (las 10 categorías de
 abajo) no se enumera como requisito: lo garantiza el build por construcción.
@@ -70,6 +70,12 @@ externa, red saliente, deserialización) · ➖ rara vez aplica.
 **Transversales a toda superficie:** A03 (inyección), A06 (dependencias vulnerables),
 A02 en cuanto haya secretos, y A08 en cuanto haya deserialización o carga dinámica.
 
+**A04 (Insecure Design) no entra en `applicable_categories` del baseline:** es diseño,
+no implementación — viaja al build como RNF y criterios de aceptación del brief
+(límites de negocio, throttling, transiciones válidas), que se demuestran con tests
+como cualquier criterio. La fila de la tabla queda como referencia de cuándo esos RNF
+deberían existir.
+
 ---
 
 ## OWASP Top 10 (2021) — categorías y defensa
@@ -123,7 +129,8 @@ limiting, flujos que confían en pasos previos, falta de defensa en profundidad.
 - **Mecanismo nativo:** middleware de throttling/rate-limit del framework, máquinas de
   estado, validación de invariantes en el modelo/servicio.
 - **Verificación:** test de los límites y de las transiciones inválidas; esto suele
-  aparecer como RNF/criterio específico del brief.
+  aparecer como RNF/criterio específico del brief. Por eso A04 no figura en
+  `applicable_categories` del baseline: se cubre por requisitos, no por el piso.
 
 ### A05 · Security Misconfiguration
 Configuración insegura: debug/verbose en producción, headers de seguridad ausentes,

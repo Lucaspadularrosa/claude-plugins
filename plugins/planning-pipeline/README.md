@@ -5,7 +5,7 @@ agentes IA**: tareas trazables a los requisitos y dimensionadas para una pasada 
 agente, lotes de features que pueden construirse en paralelo (una rama por feature) y un
 documento por feature listo para alimentar un pipeline de build.
 
-Es la continuacion del plugin `requirements-pipeline`: arranca donde aquel termina.
+Es la continuacion del plugin `requerimientos`: arranca donde aquel termina.
 
 A diferencia de un plan clasico, **no hay sprints, fases ni estimaciones en tiempo
 humano**. El ejecutor del plan no es un equipo con velocidad fija: es una flota de
@@ -42,7 +42,7 @@ planning-pipeline/
 
 ## Instalacion
 
-Este plugin se distribuye en el mismo marketplace que `requirements-pipeline`
+Este plugin se distribuye en el mismo marketplace que `requerimientos`
 (`lpadularrosa-dev-plugins`). Con el marketplace agregado:
 
 ```bash
@@ -60,7 +60,7 @@ debe tener generados:
 - `.dev/requirements/technical-design.json`
 - `.dev/requirements/data-model.json`
 
-Esos los produce el plugin `requirements-pipeline`. Si faltan, corre primero ese pipeline.
+Esos los produce el plugin `requerimientos`. Si faltan, corre primero ese pipeline.
 
 ## Uso
 
@@ -97,7 +97,7 @@ verifica todo eso.
 | `.dev/plan/tasks.json` / `.md` | Tareas trazables a los requisitos, agrupadas por feature, con `complexity` (low/medium/high) para una pasada de agente. Las dependencias entre tareas se clasifican en `hard` (necesita el codigo mergeado) o `contract` (alcanza con la firma) |
 | `.dev/plan/execution-plan.json` / `.md` | Ronda de contratos inicial + lotes paralelos de features, con el orden de tareas de cada feature (`task_order`) y las metricas de paralelismo |
 | `.dev/plan/plan-inspection.json` / `.md` | Auditoria del plan |
-| `.dev/plan/progress.json` | Estado de ejecucion del plan (pending / in_progress / done); lo actualiza el pipeline de build o el usuario |
+| `.dev/plan/progress.json` | Estado de ejecucion del plan (features: pending / in_progress / done; tareas suman blocked y cancelled); lo actualiza el pipeline de build o el usuario |
 | `.dev/features/{feature}.md` | Un brief por feature (con su lote, su orden de tareas y sus contratos), para el pipeline de build |
 
 ## Como se ejecuta el plan con agentes en paralelo
@@ -133,7 +133,7 @@ partir features densamente acopladas.
 
 ## Replanificacion: cuando los requisitos cambian a mitad del build
 
-El pipeline de requisitos (`requirements-pipeline`) es iterativo: llegan incrementos y
+El pipeline de requisitos (`requerimientos`) es iterativo: llegan incrementos y
 change requests despues de planificar. `/replanificar` los absorbe sin regenerar el
 plan ni tocar lo construido:
 
@@ -161,9 +161,5 @@ El ejecutor nativo de los briefs es el plugin `build-pipeline` (este mismo
 marketplace): `/construir <feature>` toma un brief y construye la feature en su rama
 (en cualquier stack), y `/construir-lote` ejecuta un lote completo en paralelo con un
 subagente por feature, actualizando `progress.json` — el insumo de `/replanificar`.
-
-El plugin `feature-pipeline` es independiente: lee requerimientos de `/features/` (en
-la raiz del proyecto) con su propia estructura y flujo de aprobacion humana. No
-engancha de forma directa con estos briefs.
 
 Ver `PIPELINE.md` para el diagrama completo y las reglas de orquestacion.

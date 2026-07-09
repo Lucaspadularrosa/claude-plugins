@@ -31,7 +31,7 @@ categorias y defensas es `reference/owasp-baseline.md`.
         |
         v  [stack-profiler]  (primera vez, o si el diseno cambio)
 .dev/build/stack-profile.json       (stack, comandos test/lint/build, layout,
-                                     convenciones, rama de integracion - por evidencia)
+                                     convenciones, rama de integracion, CI - por evidencia)
 .dev/build/security-baseline.json   (superficie, categorias OWASP, mecanismo nativo por
                                      control, comando de audit de dependencias)
         |
@@ -46,8 +46,8 @@ categorias y defensas es `reference/owasp-baseline.md`.
    [feature-implementer, modo ejecucion]                 un worktree por feature
      tarea por tarea, en task_order:                     [feature-implementer x N]
      implementar con piso OWASP ->                       EN PARALELO, modo ejecucion
-     verificar Gherkin + dep-audit ->                    (sin pausas)
-     lint -> commit [T-xxx]                                     |
+     verificar Gherkin (dep-audit                        (sin pausas)
+     si toco deps) -> lint -> commit [T-xxx]                    |
         |                                                        |
    [build-reviewer] + [security-gate]                    [build-reviewer + security-gate
         -> lazo de correccion                             x N] -> lazos
@@ -93,11 +93,21 @@ canonica de seguridad es `reference/owasp-baseline.md`.
 ### Verificacion obligatoria
 - Cada tarea se verifica contra sus criterios Gherkin con los comandos del perfil
   antes de pasar a la siguiente. Commit por tarea con `[T-xxx]`.
+- Al terminar la ultima tarea, **cierre de feature**: los criterios de aceptacion de
+  los **requisitos** del brief (`RF-xxx/AC-xxx`) se demuestran completos — incluido
+  el flujo punta a punta que ninguna tarea cubre por si sola. La feature no es la
+  suma de sus tareas; el `build-reviewer` audita ese cierre por requisito
+  (`requirements_closure` en su veredicto).
 - `build-reviewer` comprueba (no cree): corre tests y lint sobre el diff. Hallazgos
-  `high`/`medium` rebotan al implementador hasta pasar.
+  `high`/`medium` rebotan al implementador en modo correccion, con tope de 3 rondas;
+  lo que no pasa (o no es corregible) se bloquea y se escala al usuario.
 - `security-gate` es la otra compuerta del PR: revisa el diff contra la base de
-  seguridad (piso OWASP) y corre el audit de dependencias. Sus `high`/`medium` tambien
-  rebotan al implementador hasta pasar; lo que excede el piso lo deriva a `/auditar`.
+  seguridad (piso OWASP) y corre el audit de dependencias. Sus `high`/`medium`
+  rebotan igual, con el mismo tope; lo que excede el piso lo deriva a `/auditar`.
+- Los PRs se verifican tambien **sin agentes**: si el proyecto no tiene CI que corra
+  test y lint, el orquestador lo bootstrapea (workflow minimo con los comandos del
+  perfil) en la primera rama de la corrida. El reporte del implementador se comprueba
+  tres veces: reviewer, gate y checks del PR.
 
 ### progress.json
 - `in_progress` al arrancar (con la rama); tareas `done` a medida que se verifican;
@@ -106,9 +116,18 @@ canonica de seguridad es `reference/owasp-baseline.md`.
 
 ### Trazabilidad
 - La cadena llega hasta el codigo: commit `[T-xxx]` -> tarea -> requisito ->
-  escenario -> simbolo del LEL -> fuente. Los PRs citan `FG-xx` y sus tareas; los
+  escenario -> simbolo del LEL -> fuente. Y hasta los **nombres**: los identificadores
+  del dominio usan el vocabulario del LEL (el brief lo trae; `domain_naming` del
+  perfil define idioma y forma; el reviewer lo comprueba) — desde cualquier
+  identificador se llega al requisito. Los PRs citan `FG-xx`, sus tareas y los
+  requisitos que cierran; los
   reviews quedan en `.dev/build/reviews/` y los veredictos de seguridad en
   `.dev/build/security/`. Los hallazgos de seguridad citan su categoria OWASP (`owasp_id`).
+- **El lazo de vuelta**: si el implementador tuvo que desviarse de lo especificado
+  (lo declara como `DESVIO-n` en su reporte; desviarse en silencio es hallazgo del
+  review), el orquestador genera `.dev/build/cr-input-{slug}.md` y sugiere
+  `/requerimientos:cambio` — el requisito se actualiza por CR o el desvio se
+  revierte; la linea de base nunca diverge del codigo en silencio.
 
 ---
 
@@ -133,6 +152,7 @@ lote del plan").
   security-baseline.json      base de seguridad del stack (superficie, OWASP, tooling)
   reviews/{slug}.json         veredicto de review por feature
   security/{slug}.json        veredicto de seguridad (piso OWASP) por feature
+  cr-input-{slug}.md          desvios del brief declarados, para /requerimientos:cambio
 .dev/plan/progress.json       estado del build, al dia
 ramas feature/{slug}          una por feature -> PR a la rama de integracion
 ```

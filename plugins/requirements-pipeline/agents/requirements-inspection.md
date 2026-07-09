@@ -74,8 +74,11 @@ no contra el mapa completo.
   voz activa ("El sistema debe ..."). Un requisito que enuncia varias capacidades es un
   defecto con la particion propuesta. No hay requisitos duplicados por significado.
 - `REQ-CHECK-008`: no funcionales. Cada RNF tiene `category` valida y `metric`
-  cuantificable, o una pregunta abierta que explique la falta de metrica. Un numero sin
-  evidencia en las fuentes es un defecto (metrica inventada).
+  cuantificable, o una pregunta abierta que explique la falta de metrica. La metrica
+  vale si la respalda una de tres cosas: evidencia en las fuentes, una respuesta del
+  cuestionario, o un `default_assumption` de la checklist de no funcionales declarado
+  en `assumptions` del RNF. Un numero sin ninguna de las tres es un defecto (metrica
+  inventada).
 - `REQ-CHECK-009`: vocabulario. Los enunciados usan nombres canonicos o alias del LEL;
   no introducen vocabulario de dominio nuevo sin evidencia.
 - `REQ-CHECK-010`: desactualizacion. `metadata.lel_version_ref` y
@@ -87,9 +90,21 @@ no contra el mapa completo.
 - `REQ-CHECK-012`: coherencia con el mapa (solo si existe `product-map.json`). Toda
   feature `elaborated` o `baselined` del mapa tiene al menos un requisito; todo
   `feature_group` de `requirements.json` existe en el mapa; ningun requisito pertenece
-  a una feature que el mapa tiene en `stub` o `deprecated`. Ademas, no quedan
+  a una feature que el mapa tiene en `stub` o `deprecated`. Nota: las features del
+  incremento en curso deben llegar a esta inspeccion ya marcadas `elaborated` por el
+  orquestador; si encontras una en `stub` con requisitos, el defecto es de
+  orquestacion del mapa (defecto `medium` apuntando a `product-map.json`), no de la
+  especificacion — no lo rebotes a `requirements-specification`. Ademas, no quedan
   `proposed_baseline_changes` con `status: pending` (un cambio propuesto sobre lo
   baselineado sin resolver es defecto `medium`: falta la confirmacion del usuario).
+- `REQ-CHECK-013`: reglas de negocio. Cada `business_rule` tiene enunciado declarativo
+  con limites explicitos, `kind` valido y `enforced_by` citando criterios existentes
+  (`RF-xxx/AC-yyy`); una regla con `enforced_by` vacio y sin pregunta abierta es
+  defecto `medium` (regla sin dueño: nadie la demuestra). A la inversa: una regla
+  evidente en las excepciones/condiciones de los escenarios elaborados o en los
+  impactos del LEL (limites, plazos, exclusiones) que no esta capturada en
+  `business_rules` es defecto `medium` — quedaria muestreada por ejemplos sin
+  enunciado unico, y puede divergir entre requisitos.
 
 ## Salida
 

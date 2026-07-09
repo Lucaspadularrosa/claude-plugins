@@ -29,6 +29,8 @@ Lee `.dev/requirements/lel.json`.
 - Usa pocos defectos y utiles. Prioriza los que bloquean escenarios y requisitos.
 - `confirmed` es `true` solo cuando el defecto surge directamente del LEL inspeccionado;
   `false` para sospechas o items que requieren stakeholder.
+- `passed` es `true` cuando no quedan defectos confirmados de severidad `high` o
+  `medium`.
 - Cuando un problema requiera confirmacion humana, completa `stakeholder_question`.
 - Todos los valores legibles por humanos van en espanol.
 

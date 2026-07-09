@@ -46,9 +46,10 @@ roto.
   adversarial va a intentar refutarte: los hallazgos vagos mueren ahi.
 - Si hay tests, correlos primero (comando del stack-profile): un test rojo es un bug
   con evidencia gratis.
-- Prefiri pocos hallazgos solidos a muchos especulativos. Severidad: `high` rompe
-  datos o flujos principales; `medium` falla en casos realistas; `low` falla en casos
-  raros.
+- Prefiri pocos hallazgos solidos a muchos especulativos: maximo ~12, los de mayor
+  impacto (cada `high`/`medium` dispara una verificacion adversarial que cuesta una
+  pasada de agente). Severidad: `high` rompe datos o flujos principales; `medium`
+  falla en casos realistas; `low` falla en casos raros.
 - Todos los valores legibles por humanos van en espanol.
 
 ## Salida

@@ -19,8 +19,10 @@ material de entrada es poco o no existe.
 Lee:
 - `.dev/requirements/lel.json`
 - `.dev/requirements/lel-inspection.json`
+- `.dev/requirements/lel-candidates.json` (los `GAP-xxx`: huecos de dominio que
+  detecto el intake; son la fuente de las preguntas de descubrimiento).
 - `.dev/requirements/source-inventory.json` (en modo elicitacion: su `domain_density`
-  y sus `gaps` calibran cuanto falta preguntar).
+  y su `gap_count` calibran cuanto falta preguntar).
 
 ## Modo elicitacion (descubrimiento)
 
@@ -44,6 +46,36 @@ regulaciones) y prioridades (que es indispensable para la primera version).
 Las preguntas de elicitacion citan en `rationale` el `GAP-xxx` o el area sin evidencia
 que las justifica, y llevan `source_kind: "elicitation"`. Siguen siendo trazables: la
 respuesta del stakeholder se archiva como fuente y alimenta el proximo intake.
+
+## Seccion de no funcionales (siempre)
+
+Los stakeholders casi nunca ofrecen los requisitos no funcionales espontaneamente:
+hay que preguntarlos. Ademas de las preguntas por defectos y elicitacion, genera
+**siempre** una seccion "No funcionales" con `source_kind: "nfr_checklist"`, cubriendo
+las categorias que el producto justifica (derivalas del LEL: actores, objetos,
+integraciones — no preguntes disponibilidad 24/7 para una herramienta interna de un
+usuario):
+
+- **Volumen y rendimiento**: cuantos usuarios/operaciones esperan (hoy y en un año),
+  que operacion no puede ser lenta.
+- **Disponibilidad**: cuando duele que el sistema este caido (horario critico,
+  tolerancia a una hora sin servicio).
+- **Datos**: que datos son sensibles, cuanto tiempo hay que retener el historial, si
+  hay regulaciones (fiscales, de salud, de datos personales).
+- **Usabilidad y acceso**: desde que dispositivos se usa, que tan tecnicos son los
+  usuarios, si hay requisitos de accesibilidad.
+- **Crecimiento**: que escala esperan si el negocio funciona.
+
+Reglas de la seccion:
+
+- Es **opcional de responder** y lo dice arriba de la seccion: ninguna pregunta de
+  checklist es bloqueante (`priority: medium` como maximo).
+- Cada pregunta trae `default_assumption`: el supuesto razonable para este dominio si
+  el stakeholder no responde (ej.: "asumimos menos de 500 turnos por mes y un solo
+  local"). El silencio produce un RNF con supuesto declarado, no un hueco: la
+  especificacion usa ese default como metrica y lo registra como assumption.
+- No preguntes lo que el material ya responde ni categorias sin sustento en el
+  dominio; cada pregunta cita en `rationale` por que esa categoria aplica.
 
 ## Reglas
 
@@ -94,9 +126,10 @@ Escribi `.dev/requirements/stakeholder-questions.json` con este contrato exacto:
       "question": "string",
       "target_role": "string",
       "priority": "high|medium|low",
-      "source_kind": "defect|open_question|elicitation",
+      "source_kind": "defect|open_question|elicitation|nfr_checklist",
       "expected_answer_type": "free_text|yes_no|choice|list",
       "choices": ["string"],
+      "default_assumption": "string (solo nfr_checklist: que se asume si no hay respuesta)",
       "rationale": "string",
       "source_defect_ids": ["DEF-001"],
       "source_open_question_ids": ["Q-001"],
@@ -111,14 +144,20 @@ Escribi `.dev/requirements/stakeholder-questions.json` con este contrato exacto:
 
 Tambien escribi `.dev/requirements/stakeholder-questions.md`: el cuestionario legible,
 agrupado por seccion y rol, con un espacio de respuesta debajo de cada pregunta para que
-el stakeholder lo complete. Marca claramente las preguntas `high` como bloqueantes.
+el stakeholder lo complete. Marca claramente las preguntas `high` como bloqueantes. La
+seccion de no funcionales aclara arriba que es opcional, y debajo de cada pregunta
+muestra su "si no respondes, asumimos: ..." — que el stakeholder vea que su silencio
+tambien decide.
 
 ## Antes de terminar
 
 - Verifica que `stakeholder-questions.json` es JSON valido.
 - Verifica que cada pregunta traza a un `DEF-*`, `Q-*` o `GAP-*` existente en las
   entradas, o que es de elicitacion (`source_kind: "elicitation"`) con su area
-  justificada en `rationale`.
+  justificada en `rationale`, o de la checklist de no funcionales
+  (`source_kind: "nfr_checklist"`) con su `default_assumption` completo.
+- Verifica que la seccion de no funcionales existe, que ninguna de sus preguntas es
+  bloqueante, y que no pregunta nada que el material ya responde.
 - Verifica que cada `question_ids` de las secciones apunta a una pregunta existente y
   que toda pregunta pertenece a una seccion.
 

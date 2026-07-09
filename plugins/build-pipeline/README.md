@@ -67,7 +67,8 @@ autoritativa), pero no es obligatorio.
    `[T-xxx]`.
 4. `build-reviewer` revisa el diff (cobertura del brief, scope, correctitud, tests
    corridos de verdad) y `security-gate` revisa el piso de seguridad (OWASP + audit de
-   dependencias); los hallazgos de ambos rebotan al implementador hasta pasar.
+   dependencias); los hallazgos de ambos rebotan al implementador en modo correccion
+   (tope: 3 rondas; lo no corregible se bloquea y se escala).
 5. PR contra la rama de integracion, con el resumen y los veredictos (review y seguridad).
 
 ### `/construir-lote` — el ejecutor del plan
@@ -80,7 +81,11 @@ feature). Un bloqueo en una feature no frena a las demas.
 
 Tambien podes repartir el lote entre **varias instancias de Claude Code** (una por PC
 o licencia): cada una corre `/construir <feature>` con una feature distinta del mismo
-lote — `progress.json` coordina el estado.
+lote. `progress.json` coordina el estado **solo si viaja por git**: el protocolo
+minimo es commitear y pushear el `progress.json` al marcar la feature `in_progress`
+(el claim), y pullear antes de la compuerta de lote y antes de marcar `done`. Si dos
+instancias reclaman la misma feature, vale el claim pusheado primero; la otra toma
+otra feature.
 
 ## Estructura del plugin
 
@@ -120,13 +125,8 @@ build-pipeline/
 - **`progress.json` siempre al dia**: `done` = mergeado. Es lo que le permite a
   `/replanificar` absorber cambios de requisitos sin pisar lo construido.
 
-## Relacion con `feature-pipeline`
-
-`feature-pipeline` (este mismo marketplace) es un pipeline de build independiente que
-lee requerimientos de `/features/` con su propio formato y flujo de aprobacion, pensado
-originalmente para Next.js/TypeScript. `build-pipeline` no lo reemplaza: es el ejecutor
-nativo del sistema `.dev/` (requirements-pipeline + planning-pipeline), agnostico de
-stack. Si tu proyecto no usa esos pipelines, `feature-pipeline` sigue siendo una opcion
-valida.
-
 Ver `PIPELINE.md` para el diagrama completo y las reglas de orquestacion.
+
+Nota historica: el plugin `feature-pipeline` (primera generacion, atado a
+Next.js/TypeScript y a `/features/`) fue retirado a `archive/`; `build-pipeline` es
+su reemplazo agnostico de stack.

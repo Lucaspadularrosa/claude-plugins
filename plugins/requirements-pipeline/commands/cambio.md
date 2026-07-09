@@ -10,13 +10,17 @@ Ejecuta el modo CAMBIO de la skill `requirements-pipeline` para: `$ARGUMENTS`
 2. Lee lo existente (LEL, mapa, requisitos, diseno) y determina el veredicto de cada
    pedido: `new` (no existia), `modified` (toca algo baselineado), `deprecated`
    (elimina algo) o `already_covered` (ya estaba cubierto: el CR queda respondido sin
-   tocar nada). Si hay vocabulario nuevo, pasa la fuente por intake + LEL +
-   inspeccion.
+   tocar nada). Si cito ids de auditoria (`BUG-`/`SEC-`/`IMP-` o `AUD-xxx/...`), lee
+   los hallazgos completos de `.dev/audit/` como fuente del CR en vez del string
+   suelto. Si la fuente es un desvio del build (`.dev/build/cr-input-*.md`), cada
+   desvio cita su `FG-xx` y `RF-xxx/AC-xxx`: el veredicto tipico es `modified` sobre
+   ese requisito (actualizarlo al comportamiento construido, o rechazar y revertir).
+   Si hay vocabulario nuevo, pasa la fuente por intake + LEL + inspeccion.
 3. PAUSA DE CONFIRMACION: mostrame los veredictos con el antes/despues. Nada
    `modified` ni `deprecated` se aplica sin mi OK explicito, uno por uno.
 4. Aplica los confirmados con los agentes en modo actualizacion, preservando ids; lo
    deprecado cambia de status, nunca se borra. Corre `requirements-inspection` (y
-   `design-inspection` si el diseno cambio) con sus lazos.
+   `design-inspection` si el diseno cambio) con sus lazos (tope: 3 pasadas).
 5. Cierra la entrada del changelog con los veredictos confirmados y las versiones.
    Si el cambio afecta features ya planificadas o en construccion, decimelo explicito
    en el resumen.

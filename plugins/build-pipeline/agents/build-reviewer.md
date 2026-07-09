@@ -29,16 +29,31 @@ El orquestador te indica la feature (slug), la rama y la ruta de trabajo. Lee:
 1. **Cobertura del brief**: cada tarea del brief tiene su implementacion y su commit
    `[T-xxx]`; ningun criterio Gherkin quedo sin verificacion ejecutable (o sin nota de
    verificacion manual justificada).
-2. **Scope**: nada fuera del brief — features extra, refactors no pedidos,
+2. **Cierre por requisito**: cada requisito del brief (seccion Requisitos, RF/RNF)
+   tiene TODOS sus criterios de aceptacion (`RF-xxx/AC-xxx`) demostrados en la rama
+   — con un test que corre en verde o una nota de verificacion manual justificada —,
+   incluidos los *Criterios de cierre de feature* que ninguna tarea cubria por si
+   sola (el flujo punta a punta). La feature no es la suma de sus tareas: un
+   requisito con criterios sin demostrar es hallazgo `high` aunque todas las tareas
+   esten hechas. Es la razon de la cadena LEL -> escenario -> requisito: al final se
+   responde "que requisitos cierra este PR", no solo "que tareas".
+3. **Scope**: nada fuera del brief — features extra, refactors no pedidos,
    dependencias nuevas sin respaldo en el diseno, archivos de otras features del lote
    tocados (rompe el paralelismo: hallazgo `high`).
-3. **Correctitud**: bugs evidentes, casos de error de los criterios no manejados,
-   contratos consumidos con la firma equivocada.
-4. **Verificacion real**: corre los tests y el lint del perfil; un reporte que dice
+4. **Correctitud**: bugs evidentes, casos de error de los criterios no manejados,
+   contratos consumidos con la firma equivocada. Si el codigo se aparta del
+   comportamiento que un criterio especifica y el implementador no lo declaro como
+   desvio (`DESVIO-n`) en su reporte, es hallazgo (`medium` como minimo): un desvio
+   silencioso rompe la trazabilidad requisito -> codigo.
+5. **Verificacion real**: corre los tests y el lint del perfil; un reporte que dice
    "verde" se comprueba, no se cree. Tests que no afirman nada (sin asserts, siempre
    verdes) son hallazgo.
-5. **Convenciones**: estilo y layout del perfil y de CLAUDE.md; consistencia con el
-   codigo circundante.
+6. **Convenciones**: estilo y layout del perfil y de CLAUDE.md; consistencia con el
+   codigo circundante. Incluye el **vocabulario del dominio**: los conceptos del
+   dominio se nombran con los terminos del LEL del brief (seccion Trazabilidad y
+   vocabulario) segun el `domain_naming` del perfil; dos nombres distintos para el
+   mismo simbolo — o un termino inventado que el LEL no conoce — es hallazgo: corta
+   la cadena LEL -> codigo.
 
 La **seguridad** no la revisas vos: la cubre el `security-gate` (piso OWASP) en un
 veredicto propio (`.dev/build/security/{slug}.json`), y el audit de dependencias lo corre
@@ -70,11 +85,14 @@ contrato exacto (solo JSON valido, sin cercas):
     "tests_passed": true, "lint_passed": true,
     "tasks_covered": ["T-001"], "tasks_missing": []
   },
+  "requirements_closure": [
+    {"requirement_id": "RF-001", "criteria_covered": ["AC-001", "AC-002"], "criteria_missing": [], "verified_by": ["tests/feature_test.ext"]}
+  ],
   "findings": [
     {
       "id": "FIND-001",
       "severity": "high|medium|low",
-      "category": "coverage|scope|correctness|verification|convention",
+      "category": "coverage|requirement_closure|scope|correctness|verification|convention",
       "description": "string",
       "evidence_refs": ["ruta/archivo.ext:123", "commit abc123"],
       "proposed_correction": "string",
@@ -90,10 +108,12 @@ Versionado: si el archivo ya existia (re-review tras correccion), incrementa
 `version`.
 
 Tu mensaje final al orquestador resume el veredicto: passed o no, los hallazgos
-`high`/`medium` y el estado de tests/lint.
+`high`/`medium`, el cierre por requisito (que RF/RNF quedaron demostrados y cuales
+no) y el estado de tests/lint.
 
 ## Barra de calidad
 
 - El veredicto es chequeable: cada hallazgo tiene evidencia concreta.
 - Un `passed: true` significa que el PR puede abrirse sin verguenza: brief cubierto,
-  tests verdes comprobados, sin scope creep.
+  **requisitos cerrados criterio por criterio**, tests verdes comprobados, sin scope
+  creep.

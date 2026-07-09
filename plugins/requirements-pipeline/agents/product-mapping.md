@@ -36,11 +36,13 @@ Si existen (re-ejecucion del descubrimiento con material nuevo):
   renumeran nunca.
 - Cada feature del mapa tiene: nombre, descripcion breve, simbolos del LEL que la
   sostienen, sus escenarios stub (titulo, objetivo, actores; **sin** episodios), una
-  prioridad propuesta (`high|medium|low`) con su rationale, y `status`.
+  prioridad propuesta (`high|medium|low`) con su rationale, un **valor de negocio**
+  (`value`, `high|medium|low`) con su rationale, y `status`.
 - `status` de features y escenarios: `stub` (solo en el mapa), `elaborated` (un
   incremento ya genero sus escenarios y requisitos), `baselined` (paso las inspecciones
   y su incremento cerro), `deprecated`. **Vos solo asignas `stub` a lo nuevo**; los
-  demas estados los actualiza el orquestador al cerrar cada incremento. Nunca cambies
+  demas estados los actualiza el orquestador (`elaborated` al cerrar la
+  especificacion del incremento, `baselined` al cerrar el incremento). Nunca cambies
   el estado de algo que no creaste en esta corrida.
 - Un escenario stub se justifica con evidencia: simbolos `verbo` del LEL (procesos),
   secciones de la fuente, o respuestas de elicitacion. No inventes features sin
@@ -48,6 +50,14 @@ Si existen (re-ejecucion del descubrimiento con material nuevo):
 - Prioridad propuesta: derivala de la evidencia (que enfatiza la fuente, que es
   fundacional para el resto). Es una propuesta para que el usuario elija que elaborar
   primero; no decide nada sola.
+- **Valor y prioridad no son lo mismo.** `value` mide el impacto en el objetivo del
+  stakeholder (el dolor que resuelve, lo que genera o protege ingresos, el riesgo que
+  mitiga), independiente de lo tecnico; cita en `value_rationale` la evidencia de la
+  fuente (que dolor enfatiza, que pidio primero). `priority` es la sintesis operativa
+  (valor + que es fundacional + urgencia). Una feature de plomeria puede ser
+  `priority: high` con `value: low` (nadie la pidio, pero sostiene al resto) — esa
+  distincion es la que permite elegir incrementos por valor/esfuerzo sin perder de
+  vista los cimientos.
 - Todos los valores legibles por humanos van en espanol.
 
 ## Modo actualizacion (re-descubrimiento con material nuevo)
@@ -57,7 +67,8 @@ Cuando recibis un `product-map.json` previo:
 - No reconstruyas: actualiza incremental. Preserva todas las features y stubs
   existentes con sus ids y estados.
 - Lo nuevo entra con ids que continuan la secuencia, `status: stub` y `discovered_in`
-  citando el id de descubrimiento (`DSC-xxx`) que te indique el orquestador.
+  citando el id de la corrida que te indique el orquestador (`DSC-xxx`, o `REC-xxx`
+  cuando el mapa lo reconstruye `recovery-pipeline` desde codigo).
 - Si el material nuevo **se solapa con algo `elaborated` o `baselined`** (un documento
   nuevo que redefine un comportamiento ya elaborado, agrega campos a una entidad ya
   disenada, contradice un requisito), **no lo apliques**: registralo en
@@ -88,6 +99,8 @@ valido, sin cercas):
       "description": "string",
       "priority": "high|medium|low",
       "priority_rationale": "string",
+      "value": "high|medium|low",
+      "value_rationale": "string",
       "status": "stub|elaborated|baselined|deprecated",
       "lel_symbol_ids": ["SYM-001"],
       "scenario_stubs": [

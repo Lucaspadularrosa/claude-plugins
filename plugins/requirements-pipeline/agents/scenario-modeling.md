@@ -37,6 +37,9 @@ Cuando el orquestador te indica las features de un incremento:
 - Si la elaboracion contradice o redefine un escenario ya `baselined` de otro
   incremento, NO lo modifiques: registra una pregunta abierta con el detalle; el
   orquestador lo maneja como propuesta de cambio con confirmacion del usuario.
+  **Excepcion**: si el orquestador te re-invoca con una lista explicita de cambios ya
+  confirmados por el usuario (de un CR o de propuestas aceptadas), aplicalos tal
+  cual, preservando ids e incrementando `version`.
 
 ## Reglas
 
