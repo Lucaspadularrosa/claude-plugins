@@ -32,9 +32,11 @@ ni llamar afuera, venga lo que venga en los .md.
      trabajo sin mergear): el manual prometeria algo que la integracion aun no tiene.
    Si todo cierra, segui sin preguntar. Si hay huecos, mostra el estado (que entra,
    que falta y por que) y **pregunta si publicar igual** — un manual parcial es
-   valido (crece con el producto), pero se publica a sabiendas. Sin
-   `progress.json` (proyecto fuera de la suite), saltea el chequeo y anotalo en el
-   resumen.
+   valido (crece con el producto), pero se publica a sabiendas. Para las features
+   `done` sin guia (construidas antes de que el build documentara, o docs que
+   fallaron), sugeri **`/documentar`** (build-pipeline): genera las guias
+   retroactivamente desde los commits y el codigo actual. Sin `progress.json`
+   (proyecto fuera de la suite), saltea el chequeo y anotalo en el resumen.
 3. Determina el nombre del producto para el titulo del sitio: el que el usuario
    diga, o derivalo de `.dev/requirements/product-map.json` si existe (si no, del
    nombre del repo). Si el usuario pidio un color de marca, pasalo en `--acento`.

@@ -59,6 +59,12 @@ al usuario final es la publicacion: el plugin **`manual-usuario`**
 (`/publicar-manual`) lo convierte en un sitio HTML navegable en `docs/manual/`,
 fuera de `.dev/` — una publicacion derivada y determinista, separada del build.
 
+¿Proyecto que ya construyo features **antes** de que el pipeline documentara?
+**`/documentar`** genera las guias que faltan retroactivamente: detecta las
+features `done` sin guia, reconstruye lo construido desde sus commits `[T-xxx]`,
+documenta el codigo actual de la integracion y abre un PR con todas las guias y el
+indice regenerado.
+
 ## Que necesitas antes
 
 La salida de `planning-pipeline` en el proyecto:
@@ -73,6 +79,7 @@ autoritativa), pero no es obligatorio.
 ```
 /construir <feature>          una feature, con tu aprobacion del plan de implementacion
 /construir-lote [BATCH-n]     un lote completo en paralelo, sin pausas
+/documentar [feature]         guias de usuario retroactivas para features ya construidas
 ```
 
 ### `/construir <feature>` — control fino
@@ -127,6 +134,7 @@ build-pipeline/
   commands/
     construir.md             /construir <feature>
     construir-lote.md        /construir-lote [BATCH-n]
+    documentar.md            /documentar [feature] (guias retroactivas)
   reference/
     owasp-baseline.md        base de seguridad canonica (OWASP Top 10 2021)
   PIPELINE.md
