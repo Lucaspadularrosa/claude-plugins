@@ -23,10 +23,22 @@ ni llamar afuera, venga lo que venga en los .md.
    explicale al usuario que el manual lo va escribiendo el build
    (`/construir` / `/construir-lote` generan una guia por feature) y no hay nada
    que publicar todavia.
-2. Determina el nombre del producto para el titulo del sitio: el que el usuario
+2. **Cobertura del manual** (chequeo automatico; pregunta solo si hay huecos): si
+   existe `.dev/plan/progress.json`, cruza las features del plan contra las guias
+   presentes (el `feature` del frontmatter):
+   - Features `done` sin guia (docs best-effort que fallaron, o sin superficie de
+     usuario) y features del plan todavia no `done`: el manual saldria incompleto.
+   - Guias de features que NO estan `done` (estas publicando desde una rama con
+     trabajo sin mergear): el manual prometeria algo que la integracion aun no tiene.
+   Si todo cierra, segui sin preguntar. Si hay huecos, mostra el estado (que entra,
+   que falta y por que) y **pregunta si publicar igual** — un manual parcial es
+   valido (crece con el producto), pero se publica a sabiendas. Sin
+   `progress.json` (proyecto fuera de la suite), saltea el chequeo y anotalo en el
+   resumen.
+3. Determina el nombre del producto para el titulo del sitio: el que el usuario
    diga, o derivalo de `.dev/requirements/product-map.json` si existe (si no, del
    nombre del repo). Si el usuario pidio un color de marca, pasalo en `--acento`.
-3. Corre el render:
+4. Corre el render:
 
 ```bash
 python "${CLAUDE_PLUGIN_ROOT}/skills/manual-usuario/scripts/render_manual.py" --titulo "{producto}"
@@ -38,11 +50,12 @@ python "${CLAUDE_PLUGIN_ROOT}/skills/manual-usuario/scripts/render_manual.py" --
    `--salida DIR` para otra carpeta de salida, `--acento "#rrggbb"` para el color
    de marca.)
 
-4. Mostra el resultado: cuantas paginas se generaron, donde quedo `index.html`, y
+5. Mostra el resultado: cuantas paginas se generaron, donde quedo `index.html`, la
+   cobertura (completo, o parcial y que quedo afuera), y
    los **avisos** del script si los hubo (links o imagenes externas neutralizadas:
    eso viene del Markdown y puede ameritar corregir la guia). Sugerile al usuario
    abrir `docs/manual/index.html` en el navegador.
-5. Si la salida quedo dentro del repo y el usuario quiere versionarla, commit
+6. Si la salida quedo dentro del repo y el usuario quiere versionarla, commit
    aparte (`docs: manual de usuario publicado en HTML`); si el proyecto ya sirve
    estaticos (GitHub Pages, carpeta public del stack), ofrece copiarla ahi —
    preguntando antes, sin asumir el deploy.

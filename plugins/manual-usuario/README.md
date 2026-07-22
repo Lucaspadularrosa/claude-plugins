@@ -30,6 +30,15 @@ los `.md`:
 Es el complemento mecanico de la frontera de confianza del `user-docs-writer`: aun
 si una guia saliera contaminada, la publicacion no lo convierte en ejecucion.
 
+## Cobertura antes de publicar
+
+`/publicar-manual` cruza las guias presentes contra `.dev/plan/progress.json` (si
+existe): con el plan completo y cada feature `done` con su guia, publica directo;
+con huecos — features sin guia, features sin mergear, guias de trabajo no
+integrado — muestra el estado y **pregunta antes de publicar**. Un manual parcial
+es valido (crece con el producto, lote a lote), pero se publica a sabiendas, no
+por accidente.
+
 ## Uso
 
 ```
