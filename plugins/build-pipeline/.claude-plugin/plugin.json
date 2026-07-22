@@ -1,8 +1,8 @@
 {
   "name": "build-pipeline",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "displayName": "Build Pipeline (ejecucion del plan, agnostico de stack)",
-  "description": "Ejecuta el plan de los pipelines de requisitos y planificacion: toma los briefs de .dev/features/, detecta el stack del proyecto (cualquier lenguaje o framework) y su base de seguridad, implementa cada feature en su rama con un piso de seguridad OWASP por construccion verificando los criterios de aceptacion, y construye lotes completos en paralelo con un agente por feature. Un security-gate verifica el piso OWASP y el audit de dependencias antes de cada PR. Actualiza progress.json para que /replanificar nunca pise lo construido.",
+  "description": "Ejecuta el plan de los pipelines de requisitos y planificacion: toma los briefs de .dev/features/, detecta el stack del proyecto (cualquier lenguaje o framework) y su base de seguridad, implementa cada feature en su rama con un piso de seguridad OWASP por construccion verificando los criterios de aceptacion, y construye lotes completos en paralelo con un agente por feature. Un security-gate verifica el piso OWASP y el audit de dependencias antes de cada PR, y cada feature sale con su guia de usuario final (HTML standalone en docs/usuario/, best-effort). Actualiza progress.json para que /replanificar nunca pise lo construido.",
   "keywords": [
     "build",
     "desarrollo",

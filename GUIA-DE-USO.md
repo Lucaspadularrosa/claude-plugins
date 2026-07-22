@@ -248,7 +248,10 @@ un agente revisor audita el diff contra el brief (cobertura, **cierre por requis
 — cada requisito del brief con sus criterios de aceptación demostrados, no solo los
 de las tareas —, scope, tests corridos de verdad) y un `security-gate` verifica el
 piso de seguridad (OWASP + audit de
-dependencias); y `progress.json` se actualiza en cada transición (`done` = mergeado), que
+dependencias); con ambos en verde, un `user-docs-writer` escribe la **guía de usuario
+final** de la feature (`docs/usuario/{slug}.html`, HTML standalone en el vocabulario
+del LEL — best-effort, nunca bloquea el PR) y viaja en el mismo PR; y `progress.json`
+se actualiza en cada transición (`done` = mergeado), que
 es lo que le permite a `/replanificar` no pisar lo construido. La auditoría profunda de
 seguridad sigue estando en `/auditar` (`audit-pipeline`), al que el gate deriva lo que
 excede el piso.
@@ -273,6 +276,7 @@ autosuficientes: respetá el orden de lotes de `execution-plan.md` y mantené
 | El estado del build | `.dev/plan/progress.json` |
 | Qué construir para una feature | `.dev/features/{feature}.md` |
 | Cómo se desarrolla este proyecto (stack, comandos) | `.dev/build/stack-profile.json` |
+| El manual de usuario de lo construido | `docs/usuario/index.html` (y una guía por feature) |
 | La base de seguridad del stack (superficie, OWASP, tooling) | `.dev/build/security-baseline.json` |
 | El veredicto de review de una feature construida | `.dev/build/reviews/{feature}.json` |
 | El veredicto de seguridad (piso OWASP) de una feature | `.dev/build/security/{feature}.json` |

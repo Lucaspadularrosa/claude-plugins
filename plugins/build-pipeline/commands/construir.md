@@ -27,7 +27,13 @@ Segui el modo FEATURE de la skill `build-pipeline`:
    hallazgos high/medium de cualquiera rebotan al implementador en modo correccion,
    con tope de 3 rondas: si no pasa, o algo es no corregible (p. ej. vulnerabilidad
    de dependencia sin fix), bloquea y mostrame el caso.
-6. Crea el PR contra la rama de integracion y mostrame el resumen (tareas, criterios
+6. Con review y gate en verde, corre `user-docs-writer`: la guia de usuario de la
+   feature (`docs/usuario/{slug}.html`, HTML standalone en el vocabulario del LEL) se
+   commitea en la rama y viaja en el PR. Es best-effort: si falla o la feature no
+   tiene superficie de usuario, el PR sale igual. Reconcilia el indice del manual
+   (`docs/usuario/index.html`, derivado) segun las convenciones de la skill.
+7. Crea el PR contra la rama de integracion y mostrame el resumen (tareas, criterios
    verificados, cierre por requisito, veredicto del review, veredicto de seguridad,
    desvios del brief declarados — con su `cr-input-{slug}.md` y la sugerencia de
-   `/requerimientos:cambio` — y PR). La feature queda `done` recien cuando el PR mergea.
+   `/requerimientos:cambio` —, guia de usuario y PR). La feature queda `done` recien
+   cuando el PR mergea.

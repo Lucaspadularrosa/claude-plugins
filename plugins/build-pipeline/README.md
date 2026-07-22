@@ -40,6 +40,19 @@ Como todo en el plugin, es por evidencia y agnostico de stack: no hay un checkli
 seguridad hardcodeado. La referencia de categorias y defensas es
 `reference/owasp-baseline.md`.
 
+## Documentacion de usuario final
+
+Cada feature que pasa las compuertas (review + gate) sale ademas con su **guia de
+usuario**: `docs/usuario/{slug}.html`, una pagina HTML standalone (abre offline, sin
+JS ni requests externos, branding en variables CSS) escrita por el `user-docs-writer`
+para una persona **no tecnica** — que hace la feature, paso a paso (derivado de los
+escenarios), roles, casos especiales. Habla el vocabulario del LEL y documenta el
+comportamiento **real construido** (desvios incluidos), no la spec. La guia viaja en
+el mismo PR de la feature; el indice del manual (`docs/usuario/index.html`) es un
+archivo derivado que regenera el orquestador — por eso los PRs paralelos de un lote
+nunca se pisan. Es best-effort: nunca bloquea un PR, y las features sin superficie de
+usuario (contratos internos, infraestructura) no generan pagina.
+
 ## Que necesitas antes
 
 La salida de `planning-pipeline` en el proyecto:
@@ -69,7 +82,10 @@ autoritativa), pero no es obligatorio.
    corridos de verdad) y `security-gate` revisa el piso de seguridad (OWASP + audit de
    dependencias); los hallazgos de ambos rebotan al implementador en modo correccion
    (tope: 3 rondas; lo no corregible se bloquea y se escala).
-5. PR contra la rama de integracion, con el resumen y los veredictos (review y seguridad).
+5. `user-docs-writer` escribe la guia de usuario de la feature (`docs/usuario/{slug}.html`,
+   best-effort) y se commitea en la rama.
+6. PR contra la rama de integracion, con el resumen, los veredictos (review y seguridad)
+   y la guia de usuario.
 
 ### `/construir-lote` — el ejecutor del plan
 
@@ -98,6 +114,7 @@ build-pipeline/
     feature-implementer.md   construye una feature (modo plan / modo ejecucion)
     build-reviewer.md        revisa el diff contra el brief antes del PR
     security-gate.md         revisa el piso de seguridad (OWASP) antes del PR
+    user-docs-writer.md      escribe la guia de usuario final (HTML standalone)
   skills/
     build-pipeline/
       SKILL.md               orquestacion de los dos modos
@@ -122,6 +139,9 @@ build-pipeline/
   audit de dependencias) antes del PR. Veredictos en `.dev/build/security/`.
 - **Trazabilidad hasta el codigo**: commits `[T-xxx]` → tarea → requisito → escenario
   → LEL → fuente. Reviews archivados en `.dev/build/reviews/`.
+- **Manual de usuario que crece con el producto**: cada feature con superficie de
+  usuario sale de su PR con su guia (`docs/usuario/`), en el vocabulario del LEL y
+  fiel a lo construido. Best-effort: nunca bloquea un PR.
 - **`progress.json` siempre al dia**: `done` = mergeado. Es lo que le permite a
   `/replanificar` absorber cambios de requisitos sin pisar lo construido.
 

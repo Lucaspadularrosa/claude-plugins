@@ -24,9 +24,13 @@ Segui el modo LOTE de la skill `build-pipeline`:
    hallazgos high/medium de cualquiera rebotan al implementador de esa feature en
    modo correccion (tope: 3 rondas; si no pasa, queda bloqueada con su motivo en
    `progress.json`). Un bloqueo en una feature no frena a las demas.
-5. Por cada feature que paso (review y gate en verde): push, PR contra la rama de
-   integracion, limpieza del worktree y actualizacion de `progress.json`.
+5. Por cada feature que paso (review y gate en verde): corre su `user-docs-writer`
+   (guia de usuario `docs/usuario/{slug}.html` commiteada en la rama; best-effort,
+   nunca bloquea), y despues push, PR contra la rama de integracion, limpieza del
+   worktree y actualizacion de `progress.json`.
 6. Al final, resumen por feature (tareas, cierre por requisito, veredicto del review,
    veredicto de seguridad, desvios del brief — con su `cr-input-{slug}.md` para
-   `/requerimientos:cambio` — y PR), bloqueos y lo que el gate haya derivado a `/auditar`,
-   y el proximo paso (mergear PRs; cuando esten `done`, el siguiente lote).
+   `/requerimientos:cambio` —, guia de usuario y PR), bloqueos y lo que el gate haya
+   derivado a `/auditar`, y el proximo paso (mergear PRs; cuando esten `done`, el
+   siguiente lote). Si los PRs mergearon en sesion, ofrece regenerar el indice del
+   manual (`docs/usuario/index.html`, derivado — convenciones de la skill).

@@ -32,6 +32,7 @@ Si falta el plan, indicale al usuario que primero corra `/planificar`
 | `feature-implementer` | Construye UNA feature: modo plan (propone) y modo ejecucion (implementa y verifica, con el piso de seguridad OWASP por construccion) | Por cada feature |
 | `build-reviewer` | Revisa el diff contra el brief (cobertura, scope, correctitud, convenciones) y emite veredicto en `.dev/build/reviews/{slug}.json` | Antes de cada PR |
 | `security-gate` | Revisa el diff contra la base de seguridad (piso OWASP) y corre el audit de dependencias; emite veredicto en `.dev/build/security/{slug}.json` | Antes de cada PR, junto con el review |
+| `user-docs-writer` | Escribe la guia de usuario final de la feature construida: `docs/usuario/{slug}.html` (HTML standalone, vocabulario del LEL) | Despues de que review y gate pasan, antes del PR (best-effort) |
 
 ## Convenciones compartidas
 
@@ -75,6 +76,27 @@ Si falta el plan, indicale al usuario que primero corra `/planificar`
   feature, con `gh` si esta disponible (si no, deja la rama lista y las instrucciones).
   El cuerpo del PR cita la feature (`FG-xx`), las tareas (`T-xxx`) y el resultado del
   review.
+- **Documentacion de usuario (best-effort)**: cuando una feature paso review y gate,
+  invoca `user-docs-writer` sobre su rama antes del PR: escribe
+  `docs/usuario/{slug}.html` (guia standalone para el usuario final, en el
+  vocabulario del LEL, documentando el comportamiento real construido — pasale el
+  reporte del implementador para que absorba los desvios). Si emitio pagina,
+  commiteala en la rama (`docs: guia de usuario {slug}`) para que viaje en el mismo
+  PR. Es **best-effort**: si el agente falla o reporta que la feature no tiene
+  superficie de usuario, el PR sale igual y lo anotas en el resumen — la guia nunca
+  bloquea ni entra al lazo de correccion.
+- **Indice del manual (derivado, del orquestador)**: `docs/usuario/index.html` no lo
+  toca ningun agente de feature — lo regeneras VOS, siempre desde cero, leyendo el
+  comentario `<!-- guia-usuario {...} -->` de cada pagina presente en
+  `docs/usuario/`: una portada standalone (mismas variables CSS que las paginas, sin
+  JS ni requests externos) con el nombre del producto y la lista de guias
+  (`titulo` + `resumen`, link a cada pagina). Como es derivado y determinista, nunca
+  se edita a mano y un conflicto se resuelve regenerandolo. Cuando reconciliarlo
+  (mismo patron que el bootstrap de CI): en la **primera rama de cada corrida**, si
+  hay paginas que el indice no lista (o hay paginas y no hay indice), regeneralo con
+  un commit propio (`docs: indice del manual de usuario`); y al cierre, si los PRs de
+  la corrida mergearon en sesion, ofrece regenerarlo de nuevo para que el manual
+  quede completo.
 - **Desvios del brief -> CR**: si un implementador declaro desvios (`DESVIO-n`) en su
   reporte, no los dejes morir en el resumen: genera `.dev/build/cr-input-{slug}.md`
   con cada desvio completo (feature `FG-xx`, requisito afectado `RF-xxx/AC-xxx`, que
@@ -122,13 +144,16 @@ Construye una feature, con aprobacion del plan de implementacion antes de codear
    estan y escalale el caso al usuario en vez de seguir iterando. Los
    `deferred_to_audit` del gate no bloquean el PR: se anotan para sugerir `/auditar`
    despues.
-6. Crea el PR contra la rama de integracion y mostrale al usuario el resumen: tareas
+6. Con review y gate en verde, invoca `user-docs-writer` sobre la rama y commitea la
+   guia si emitio pagina (ver convenciones: best-effort, nunca bloquea).
+7. Crea el PR contra la rama de integracion y mostrale al usuario el resumen: tareas
    construidas, criterios verificados, **cierre por requisito** (cada RF/RNF del
    brief con sus criterios demostrados, del `requirements_closure` del review),
    veredicto del review, **veredicto de seguridad**
    (piso OWASP: passed, hallazgos, resultado del audit de dependencias), los
    **desvios declarados** (con su `cr-input-{slug}.md` y la sugerencia de
-   `/requerimientos:cambio`) y link del PR. La
+   `/requerimientos:cambio`), la **guia de usuario** (ruta, o por que no se genero)
+   y link del PR. La
    feature queda `in_progress` hasta que el PR mergee (anota el PR en `notes`); si el
    usuario lo mergea en la sesion, marcala `done`.
 
@@ -186,15 +211,19 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
    (p. ej. vulnerabilidad de dependencia sin fix) — la feature queda **bloqueada**:
    anota `BLOQUEADA: <motivo>` en sus `notes` de `progress.json`, deja la rama y el
    worktree como estan y segui. Un bloqueo en una feature no frena a las demas.
-6. Por cada feature que paso (review y gate en verde): push de la rama, PR contra la
-   rama de integracion, y limpieza del worktree (`git worktree remove`). Actualiza
+6. Por cada feature que paso (review y gate en verde): invoca su `user-docs-writer`
+   sobre su worktree y commitea la guia si emitio pagina (best-effort, ver
+   convenciones; podes lanzar los de varias features en paralelo — cada uno escribe
+   solo su `docs/usuario/{slug}.html`, no se pisan). Despues push de la rama, PR
+   contra la rama de integracion, y limpieza del worktree (`git worktree remove`). Actualiza
    `progress.json` (features `in_progress` con su PR en `notes`). Los worktrees de
    las features bloqueadas quedan en pie para el retome: listalos en el resumen para
    que no queden huerfanos invisibles.
 7. Resumen final: por feature, tareas construidas, cierre por requisito, veredicto
    del review, veredicto de
    seguridad (piso OWASP + audit de dependencias), desvios declarados (con su
-   `cr-input-{slug}.md` y la sugerencia de `/requerimientos:cambio`) y PR; bloqueos con su worktree y
+   `cr-input-{slug}.md` y la sugerencia de `/requerimientos:cambio`), guia de usuario
+   (ruta, o por que no) y PR; bloqueos con su worktree y
    como retomarlos (resolver el motivo y re-correr `/construir-lote`: las toma como
    retome) y `deferred_to_audit`
    si los hubo; y el proximo paso (mergear los PRs y, cuando esten `done`, el siguiente
@@ -237,5 +266,7 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
   security/{slug}.json        veredicto de seguridad (piso OWASP) por feature
   cr-input-{slug}.md          desvios del brief declarados, listos para /requerimientos:cambio
 .dev/plan/progress.json       actualizado en cada transicion
+docs/usuario/{slug}.html      guia de usuario final por feature (standalone, viaja en su PR)
+docs/usuario/index.html       indice del manual — derivado, lo regenera el orquestador
 ramas feature/{slug}          una por feature, PR contra la rama de integracion
 ```
