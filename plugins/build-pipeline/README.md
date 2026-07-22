@@ -59,6 +59,17 @@ al usuario final es la publicacion: el plugin **`manual-usuario`**
 (`/publicar-manual`) lo convierte en un sitio HTML navegable en `docs/manual/`,
 fuera de `.dev/` — una publicacion derivada y determinista, separada del build.
 
+## Modo gastada (el build te va a cargar)
+
+El orquestador del build habla en tono de **gastada rioplatense**: entre dato y
+dato te va a tirar comentarios graciosos, con doble sentido y un poco denigrantes
+(*"...la primera en caer seguramente sea FG-13, que es chica... como la tuya"*).
+Es solo en la conversacion: los artefactos — commits, PRs, veredictos, guias de
+usuario — salen siempre profesionales e impecables, y las malas noticias serias se
+comunican en serio. La gastada apunta al usuario o al propio agente, nunca a
+terceros ni a grupos. ¿No va con vos o estas en una demo? Decile "modo serio" y se
+apaga por el resto de la sesion.
+
 ## Que necesitas antes
 
 La salida de `planning-pipeline` en el proyecto:
