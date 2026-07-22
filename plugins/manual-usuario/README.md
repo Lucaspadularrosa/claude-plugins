@@ -1,15 +1,16 @@
 # Manual de Usuario — Plugin de Claude Code
 
 Plugin que **publica el manual de usuario** de un producto construido con la suite:
-toma las guias Markdown que el `build-pipeline` va escribiendo en `docs/usuario/`
+toma las guias Markdown que el `build-pipeline` va escribiendo en `.dev/manual/`
 (una por feature, mas el indice derivado `README.md`) y las convierte en un **sitio
-HTML estatico navegable**: una pagina por guia + `index.html`.
+HTML estatico navegable** en `docs/manual/`: una pagina por guia + `index.html`.
 
 La division del trabajo es deliberada:
 
-- **El Markdown es la fuente de verdad.** Lo escribe el `user-docs-writer` del
-  build-pipeline dentro del PR de cada feature: diffeable, revisable, renderiza en
-  GitHub. Este plugin no lo toca.
+- **El Markdown es la fuente de verdad y vive en `.dev/`**, como todo artefacto de
+  la suite. Lo escribe el `user-docs-writer` del build-pipeline dentro del PR de
+  cada feature: diffeable, revisable, renderiza en GitHub. Este plugin no lo toca.
+  Lo unico de cara al usuario final es la publicacion (`docs/manual/`).
 - **El HTML es una publicacion derivada.** La hace un script **determinista**
   (`render_manual.py`, solo stdlib de Python 3.8+): mismo Markdown -> mismo sitio,
   cero tokens de modelo, regenerable las veces que haga falta.
@@ -39,12 +40,13 @@ si una guia saliera contaminada, la publicacion no lo convierte en ejecucion.
 O directo, sin agente:
 
 ```bash
-python plugins/manual-usuario/skills/manual-usuario/scripts/render_manual.py docs/usuario \
+python plugins/manual-usuario/skills/manual-usuario/scripts/render_manual.py \
   --titulo "Mi Producto" --acento "#0a7d55"
 ```
 
-Salida (default): `docs/usuario/html/` — `index.html` (del `README.md` derivado del
-build, o sintetizado desde el frontmatter de las guias) + una pagina por guia.
+Entrada (default): `.dev/manual/`. Salida (default): `docs/manual/` — `index.html`
+(del `README.md` derivado del build, o sintetizado desde el frontmatter de las
+guias) + una pagina por guia.
 
 ```
 manual-usuario/
@@ -58,6 +60,6 @@ manual-usuario/
 
 ## Que necesitas antes
 
-Guias en `docs/usuario/*.md` con frontmatter (`feature`, `fg`, `titulo`, `resumen`)
+Guias en `.dev/manual/*.md` con frontmatter (`feature`, `fg`, `titulo`, `resumen`)
 — las genera el `build-pipeline` en cada PR de feature. Sin guias no hay manual que
 publicar.

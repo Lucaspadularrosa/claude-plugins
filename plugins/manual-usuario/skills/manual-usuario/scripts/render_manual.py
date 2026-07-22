@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Render determinista del manual de usuario: docs/usuario/*.md -> sitio HTML estatico.
+"""Render determinista del manual de usuario: .dev/manual/*.md -> sitio HTML estatico.
 
 Toma las guias Markdown que escribe el build-pipeline (user-docs-writer) y las
 convierte en un sitio navegable offline: una pagina por guia + index.html.
@@ -22,8 +22,8 @@ Uso:
   python render_manual.py [carpeta-md] [--salida DIR] [--titulo "Nombre"] [--acento "#0a7d55"]
   python render_manual.py --self-test
 
-  carpeta-md  por defecto docs/usuario
-  --salida    por defecto {carpeta-md}/html
+  carpeta-md  por defecto .dev/manual (donde escribe el build-pipeline)
+  --salida    por defecto docs/manual (la publicacion, fuera de .dev)
   index.html  sale de README.md (el indice derivado del build) si existe;
               si no, se sintetiza desde el frontmatter de las guias.
 
@@ -33,6 +33,7 @@ ante errores de IO o self-test fallido.
 
 import argparse
 import html
+import os
 import re
 import sys
 from pathlib import Path
@@ -77,7 +78,7 @@ def _rewrite_href(href, avisos):
     return base + ("#" + anchor if anchor else "")
 
 
-def render_inline(text, avisos):
+def render_inline(text, avisos, img_prefix=".."):
     """Formato inline sobre texto YA escapado. El orden importa: codigo primero."""
     out = []
     # los code spans se procesan aparte para que nada mas los toque
@@ -91,7 +92,7 @@ def render_inline(text, avisos):
             if _EXTERNAL.match(src) or src.startswith("//"):
                 avisos.append("imagen externa omitida: %s" % src)
                 return alt
-            return '<img src="../%s" alt="%s">' % (src, alt)
+            return '<img src="%s/%s" alt="%s">' % (img_prefix, src, alt)
 
         def link(m):
             label, href = m.group(1), m.group(2)
@@ -111,16 +112,19 @@ def render_inline(text, avisos):
 # -------------------------------------------------------------------- blocks
 
 
-def render_markdown(md, avisos):
+def render_markdown(md, avisos, img_prefix=".."):
     """Markdown (subconjunto) -> HTML. Todo el texto pasa por html.escape."""
     lines = md.split("\n")
     out = []
     i = 0
     para = []
 
+    def inline(text):
+        return render_inline(html.escape(text), avisos, img_prefix)
+
     def flush_para():
         if para:
-            out.append("<p>%s</p>" % render_inline(html.escape(" ".join(para)), avisos))
+            out.append("<p>%s</p>" % inline(" ".join(para)))
             del para[:]
 
     while i < len(lines):
@@ -147,8 +151,7 @@ def render_markdown(md, avisos):
         if m:
             flush_para()
             level = len(m.group(1))
-            out.append("<h%d>%s</h%d>"
-                       % (level, render_inline(html.escape(m.group(2)), avisos), level))
+            out.append("<h%d>%s</h%d>" % (level, inline(m.group(2)), level))
             i += 1
             continue
 
@@ -164,8 +167,7 @@ def render_markdown(md, avisos):
             while i < len(lines) and lines[i].strip().startswith(">"):
                 quote.append(lines[i].strip().lstrip(">").strip())
                 i += 1
-            out.append("<blockquote><p>%s</p></blockquote>"
-                       % render_inline(html.escape(" ".join(quote)), avisos))
+            out.append("<blockquote><p>%s</p></blockquote>" % inline(" ".join(quote)))
             continue
 
         if stripped.startswith("|") and stripped.endswith("|"):
@@ -179,19 +181,20 @@ def render_markdown(md, avisos):
             body_rows = rows
             if len(rows) >= 2 and all(re.match(r"^:?-+:?$", c) for c in rows[1] if c):
                 table.append("<thead><tr>%s</tr></thead>" % "".join(
-                    "<th>%s</th>" % render_inline(html.escape(c), avisos) for c in rows[0]))
+                    "<th>%s</th>" % inline(c) for c in rows[0]))
                 body_rows = rows[2:]
             table.append("<tbody>")
             for r in body_rows:
                 table.append("<tr>%s</tr>" % "".join(
-                    "<td>%s</td>" % render_inline(html.escape(c), avisos) for c in r))
+                    "<td>%s</td>" % inline(c) for c in r))
             table.append("</tbody></table>")
             out.append("".join(table))
             continue
 
         if re.match(r"^\s*([-*]|\d+\.)\s+", line):
             flush_para()
-            i = _render_list(lines, i, out, avisos, indent=_indent_of(line))
+            i = _render_list(lines, i, out, avisos, indent=_indent_of(line),
+                             img_prefix=img_prefix)
             continue
 
         para.append(stripped)
@@ -205,7 +208,7 @@ def _indent_of(line):
     return len(line) - len(line.lstrip(" "))
 
 
-def _render_list(lines, i, out, avisos, indent):
+def _render_list(lines, i, out, avisos, indent, img_prefix=".."):
     """Lista (dos niveles via indentacion). Devuelve el indice siguiente."""
     ordered = bool(re.match(r"^\s*\d+\.\s+", lines[i]))
     tag = "ol" if ordered else "ul"
@@ -217,19 +220,21 @@ def _render_list(lines, i, out, avisos, indent):
         if not m:
             # continuacion de item (linea indentada) o fin de la lista
             if line.strip() and _indent_of(line) > indent and item_open:
-                out.append(" " + render_inline(html.escape(line.strip()), avisos))
+                out.append(" " + render_inline(html.escape(line.strip()), avisos,
+                                               img_prefix))
                 i += 1
                 continue
             break
         cur = len(m.group(1))
         if cur > indent:
-            i = _render_list(lines, i, out, avisos, indent=cur)
+            i = _render_list(lines, i, out, avisos, indent=cur, img_prefix=img_prefix)
             continue
         if cur < indent:
             break
         if item_open:
             out.append("</li>")
-        out.append("<li>%s" % render_inline(html.escape(m.group(3)), avisos))
+        out.append("<li>%s" % render_inline(html.escape(m.group(3)), avisos,
+                                            img_prefix))
         item_open = True
         i += 1
     if item_open:
@@ -296,7 +301,7 @@ _PAGE = """<!doctype html>
 <main>
 %(cuerpo)s
 </main>
-<footer class="sitio">Manual de usuario — generado desde docs/usuario</footer>
+<footer class="sitio">Manual de usuario — generado desde .dev/manual</footer>
 </body>
 </html>
 """
@@ -329,13 +334,16 @@ def render_site(src_dir, out_dir, producto, acento):
     css = _CSS % {"acento": acento}
     avisos = []
     metas = []
+    # las imagenes de los .md son relativas a la carpeta fuente; desde la salida
+    # se llega con este prefijo (ej. docs/manual -> ../../.dev/manual)
+    img_prefix = os.path.relpath(str(src), str(out)).replace(os.sep, "/")
 
     for page in mds:
         meta, body = parse_frontmatter(page.read_text(encoding="utf-8"))
         titulo = meta.get("titulo") or page.stem
         metas.append({"archivo": page.stem + ".html", "titulo": titulo,
                       "resumen": meta.get("resumen", "")})
-        cuerpo = render_markdown(body, avisos)
+        cuerpo = render_markdown(body, avisos, img_prefix)
         dest = out / (page.stem + ".html")
         dest.write_text(build_page(titulo, producto, cuerpo, css, is_index=False),
                         encoding="utf-8")
@@ -343,7 +351,7 @@ def render_site(src_dir, out_dir, producto, acento):
 
     if readme is not None:
         _, body = parse_frontmatter(readme.read_text(encoding="utf-8"))
-        cuerpo = render_markdown(body, avisos)
+        cuerpo = render_markdown(body, avisos, img_prefix)
     else:
         items = "\n".join(
             '<li><a href="%s">%s</a><br><span class="resumen">%s</span></li>'
@@ -399,17 +407,17 @@ def self_test():
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("carpeta", nargs="?", default="docs/usuario",
-                    help="carpeta con las guias .md (default: docs/usuario)")
-    ap.add_argument("--salida", default=None, help="carpeta de salida (default: {carpeta}/html)")
+    ap.add_argument("carpeta", nargs="?", default=".dev/manual",
+                    help="carpeta con las guias .md (default: .dev/manual)")
+    ap.add_argument("--salida", default="docs/manual",
+                    help="carpeta de salida (default: docs/manual)")
     ap.add_argument("--titulo", default="Manual de usuario", help="nombre del producto")
     ap.add_argument("--acento", default="#0a7d55", help="color de acento CSS")
     ap.add_argument("--self-test", action="store_true", help="corre el self-test y sale")
     args = ap.parse_args(argv)
     if args.self_test:
         return self_test()
-    out_dir = args.salida or str(Path(args.carpeta) / "html")
-    return render_site(args.carpeta, out_dir, args.titulo, args.acento)
+    return render_site(args.carpeta, args.salida, args.titulo, args.acento)
 
 
 if __name__ == "__main__":

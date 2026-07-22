@@ -21,12 +21,13 @@ Es prevencion (el piso); la auditoria profunda adversarial sigue siendo `audit-p
 categorias y defensas es `reference/owasp-baseline.md`.
 
 **Documentacion de usuario por construccion**: cada feature que pasa las compuertas
-sale con su guia de usuario final — `docs/usuario/{slug}.md`, un Markdown escrito en
+sale con su guia de usuario final — `.dev/manual/{slug}.md`, un Markdown escrito en
 el vocabulario del LEL, que documenta el comportamiento **real construido** (desvios
 incluidos), no la spec. El manual se arma por feature (los PRs paralelos no se pisan)
-y el indice (`docs/usuario/README.md`) es un archivo derivado que mantiene el
+y el indice (`.dev/manual/README.md`) es un archivo derivado que mantiene el
 orquestador. Es best-effort: la guia nunca bloquea un PR. El Markdown es la fuente de
-verdad; la publicacion HTML del manual es del plugin `manual-usuario`
+verdad y vive en `.dev/` como todo artefacto de la suite; lo unico de cara al usuario
+es la publicacion HTML (`docs/manual/`), que hace el plugin `manual-usuario`
 (`/publicar-manual`).
 
 ---
@@ -62,7 +63,7 @@ verdad; la publicacion HTML del manual es del plugin `manual-usuario`
         -> lazo de correccion                             x N] -> lazos
         |                                                        |
    [user-docs-writer] (best-effort)                      [user-docs-writer x N]
-   docs/usuario/{slug}.md en la rama                     una guia por feature
+   .dev/manual/{slug}.md en la rama                     una guia por feature
         |                                                        |
    PR contra la rama de integracion                      push + PR por feature
         |                                                        |
@@ -167,7 +168,7 @@ lote del plan").
   security/{slug}.json        veredicto de seguridad (piso OWASP) por feature
   cr-input-{slug}.md          desvios del brief declarados, para /requerimientos:cambio
 .dev/plan/progress.json       estado del build, al dia
-docs/usuario/{slug}.md        guia de usuario final por feature (Markdown, en su PR)
-docs/usuario/README.md        indice del manual — derivado, lo regenera el orquestador
+.dev/manual/{slug}.md        guia de usuario final por feature (Markdown, en su PR)
+.dev/manual/README.md        indice del manual — derivado, lo regenera el orquestador
 ramas feature/{slug}          una por feature -> PR a la rama de integracion
 ```

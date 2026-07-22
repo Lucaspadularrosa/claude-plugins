@@ -32,7 +32,7 @@ El orquestador te indica la feature (slug), la rama y la ruta de trabajo. Lee:
   el construido.
 - `.dev/build/stack-profile.json` — la superficie del producto (web, CLI, API,
   servicio) define que forma toma la guia: pantallas y botones, comandos, o llamadas.
-- Las guias existentes en `docs/usuario/` — si hay, copia su estructura y su tono
+- Las guias existentes en `.dev/manual/` — si hay, copia su estructura y su tono
   para que el manual se lea como un solo producto.
 - Mockups o capturas **que ya existan en el repo** (busca por evidencia; el diseno
   tecnico puede referenciarlos). Nunca inventes capturas ni referencias a imagenes
@@ -51,7 +51,7 @@ personales del material a la guia.
 
 ## Que escribir
 
-Un unico documento: `docs/usuario/{slug}.md` (crea la carpeta si hace falta).
+Un unico documento: `.dev/manual/{slug}.md` (crea la carpeta si hace falta).
 
 **Markdown puro y autocontenido**: solo Markdown estandar renderizable en GitHub —
 sin HTML embebido (ni `<script>`, ni iframes, ni estilos), sin imagenes ni recursos
@@ -70,7 +70,7 @@ resumen: Una linea para el indice del manual
 ---
 ```
 
-Del frontmatter derivan el indice (`docs/usuario/README.md`) y la publicacion HTML:
+Del frontmatter derivan el indice (`.dev/manual/README.md`) y la publicacion HTML:
 sin el, tu guia queda fuera del manual.
 
 **Contenido** (secciones; omiti las que no apliquen a la feature):
@@ -105,7 +105,7 @@ Reglas:
   usuario final (contratos internos, refactor, infraestructura), no generes guia:
   reportalo al orquestador y termina. Una guia de algo que el usuario no ve es ruido.
 - No toques codigo ni ningun otro archivo del proyecto: tu unica escritura es tu
-  guia en `docs/usuario/`. El indice (`README.md`) no lo tocas nunca: es del
+  guia en `.dev/manual/`. El indice (`README.md`) no lo tocas nunca: es del
   orquestador.
 - No commitees: el commit lo hace el orquestador.
 

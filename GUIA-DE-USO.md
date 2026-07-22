@@ -249,10 +249,10 @@ un agente revisor audita el diff contra el brief (cobertura, **cierre por requis
 de las tareas —, scope, tests corridos de verdad) y un `security-gate` verifica el
 piso de seguridad (OWASP + audit de
 dependencias); con ambos en verde, un `user-docs-writer` escribe la **guía de usuario
-final** de la feature (`docs/usuario/{slug}.md`, Markdown en el vocabulario
+final** de la feature (`.dev/manual/{slug}.md`, Markdown en el vocabulario
 del LEL — best-effort, nunca bloquea el PR) y viaja en el mismo PR (con
 `/publicar-manual` del plugin `manual-usuario` lo convertís en un sitio HTML
-navegable cuando quieras); y `progress.json`
+navegable en `docs/manual/` cuando quieras); y `progress.json`
 se actualiza en cada transición (`done` = mergeado), que
 es lo que le permite a `/replanificar` no pisar lo construido. La auditoría profunda de
 seguridad sigue estando en `/auditar` (`audit-pipeline`), al que el gate deriva lo que
@@ -278,7 +278,7 @@ autosuficientes: respetá el orden de lotes de `execution-plan.md` y mantené
 | El estado del build | `.dev/plan/progress.json` |
 | Qué construir para una feature | `.dev/features/{feature}.md` |
 | Cómo se desarrolla este proyecto (stack, comandos) | `.dev/build/stack-profile.json` |
-| El manual de usuario de lo construido | `docs/usuario/README.md` (índice; una guía `.md` por feature; HTML con `/publicar-manual`) |
+| El manual de usuario de lo construido | `.dev/manual/README.md` (índice; una guía `.md` por feature; HTML en `docs/manual/` con `/publicar-manual`) |
 | La base de seguridad del stack (superficie, OWASP, tooling) | `.dev/build/security-baseline.json` |
 | El veredicto de review de una feature construida | `.dev/build/reviews/{feature}.json` |
 | El veredicto de seguridad (piso OWASP) de una feature | `.dev/build/security/{feature}.json` |
