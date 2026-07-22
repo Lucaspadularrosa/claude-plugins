@@ -32,7 +32,7 @@ Si falta el plan, indicale al usuario que primero corra `/planificar`
 | `feature-implementer` | Construye UNA feature: modo plan (propone) y modo ejecucion (implementa y verifica, con el piso de seguridad OWASP por construccion) | Por cada feature |
 | `build-reviewer` | Revisa el diff contra el brief (cobertura, scope, correctitud, convenciones) y emite veredicto en `.dev/build/reviews/{slug}.json` | Antes de cada PR |
 | `security-gate` | Revisa el diff contra la base de seguridad (piso OWASP) y corre el audit de dependencias; emite veredicto en `.dev/build/security/{slug}.json` | Antes de cada PR, junto con el review |
-| `user-docs-writer` | Escribe la guia de usuario final de la feature construida: `docs/usuario/{slug}.html` (HTML standalone, vocabulario del LEL) | Despues de que review y gate pasan, antes del PR (best-effort) |
+| `user-docs-writer` | Escribe la guia de usuario final de la feature construida: `docs/usuario/{slug}.md` (Markdown, vocabulario del LEL) | Despues de que review y gate pasan, antes del PR (best-effort) |
 
 ## Convenciones compartidas
 
@@ -78,25 +78,26 @@ Si falta el plan, indicale al usuario que primero corra `/planificar`
   review.
 - **Documentacion de usuario (best-effort)**: cuando una feature paso review y gate,
   invoca `user-docs-writer` sobre su rama antes del PR: escribe
-  `docs/usuario/{slug}.html` (guia standalone para el usuario final, en el
+  `docs/usuario/{slug}.md` (guia en Markdown para el usuario final, en el
   vocabulario del LEL, documentando el comportamiento real construido — pasale el
-  reporte del implementador para que absorba los desvios). Si emitio pagina,
+  reporte del implementador para que absorba los desvios). Si emitio guia,
   commiteala en la rama (`docs: guia de usuario {slug}`) para que viaje en el mismo
   PR. Es **best-effort**: si el agente falla o reporta que la feature no tiene
   superficie de usuario, el PR sale igual y lo anotas en el resumen — la guia nunca
   bloquea ni entra al lazo de correccion.
-- **Indice del manual (derivado, del orquestador)**: `docs/usuario/index.html` no lo
+- **Indice del manual (derivado, del orquestador)**: `docs/usuario/README.md` no lo
   toca ningun agente de feature — lo regeneras VOS, siempre desde cero, leyendo el
-  comentario `<!-- guia-usuario {...} -->` de cada pagina presente en
-  `docs/usuario/`: una portada standalone (mismas variables CSS que las paginas, sin
-  JS ni requests externos) con el nombre del producto y la lista de guias
-  (`titulo` + `resumen`, link a cada pagina). Como es derivado y determinista, nunca
-  se edita a mano y un conflicto se resuelve regenerandolo. Cuando reconciliarlo
-  (mismo patron que el bootstrap de CI): en la **primera rama de cada corrida**, si
-  hay paginas que el indice no lista (o hay paginas y no hay indice), regeneralo con
-  un commit propio (`docs: indice del manual de usuario`); y al cierre, si los PRs de
+  frontmatter (`feature`, `fg`, `titulo`, `resumen`) de cada guia presente en
+  `docs/usuario/`: el nombre del producto como titulo y la lista de guias
+  (`[titulo]({slug}.md)` + resumen). Como es derivado y determinista, nunca se edita
+  a mano y un conflicto se resuelve regenerandolo. Cuando reconciliarlo (mismo
+  patron que el bootstrap de CI): en la **primera rama de cada corrida**, si hay
+  guias que el indice no lista (o hay guias y no hay indice), regeneralo con un
+  commit propio (`docs: indice del manual de usuario`); y al cierre, si los PRs de
   la corrida mergearon en sesion, ofrece regenerarlo de nuevo para que el manual
-  quede completo.
+  quede completo. El Markdown es la fuente de verdad; la publicacion HTML es un
+  paso aparte (`/publicar-manual`, plugin `manual-usuario`): si esta instalado,
+  sugerilo en el resumen final — no lo corras vos.
 - **Desvios del brief -> CR**: si un implementador declaro desvios (`DESVIO-n`) en su
   reporte, no los dejes morir en el resumen: genera `.dev/build/cr-input-{slug}.md`
   con cada desvio completo (feature `FG-xx`, requisito afectado `RF-xxx/AC-xxx`, que
@@ -214,7 +215,7 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
 6. Por cada feature que paso (review y gate en verde): invoca su `user-docs-writer`
    sobre su worktree y commitea la guia si emitio pagina (best-effort, ver
    convenciones; podes lanzar los de varias features en paralelo — cada uno escribe
-   solo su `docs/usuario/{slug}.html`, no se pisan). Despues push de la rama, PR
+   solo su `docs/usuario/{slug}.md`, no se pisan). Despues push de la rama, PR
    contra la rama de integracion, y limpieza del worktree (`git worktree remove`). Actualiza
    `progress.json` (features `in_progress` con su PR en `notes`). Los worktrees de
    las features bloqueadas quedan en pie para el retome: listalos en el resumen para
@@ -266,7 +267,7 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
   security/{slug}.json        veredicto de seguridad (piso OWASP) por feature
   cr-input-{slug}.md          desvios del brief declarados, listos para /requerimientos:cambio
 .dev/plan/progress.json       actualizado en cada transicion
-docs/usuario/{slug}.html      guia de usuario final por feature (standalone, viaja en su PR)
-docs/usuario/index.html       indice del manual — derivado, lo regenera el orquestador
+docs/usuario/{slug}.md        guia de usuario final por feature (Markdown, viaja en su PR)
+docs/usuario/README.md        indice del manual — derivado, lo regenera el orquestador
 ramas feature/{slug}          una por feature, PR contra la rama de integracion
 ```

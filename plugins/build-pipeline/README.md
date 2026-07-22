@@ -43,15 +43,20 @@ seguridad hardcodeado. La referencia de categorias y defensas es
 ## Documentacion de usuario final
 
 Cada feature que pasa las compuertas (review + gate) sale ademas con su **guia de
-usuario**: `docs/usuario/{slug}.html`, una pagina HTML standalone (abre offline, sin
-JS ni requests externos, branding en variables CSS) escrita por el `user-docs-writer`
-para una persona **no tecnica** — que hace la feature, paso a paso (derivado de los
-escenarios), roles, casos especiales. Habla el vocabulario del LEL y documenta el
-comportamiento **real construido** (desvios incluidos), no la spec. La guia viaja en
-el mismo PR de la feature; el indice del manual (`docs/usuario/index.html`) es un
-archivo derivado que regenera el orquestador — por eso los PRs paralelos de un lote
-nunca se pisan. Es best-effort: nunca bloquea un PR, y las features sin superficie de
-usuario (contratos internos, infraestructura) no generan pagina.
+usuario**: `docs/usuario/{slug}.md`, un Markdown escrito por el `user-docs-writer`
+(sonnet: redactar no necesita el modelo de las etapas de juicio) para una persona
+**no tecnica** — que hace la feature, paso a paso (derivado de los escenarios),
+roles, casos especiales. Habla el vocabulario del LEL y documenta el comportamiento
+**real construido** (desvios incluidos), no la spec. La guia viaja en el mismo PR de
+la feature; el indice del manual (`docs/usuario/README.md`) es un archivo derivado
+que regenera el orquestador — por eso los PRs paralelos de un lote nunca se pisan.
+Es best-effort: nunca bloquea un PR, y las features sin superficie de usuario
+(contratos internos, infraestructura) no generan guia.
+
+El Markdown es la **fuente de verdad** del manual (renderiza en GitHub y se revisa
+en el PR). Para entregarlo como sitio HTML navegable esta el plugin
+**`manual-usuario`** (`/publicar-manual`): una publicacion derivada y determinista,
+separada del build.
 
 ## Que necesitas antes
 
@@ -82,7 +87,7 @@ autoritativa), pero no es obligatorio.
    corridos de verdad) y `security-gate` revisa el piso de seguridad (OWASP + audit de
    dependencias); los hallazgos de ambos rebotan al implementador en modo correccion
    (tope: 3 rondas; lo no corregible se bloquea y se escala).
-5. `user-docs-writer` escribe la guia de usuario de la feature (`docs/usuario/{slug}.html`,
+5. `user-docs-writer` escribe la guia de usuario de la feature (`docs/usuario/{slug}.md`,
    best-effort) y se commitea en la rama.
 6. PR contra la rama de integracion, con el resumen, los veredictos (review y seguridad)
    y la guia de usuario.
@@ -114,7 +119,7 @@ build-pipeline/
     feature-implementer.md   construye una feature (modo plan / modo ejecucion)
     build-reviewer.md        revisa el diff contra el brief antes del PR
     security-gate.md         revisa el piso de seguridad (OWASP) antes del PR
-    user-docs-writer.md      escribe la guia de usuario final (HTML standalone)
+    user-docs-writer.md      escribe la guia de usuario final (Markdown)
   skills/
     build-pipeline/
       SKILL.md               orquestacion de los dos modos

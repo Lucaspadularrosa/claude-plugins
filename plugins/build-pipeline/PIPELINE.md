@@ -21,12 +21,13 @@ Es prevencion (el piso); la auditoria profunda adversarial sigue siendo `audit-p
 categorias y defensas es `reference/owasp-baseline.md`.
 
 **Documentacion de usuario por construccion**: cada feature que pasa las compuertas
-sale con su guia de usuario final — `docs/usuario/{slug}.html`, una pagina HTML
-standalone (sin JS ni requests externos) escrita en el vocabulario del LEL, que
-documenta el comportamiento **real construido** (desvios incluidos), no la spec. El
-manual se arma por feature (los PRs paralelos no se pisan) y el indice
-(`docs/usuario/index.html`) es un archivo derivado que mantiene el orquestador. Es
-best-effort: la guia nunca bloquea un PR.
+sale con su guia de usuario final — `docs/usuario/{slug}.md`, un Markdown escrito en
+el vocabulario del LEL, que documenta el comportamiento **real construido** (desvios
+incluidos), no la spec. El manual se arma por feature (los PRs paralelos no se pisan)
+y el indice (`docs/usuario/README.md`) es un archivo derivado que mantiene el
+orquestador. Es best-effort: la guia nunca bloquea un PR. El Markdown es la fuente de
+verdad; la publicacion HTML del manual es del plugin `manual-usuario`
+(`/publicar-manual`).
 
 ---
 
@@ -61,7 +62,7 @@ best-effort: la guia nunca bloquea un PR.
         -> lazo de correccion                             x N] -> lazos
         |                                                        |
    [user-docs-writer] (best-effort)                      [user-docs-writer x N]
-   docs/usuario/{slug}.html en la rama                   una guia por feature
+   docs/usuario/{slug}.md en la rama                     una guia por feature
         |                                                        |
    PR contra la rama de integracion                      push + PR por feature
         |                                                        |
@@ -82,7 +83,7 @@ best-effort: la guia nunca bloquea un PR.
 | `feature-implementer` | Construye una feature: modo plan (propone sin tocar codigo) y modo ejecucion (implementa con el piso de seguridad OWASP, verifica criterios, commit por tarea) | `agents/feature-implementer.md` |
 | `build-reviewer` | Revisa el diff contra el brief: cobertura, scope, correctitud, verificacion real (corre los tests) y convenciones | `agents/build-reviewer.md` |
 | `security-gate` | Revisa el diff contra la base de seguridad (piso OWASP), corre el audit de dependencias y delega lo profundo a `/auditar` | `agents/security-gate.md` |
-| `user-docs-writer` | Escribe la guia de usuario final de la feature construida (HTML standalone, vocabulario del LEL, comportamiento real); best-effort, nunca bloquea el PR | `agents/user-docs-writer.md` |
+| `user-docs-writer` | Escribe la guia de usuario final de la feature construida (Markdown, vocabulario del LEL, comportamiento real); best-effort, nunca bloquea el PR | `agents/user-docs-writer.md` |
 
 La orquestacion vive en la skill `skills/build-pipeline/SKILL.md`. La referencia
 canonica de seguridad es `reference/owasp-baseline.md`.
@@ -166,7 +167,7 @@ lote del plan").
   security/{slug}.json        veredicto de seguridad (piso OWASP) por feature
   cr-input-{slug}.md          desvios del brief declarados, para /requerimientos:cambio
 .dev/plan/progress.json       estado del build, al dia
-docs/usuario/{slug}.html      guia de usuario final por feature (standalone, en su PR)
-docs/usuario/index.html       indice del manual — derivado, lo regenera el orquestador
+docs/usuario/{slug}.md        guia de usuario final por feature (Markdown, en su PR)
+docs/usuario/README.md        indice del manual — derivado, lo regenera el orquestador
 ramas feature/{slug}          una por feature -> PR a la rama de integracion
 ```
