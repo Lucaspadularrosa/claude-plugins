@@ -1,0 +1,19 @@
+{
+  "name": "manual-usuario",
+  "version": "1.0.0",
+  "displayName": "Manual de Usuario (publicacion HTML del manual)",
+  "description": "Publica el manual de usuario que el build-pipeline escribe en .dev/manual/ (una guia Markdown por feature + indice) como un sitio HTML estatico navegable en docs/manual/: una pagina por guia + index.html, offline, sin JavaScript ni requests externos. El render es un script determinista (mismo Markdown -> mismo sitio, cero tokens) que escapa todo HTML embebido y neutraliza recursos externos.",
+  "keywords": [
+    "documentacion",
+    "manual",
+    "usuario-final",
+    "html",
+    "publicacion",
+    "markdown"
+  ],
+  "author": {
+    "name": "Lucas Micheli",
+    "email": "lucas.t.micheli@gmail.com"
+  },
+  "license": "MIT"
+}

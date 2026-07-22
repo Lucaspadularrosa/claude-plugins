@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "greenfield": false,
+  "stack": [{ "name": "node", "evidence": "app.js" }],
+  "surface": "web",
+  "integration_branch": "main",
+  "commands": { "test": "node --test", "lint": "true", "install": "true" },
+  "domain_naming": { "language": "es", "style": "camelCase" },
+  "ci": { "exists": false }
+}

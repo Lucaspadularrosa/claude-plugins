@@ -16,7 +16,8 @@ cómo ejecutar el plan con agentes en paralelo.
 |---|---|
 | `requerimientos` | Pipeline iterativo de ingeniería de requisitos (método LEL y Escenarios de Leite, Hadad, Kaplan y Doorn). Descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; absorbe cambios con confirmación y changelog. |
 | `planning-pipeline` | Convierte la línea de base de requisitos en un plan de ejecución para agentes IA: tareas dimensionadas para una pasada de agente, lotes de features paralelas (ronda de contratos + lotes), inspección del plan y un brief por feature. `/replanificar` absorbe cambios de requisitos sin tocar lo construido. |
-| `build-pipeline` | Ejecuta el plan en cualquier lenguaje o framework: detecta el stack y su base de seguridad por evidencia, implementa cada feature en su rama con un **piso de seguridad OWASP por construcción**, verifica los criterios de aceptación y ese piso (un `security-gate` + audit de dependencias) antes de cada PR, construye lotes completos en paralelo (un agente por feature en worktrees) y mantiene el progreso para la replanificación. |
+| `build-pipeline` | Ejecuta el plan en cualquier lenguaje o framework: detecta el stack y su base de seguridad por evidencia, implementa cada feature en su rama con un **piso de seguridad OWASP por construcción**, verifica los criterios de aceptación y ese piso (un `security-gate` + audit de dependencias) antes de cada PR, construye lotes completos en paralelo (un agente por feature en worktrees), genera la **guía de usuario final** de cada feature (`.dev/manual/`, Markdown) y mantiene el progreso para la replanificación. |
+| `manual-usuario` | Publica el manual de usuario que el build va escribiendo en `.dev/manual/` como un **sitio HTML estático navegable** en `docs/manual/` (offline, sin dependencias externas): una página por guía + índice, con render determinístico vía script. Lo único de la suite que sale de `.dev/`. |
 | `recovery-pipeline` | Comprende una app ya desarrollada (aunque no tenga documentación): qué hace, en qué estado está, qué falta y qué hay que decidir. Reconstruye la línea de base de requisitos con evidencia `archivo:línea`, compatible con toda la suite. |
 | `audit-pipeline` | Audita el codebase en tres dimensiones — bugs, seguridad defensiva y mejoras — con verificación adversarial de cada hallazgo antes de reportarlo. Los confirmados se convierten en change requests planificables. |
 
@@ -27,6 +28,7 @@ cómo ejecutar el plan con agentes en paralelo.
 /plugin install requerimientos@lpadularrosa-dev-plugins
 /plugin install planning-pipeline@lpadularrosa-dev-plugins
 /plugin install build-pipeline@lpadularrosa-dev-plugins
+/plugin install manual-usuario@lpadularrosa-dev-plugins
 /plugin install recovery-pipeline@lpadularrosa-dev-plugins
 /plugin install audit-pipeline@lpadularrosa-dev-plugins
 ```

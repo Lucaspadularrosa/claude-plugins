@@ -40,6 +40,31 @@ Como todo en el plugin, es por evidencia y agnostico de stack: no hay un checkli
 seguridad hardcodeado. La referencia de categorias y defensas es
 `reference/owasp-baseline.md`.
 
+## Documentacion de usuario final
+
+Cada feature que pasa las compuertas (review + gate) sale ademas con su **guia de
+usuario**: `.dev/manual/{slug}.md`, un Markdown escrito por el `user-docs-writer`
+(sonnet: redactar no necesita el modelo de las etapas de juicio) para una persona
+**no tecnica** — que hace la feature, paso a paso (derivado de los escenarios),
+roles, casos especiales. Habla el vocabulario del LEL y documenta el comportamiento
+**real construido** (desvios incluidos), no la spec. La guia viaja en el mismo PR de
+la feature; el indice del manual (`.dev/manual/README.md`) es un archivo derivado
+que regenera el orquestador — por eso los PRs paralelos de un lote nunca se pisan.
+Es best-effort: nunca bloquea un PR, y las features sin superficie de usuario
+(contratos internos, infraestructura) no generan guia.
+
+El Markdown es la **fuente de verdad** del manual y vive en `.dev/` como todo
+artefacto de la suite (renderiza en GitHub y se revisa en el PR). Lo unico de cara
+al usuario final es la publicacion: el plugin **`manual-usuario`**
+(`/publicar-manual`) lo convierte en un sitio HTML navegable en `docs/manual/`,
+fuera de `.dev/` — una publicacion derivada y determinista, separada del build.
+
+¿Proyecto que ya construyo features **antes** de que el pipeline documentara?
+**`/documentar`** genera las guias que faltan retroactivamente: detecta las
+features `done` sin guia, reconstruye lo construido desde sus commits `[T-xxx]`,
+documenta el codigo actual de la integracion y abre un PR con todas las guias y el
+indice regenerado.
+
 ## Que necesitas antes
 
 La salida de `planning-pipeline` en el proyecto:
@@ -54,6 +79,7 @@ autoritativa), pero no es obligatorio.
 ```
 /construir <feature>          una feature, con tu aprobacion del plan de implementacion
 /construir-lote [BATCH-n]     un lote completo en paralelo, sin pausas
+/documentar [feature]         guias de usuario retroactivas para features ya construidas
 ```
 
 ### `/construir <feature>` — control fino
@@ -69,7 +95,10 @@ autoritativa), pero no es obligatorio.
    corridos de verdad) y `security-gate` revisa el piso de seguridad (OWASP + audit de
    dependencias); los hallazgos de ambos rebotan al implementador en modo correccion
    (tope: 3 rondas; lo no corregible se bloquea y se escala).
-5. PR contra la rama de integracion, con el resumen y los veredictos (review y seguridad).
+5. `user-docs-writer` escribe la guia de usuario de la feature (`.dev/manual/{slug}.md`,
+   best-effort) y se commitea en la rama.
+6. PR contra la rama de integracion, con el resumen, los veredictos (review y seguridad)
+   y la guia de usuario.
 
 ### `/construir-lote` — el ejecutor del plan
 
@@ -98,12 +127,14 @@ build-pipeline/
     feature-implementer.md   construye una feature (modo plan / modo ejecucion)
     build-reviewer.md        revisa el diff contra el brief antes del PR
     security-gate.md         revisa el piso de seguridad (OWASP) antes del PR
+    user-docs-writer.md      escribe la guia de usuario final (Markdown)
   skills/
     build-pipeline/
       SKILL.md               orquestacion de los dos modos
   commands/
     construir.md             /construir <feature>
     construir-lote.md        /construir-lote [BATCH-n]
+    documentar.md            /documentar [feature] (guias retroactivas)
   reference/
     owasp-baseline.md        base de seguridad canonica (OWASP Top 10 2021)
   PIPELINE.md
@@ -122,6 +153,9 @@ build-pipeline/
   audit de dependencias) antes del PR. Veredictos en `.dev/build/security/`.
 - **Trazabilidad hasta el codigo**: commits `[T-xxx]` → tarea → requisito → escenario
   → LEL → fuente. Reviews archivados en `.dev/build/reviews/`.
+- **Manual de usuario que crece con el producto**: cada feature con superficie de
+  usuario sale de su PR con su guia (`.dev/manual/`), en el vocabulario del LEL y
+  fiel a lo construido. Best-effort: nunca bloquea un PR.
 - **`progress.json` siempre al dia**: `done` = mergeado. Es lo que le permite a
   `/replanificar` absorber cambios de requisitos sin pisar lo construido.
 
