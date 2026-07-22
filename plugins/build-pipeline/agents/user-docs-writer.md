@@ -27,9 +27,15 @@ El orquestador te indica la feature (slug), la rama y la ruta de trabajo. Lee:
 - El diff de la rama: `git diff {rama_integracion}...{rama}` (la rama de integracion
   esta en `.dev/build/stack-profile.json`) — para confirmar que lo que documentas
   existe y como quedo de verdad.
+- **Modo retroactivo** (el orquestador te lo indica: la feature ya esta mergeada y
+  no hay rama viva): reconstrui lo construido desde sus commits — la feature dejo
+  rastro `[T-xxx]` por tarea (`git log --grep` con los IDs de tarea del brief) — y
+  lee el codigo **actual** de la rama de integracion, que puede haber evolucionado
+  desde el merge: documentas el comportamiento vigente hoy, no el del dia del PR.
 - El reporte del implementador, si el orquestador te lo pasa — en particular los
   desvios (`DESVIO-n`): si el comportamiento construido difiere del brief, documentas
-  el construido.
+  el construido. En modo retroactivo no suele haber reporte: el codigo actual es la
+  unica verdad.
 - `.dev/build/stack-profile.json` — la superficie del producto (web, CLI, API,
   servicio) define que forma toma la guia: pantallas y botones, comandos, o llamadas.
 - Las guias existentes en `.dev/manual/` — si hay, copia su estructura y su tono

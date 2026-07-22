@@ -28,7 +28,8 @@ y el indice (`.dev/manual/README.md`) es un archivo derivado que mantiene el
 orquestador. Es best-effort: la guia nunca bloquea un PR. El Markdown es la fuente de
 verdad y vive en `.dev/` como todo artefacto de la suite; lo unico de cara al usuario
 es la publicacion HTML (`docs/manual/`), que hace el plugin `manual-usuario`
-(`/publicar-manual`).
+(`/publicar-manual`). Para features construidas antes de este paso, `/documentar`
+genera las guias retroactivamente (desde los commits `[T-xxx]` y el codigo actual).
 
 ---
 
@@ -151,6 +152,7 @@ canonica de seguridad es `reference/owasp-baseline.md`.
 /construir importacion-padron        (una feature, con aprobacion del plan)
 /construir-lote                      (el proximo lote desbloqueado, en paralelo)
 /construir-lote BATCH-2              (un lote especifico)
+/documentar                          (guias de usuario retroactivas para lo ya construido)
 ```
 
 O en lenguaje natural ("construi la feature de facturacion", "ejecuta el proximo

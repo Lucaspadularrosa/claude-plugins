@@ -281,6 +281,32 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
    lote — o `/replanificar` si llegaron cambios de requisitos, o `/auditar` si el gate
    dejo cosas para auditoria profunda).
 
+## Modo DOCUMENTAR (`/documentar [feature]`)
+
+Genera retroactivamente las guias de usuario que faltan: features construidas
+**antes** de que el pipeline escribiera documentacion (o cuyo docs best-effort
+fallo en su momento). No toca codigo: solo produce guias.
+
+1. Detecta el universo: features `done` en `progress.json` sin guia en
+   `.dev/manual/` (cruce por el `feature` del frontmatter). Si el usuario indico
+   una feature puntual, limitate a esa (aunque no este `done`: vale documentar una
+   feature mergeada que progress no refleje — confirmalo con el usuario). Si no
+   falta ninguna, decilo y termina.
+2. Mostra la lista de features a documentar y confirma antes de arrancar.
+3. Crea UNA rama `docs/manual-retroactivo` desde la rama de integracion (aca no hay
+   paralelismo de PRs que proteger: es una corrida unica). Por cada feature, invoca
+   `user-docs-writer` en **modo retroactivo** (feature mergeada, sin rama viva: el
+   agente reconstruye desde los commits `[T-xxx]` del brief y documenta el codigo
+   actual de la integracion). Podes lanzar varios en paralelo: cada uno escribe
+   solo su `.dev/manual/{slug}.md`. Commit por guia
+   (`docs: guia de usuario {slug} (retroactiva)`).
+4. Best-effort como siempre: la que falla o no tiene superficie de usuario se
+   anota y no frena a las demas.
+5. Al final regenera el indice (`.dev/manual/README.md`, ver convenciones) en la
+   misma rama, y abri UN PR con todas las guias. Resumen: guias generadas, las que
+   quedaron sin (y por que), y el proximo paso (mergear y, si quieren el manual
+   navegable, `/publicar-manual`).
+
 ---
 
 ## Reglas de orquestacion

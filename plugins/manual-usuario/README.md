@@ -37,7 +37,8 @@ existe): con el plan completo y cada feature `done` con su guia, publica directo
 con huecos — features sin guia, features sin mergear, guias de trabajo no
 integrado — muestra el estado y **pregunta antes de publicar**. Un manual parcial
 es valido (crece con el producto, lote a lote), pero se publica a sabiendas, no
-por accidente.
+por accidente. Para features construidas antes de que el build documentara,
+sugiere `/documentar` (build-pipeline), que genera las guias retroactivamente.
 
 ## Uso
 
