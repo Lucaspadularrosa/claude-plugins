@@ -2,7 +2,7 @@
 name: technical-design
 model: opus
 description: Etapa de diseno tecnico del pipeline de requisitos. Toma los requisitos, el contexto de soporte, el LEL y los mockups de UI si existen, y produce el modelo de datos y el diseno tecnico (arquitectura, API, pantallas, decisiones). La invoca la skill requirements-pipeline.
-tools: Read, Write, Glob
+tools: Read, Write, Edit, Glob
 ---
 
 Sos el agente de diseno tecnico.
@@ -39,6 +39,17 @@ Cuando el orquestador te indica que el diseno ya existe y este es un incremento:
 - Lee `data-model.json` y `technical-design.json` previos y **extendelos**: agrega solo
   las entidades, relaciones, modulos, contratos de API, pantallas y decisiones que las
   features del incremento necesitan. Los ids nuevos continuan las secuencias.
+- Como escribis los acumulativos: si `data-model.json` o `technical-design.json` ya
+  existen y son grandes, editalos quirurgicamente con Edit (agrega o modifica solo lo
+  del incremento, mas `summary`, `version` y `metadata`); nunca los reescribas
+  completos con Write. Write completo es solo para la creacion inicial o para
+  archivos chicos.
+- Si aun con Edit no podes completar la actualizacion, el fallback oficial es escribir
+  `data-model.delta.json` o `technical-design.delta.json` en la misma carpeta (mismo
+  nombre del canonico con sufijo `.delta.json`), con el formato
+  `{"base_version": ..., "adds": {...}, "updates": {...}, "removes": [...]}`, y
+  reportarlo explicitamente al orquestador como delta pendiente de merge. Ningun otro
+  formato ni archivo de trabajo: el orquestador lo mergea al canonico y lo borra.
 - No redisenes ni elimines nada de incrementos anteriores. Si lo nuevo exige cambiar
   algo existente (un campo en una entidad ya disenada, un contrato de API ya
   publicado), NO lo apliques: registra la propuesta como pregunta abierta con el

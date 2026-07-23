@@ -68,14 +68,20 @@ El estado de ejecucion del plan. Lo inicializas vos al cerrar `/planificar` (tod
 {
   "version": 1,
   "updated_at": "string",
+  "plan_ref": {"tasks_version": "string", "applied_changelog_ids": ["INC-001"]},
   "features": [
     {"feature_id": "FG-01", "status": "pending|in_progress|done", "branch": "string", "notes": "string"}
   ],
   "tasks": [
-    {"task_id": "T-001", "status": "pending|in_progress|done|blocked|cancelled", "notes": "string"}
+    {"task_id": "T-001", "feature_id": "FG-01", "status": "pending|in_progress|done|blocked|cancelled", "notes": "string"}
   ]
 }
 ```
+
+`plan_ref` identifica el plan sobre el que se construye: cita la `version` de
+`tasks.json` (como string) y sus `applied_changelog_ids`. Lo inicializas vos al
+cerrar `/planificar` y lo sincroniza el cierre de `/replanificar` — tiene dueño;
+no queda congelado. Cada entrada de `tasks` lleva el `feature_id` de su feature.
 
 Semantica: feature `done` = mergeada a la rama de integracion. El build marca cada
 tarea `done` cuando el reporte del implementador la da por verificada y `blocked`
@@ -115,8 +121,8 @@ Invoca `plan-inspection`. Es la compuerta de auditoria del plan.
   corresponda en modo correccion, indicandole que lea `.dev/plan/plan-inspection.json`
   y aplique las correcciones propuestas:
   - `task-derivation` para defectos de cobertura, tareas huerfanas, dependencias,
-    granularidad/complejidad, criterios de aceptacion o extraccion de contratos:
-    checks 001, 002, 003, 004, 005, 006, 011.
+    granularidad/complejidad, criterios de aceptacion, extraccion de contratos o
+    el invariante de replanificacion: checks 001, 002, 003, 004, 005, 006, 011, 013.
   - `execution-planning` para defectos de completitud, orden, metricas o lotes
     seriales sin justificar: checks 008, 009, 010, 012.
   - `PLAN-CHECK-007` (desactualizacion) NO se corrige en este lazo: corta e indicale
@@ -135,7 +141,9 @@ alimentar un pipeline de desarrollo de features.
 
 ### Paso 5 - Cierre
 
-Inicializa `.dev/plan/progress.json` con todas las features y tareas en `pending`. Si
+Inicializa `.dev/plan/progress.json` con todas las features y tareas en `pending`
+(cada tarea con su `feature_id`) y `plan_ref` (tasks_version y
+applied_changelog_ids) sincronizado con el `tasks.json` emitido. Si
 ya existia, no lo pises — salvo que esta corrida haya sido una regeneracion total
 confirmada por el usuario (ver guard de re-ejecucion): ahi re-inicializalo, porque
 los ids viejos ya no significan nada. Informa al usuario los archivos generados en `.dev/plan/` y
@@ -174,10 +182,21 @@ construido.
    trabajo restante (features `done` fuera del grafo, `in_progress` conservan su
    lote, lo nuevo se inserta por niveles).
 7. Corre `plan-inspection` con su lazo de correccion, igual que en el Paso 3.
+   Indicale que es replanificacion y pasale la version previa de `tasks.json`
+   (una referencia git o una ruta) para el invariante de replanificacion
+   (PLAN-CHECK-013: las tareas no afectadas por el delta no pueden haber cambiado).
 8. Invoca `feature-brief` indicandole **solo las features afectadas**: regenera esos
    briefs citando que entrada del changelog los cambio.
-9. Cierre: actualiza `progress.json` (tareas nuevas en `pending`, canceladas en
-   `cancelled`), y resume: que se agrego/modifico/cancelo, los lotes del trabajo
+9. Cierre: si algun agente reporto un delta (`*.delta.json`, su fallback oficial
+   cuando ni Edit alcanzo), mergealo vos al canonico, verifica el resultado (JSON
+   valido, `version` incrementada, nada perdido) y BORRA el delta antes de cerrar.
+   Checklist de cierre: no quedan archivos `*delta*`, `*patch*` ni `_*` en
+   `.dev/plan/` ni `.dev/requirements/`; el layout es cerrado — ningun artefacto
+   fuera de los definidos. Actualiza `progress.json` (tareas nuevas en `pending`
+   con su `feature_id`, canceladas en `cancelled`) y sincroniza
+   `progress.json.plan_ref` (tasks_version y applied_changelog_ids) con el
+   `tasks.json` recien emitido. Resume: que se agrego/modifico/cancelo, los lotes
+   del trabajo
    restante, el paralelismo resultante y los `applied_changelog_ids` actualizados.
 
 ## Reglas de orquestacion

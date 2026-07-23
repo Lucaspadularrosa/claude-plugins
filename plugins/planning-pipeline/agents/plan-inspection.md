@@ -73,6 +73,13 @@ Checks sobre las tareas (`tasks.json`):
   `high` con correccion propuesta "correr /replanificar" — este defecto no se corrige
   en el lazo de correccion del pipeline. Una entrada presente solo en
   `deferred_changelog_ids` es defecto `low` informativo: no bloquea.
+- `PLAN-CHECK-013` (solo aplica en replanificacion): invariante de replanificacion.
+  Las tareas NO afectadas por el delta coinciden con la version previa de
+  `tasks.json` — el orquestador te provee esa version previa (una ruta o una
+  referencia git); si no te la dio, anota en `warnings` que el check no se pudo
+  verificar, no lo asumas cumplido. Cualquier perdida de campos (p. ej.
+  `acceptance_criteria`) o alteracion en tareas no afectadas es defecto `high`
+  (rebota a `task-derivation`).
 
 Checks sobre el plan de ejecucion (`execution-plan.json`):
 

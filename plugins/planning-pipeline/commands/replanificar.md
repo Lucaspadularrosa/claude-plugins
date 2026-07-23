@@ -28,7 +28,15 @@ Segui el modo REPLANIFICACION de la skill `planning-pipeline`:
    trabajo restante (lo `done` queda fuera del grafo, lo `in_progress` conserva su
    lote).
 7. Corre `plan-inspection` y su lazo de correccion (tope: 3 pasadas; si no pasa,
-   mostrame los defectos remanentes y decido yo).
+   mostrame los defectos remanentes y decido yo). Indicale que es replanificacion y
+   pasale la version previa de `tasks.json` (referencia git o ruta) para el
+   invariante de replanificacion (PLAN-CHECK-013).
 8. Corre `feature-brief` solo para las features afectadas, marcando que cambio.
-9. Al final: resumen de que se agrego/modifico/cancelo, los nuevos lotes del trabajo
-   restante, el paralelismo resultante y los `applied_changelog_ids` actualizados.
+9. Al final: si algun agente reporto un delta (`*.delta.json`), mergealo al canonico,
+   verifica el resultado y borralo antes de cerrar — no pueden quedar archivos
+   `*delta*`, `*patch*` ni `_*` en `.dev/plan/` ni `.dev/requirements/`; el layout es
+   cerrado. Sincroniza `progress.json.plan_ref` (tasks_version y
+   applied_changelog_ids) con el `tasks.json` recien emitido. Despues el resumen de
+   que se agrego/modifico/cancelo, los nuevos lotes
+   del trabajo restante, el paralelismo resultante y los `applied_changelog_ids`
+   actualizados.
