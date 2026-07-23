@@ -185,7 +185,9 @@ que quedo afuera y por que. El usuario decide; vos no elaboras nada sin su elecc
    los rechazados quedan `rejected` en el changelog. Lo nuevo no requiere confirmacion.
 5. Invoca `requirements-inspection` (audita todo lo elaborado, no solo este
    incremento). Lazo de correccion: defectos `high`/`medium` rebotan a
-   `requirements-specification` (modo correccion) y se reinspecciona, con tope de
+   `requirements-specification` (modo correccion) y se reinspecciona SIEMPRE — la
+   re-inspeccion puede ser acotada a los defectos corregidos, pero se persiste con
+   `version` nueva y su `passed` real —, con tope de
    **3 pasadas**: si no pasa, presenta los defectos remanentes al usuario y decidi
    con el (aceptar anotado, corregir a mano, abortar).
 6. Diseño tecnico, SIEMPRE — tambien si el incremento no tiene pantallas: el modelo
@@ -196,7 +198,15 @@ que quedo afuera y por que. El usuario decide; vos no elaboras nada sin su elecc
      solo con lo que estas features necesitan, preservando ids y decisiones previas)
      y despues `design-inspection`, con su lazo de correccion (mismo tope de 3
      pasadas).
-7. Cierra: marca las features y escenarios del incremento como `baselined` en
+7. Cierra, con **compuerta dura**: un incremento no puede cerrar `applied` si la
+   ultima inspeccion persistida tiene `passed: false`. Antes de marcar nada, lee en
+   disco `requirements-inspection.json` (y `design-inspection.json`) y verifica
+   `passed: true` en su ultima version; si esta en `false`, volve al lazo de
+   correccion y re-emiti la inspeccion — nunca cierres declarando que la inspeccion
+   paso si el JSON dice otra cosa. Si el usuario acepto defectos anotados (paso 5),
+   el cierre lo registra explicito en `notes` del changelog: el estado en disco y el
+   changelog no se contradicen. Con la compuerta verificada, marca las features y
+   escenarios del incremento como `baselined` en
    `product-map.json`, cierra la entrada `INC-xxx` (`applied`, con verdicts y
    versiones). Informa el resumen y sugeri el paso siguiente: `/planificar` (primera
    vez) o re-planificar (si ya hay plan, el pipeline de planificacion detecta los
