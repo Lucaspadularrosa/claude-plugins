@@ -197,7 +197,12 @@ Construye una feature, con aprobacion del plan de implementacion antes de codear
    despues.
 6. Con review y gate en verde, invoca `user-docs-writer` sobre la rama y commitea la
    guia si emitio pagina (ver convenciones: best-effort, nunca bloquea).
-7. Crea el PR contra la rama de integracion y mostrale al usuario el resumen: tareas
+7. **Compuerta dura pre-PR**: antes de abrir el PR verifica con `ls`/`Read` que
+   `.dev/build/reviews/{slug}.json` y `.dev/build/security/{slug}.json` existen y que
+   **ambos** tienen `passed: true`. Si falta cualquiera de los dos, o alguno esta en
+   `false`, el PR no se abre: reporta el bloqueo al usuario (que veredicto falta o
+   fallo) y volve al paso 5. Con la compuerta verificada, crea el PR contra la rama
+   de integracion y mostrale al usuario el resumen: tareas
    construidas, criterios verificados, **cierre por requisito** (cada RF/RNF del
    brief con sus criterios demostrados, del `requirements_closure` del review),
    veredicto del review, **veredicto de seguridad**
@@ -265,7 +270,11 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
 6. Por cada feature que paso (review y gate en verde): invoca su `user-docs-writer`
    sobre su worktree y commitea la guia si emitio pagina (best-effort, ver
    convenciones; podes lanzar los de varias features en paralelo — cada uno escribe
-   solo su `.dev/manual/{slug}.md`, no se pisan). Despues push de la rama, PR
+   solo su `.dev/manual/{slug}.md`, no se pisan). Despues, **compuerta dura
+   pre-PR**: verifica con `ls`/`Read` que `.dev/build/reviews/{slug}.json` y
+   `.dev/build/security/{slug}.json` existen, ambos con `passed: true` — si falta
+   cualquiera, esa feature no abre PR: queda bloqueada con el motivo en `notes` y lo
+   reportas en el resumen. Con la compuerta verificada: push de la rama, PR
    contra la rama de integracion, y limpieza del worktree (`git worktree remove`). Actualiza
    `progress.json` (features `in_progress` con su PR en `notes`). Los worktrees de
    las features bloqueadas quedan en pie para el retome: listalos en el resumen para
