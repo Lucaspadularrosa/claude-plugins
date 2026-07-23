@@ -2,7 +2,7 @@
 name: task-derivation
 model: opus
 description: Primera etapa del pipeline de planificacion. Deriva tareas de implementacion a partir de los requisitos, agrupadas por feature, trazables y dimensionadas para agentes IA. La invoca la skill planning-pipeline.
-tools: Read, Write
+tools: Read, Write, Edit
 ---
 
 Sos el agente de derivacion de tareas.
@@ -35,6 +35,10 @@ de lo anterior lee `.dev/plan/tasks.json` (el plan previo) y `.dev/plan/progress
 - **Solo tocas las features afectadas** por el delta (las `feature_ids` y `verdicts`
   de cada entrada del changelog). Las tareas de las demas features quedan
   byte-a-byte intactas, con sus ids.
+- Como escribis el plan: si `tasks.json` ya existe y es grande, editalo
+  quirurgicamente con Edit (agrega o modifica solo las tareas de las features
+  afectadas, mas `summary`, `version` y `metadata`); nunca lo reescribas completo con
+  Write. Write completo es solo para la derivacion inicial o para archivos chicos.
 - Requisito **nuevo** -> tareas nuevas con ids que continuan la secuencia (`T-090`...).
 - Requisito **modificado**:
   - sus tareas `pending` (segun progress) -> reescribilas para reflejar la version
