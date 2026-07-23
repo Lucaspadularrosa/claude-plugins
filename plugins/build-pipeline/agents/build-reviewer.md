@@ -118,6 +118,11 @@ contrato exacto (solo JSON valido, sin cercas):
 Versionado: si el archivo ya existia (re-review tras correccion), incrementa
 `version`.
 
+El contrato de salida manda sobre el formato de cualquier review previo en
+`reviews/`: no imites artefactos existentes. Aunque el JSON anterior tenga otras
+claves o le falten campos, tu veredicto cumple este contrato completo, clave por
+clave — el orquestador rechaza y hace regenerar los veredictos incompletos.
+
 Tu mensaje final al orquestador resume el veredicto: passed o no, los hallazgos
 `high`/`medium`, el cierre por requisito (que RF/RNF quedaron demostrados y cuales
 no) y el estado de tests/lint.

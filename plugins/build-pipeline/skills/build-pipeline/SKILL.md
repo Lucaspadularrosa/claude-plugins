@@ -155,6 +155,12 @@ Si falta el plan, indicale al usuario que primero corra `/planificar`
   usuario `/requerimientos:cambio .dev/build/cr-input-{slug}.md`. La linea de base no
   se corrige a mano: o el CR actualiza el requisito, o el desvio se revierte — el
   codigo y los requisitos no divergen en silencio.
+- **Contrato del veredicto**: al recibir cada veredicto (`reviews/{slug}.json` o
+  `security/{slug}.json`), lee el JSON y valida que contiene todas las claves del
+  contrato del agente — en el review, `requirements_closure` incluida. Si falta
+  cualquiera, el veredicto es invalido: re-invoca al agente para que lo regenere
+  completo antes de seguir; un veredicto incompleto no habilita PR ni cuenta como
+  ronda de review.
 - Si un subagente falla o reporta bloqueo, no improvises: mostra el bloqueo al usuario
   con el contexto del brief.
 
