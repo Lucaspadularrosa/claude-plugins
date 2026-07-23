@@ -155,6 +155,14 @@ Cuando el plan paso la inspeccion, invoca `feature-brief`. Escribe un documento 
 feature en `.dev/features/`, con su lote, su orden de tareas y sus contratos, listo para
 alimentar un pipeline de desarrollo de features.
 
+**Validacion estructural (obligatoria)**: cuando `feature-brief` termina, verifica VOS
+por Grep que cada brief emitido (o regenerado) contiene los encabezados obligatorios —
+`Seguridad`, `Vocabulario` y `Criterios de cierre de feature` (los nombres exactos de
+seccion del contrato de `feature-brief`). El auto-check del subagente no alcanza: si a
+algun brief le falta cualquiera de los tres, re-invoca `feature-brief` en modo
+correccion indicandole los archivos y las secciones faltantes, y volve a verificar.
+La etapa no cierra con un brief incompleto.
+
 ### Paso 5 - Cierre
 
 Inicializa `.dev/plan/progress.json` con todas las features y tareas en `pending`. Si
@@ -197,7 +205,9 @@ construido.
    lote, lo nuevo se inserta por niveles).
 7. Corre `plan-inspection` con su lazo de correccion, igual que en el Paso 3.
 8. Invoca `feature-brief` indicandole **solo las features afectadas**: regenera esos
-   briefs citando que entrada del changelog los cambio.
+   briefs citando que entrada del changelog los cambio. Aplicales la misma validacion
+   estructural del Paso 4 (encabezados `Seguridad`, `Vocabulario` y `Criterios de
+   cierre de feature` verificados por Grep; correccion si falta alguno).
 9. Cierre: actualiza `progress.json` (tareas nuevas en `pending`, canceladas en
    `cancelled`), y resume: que se agrego/modifico/cancelo, los lotes del trabajo
    restante, el paralelismo resultante y los `applied_changelog_ids` actualizados.
