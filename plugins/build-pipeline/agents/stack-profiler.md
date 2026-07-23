@@ -78,6 +78,16 @@ donde estan, nunca el valor.
   registra los comandos estandar de ese stack como `validated: false`, con la nota de
   que el primer feature debe crear el esqueleto del proyecto. Para la base de seguridad,
   deriva los mecanismos nativos del framework elegido y los ADRs de seguridad si existen.
+- **Modo regeneracion**: el orquestador te re-invoca cuando el perfil quedo stale —
+  (a) le falta alguna clave del contrato vigente, (b) termino la primera feature de
+  un greenfield, o (c) se resolvio una decision de stack abierta (te puede pasar la
+  decision tomada). Re-deriva **ambos** perfiles completos contra el contrato de este
+  prompt (no contra el formato del perfil viejo), incrementando `version`: en (b),
+  el esqueleto ya existe — re-evalua `greenfield` (normalmente pasa a `false`) y
+  valida los comandos ejecutandolos ahora que se puede; en (c), refleja la decision
+  resuelta y quitala de `open_questions`. Conserva del perfil previo lo que siga
+  respaldado por evidencia; lo que la evidencia nueva contradiga se reescribe, no se
+  arrastra.
 - **Base de seguridad por evidencia, no checklist inventado.** Cada `control` cita el
   mecanismo nativo real del stack (`evidence`); si el stack no da algo nativo para una
   categoria aplicable, no lo inventes: marca `mechanism` como ausente y registra el
