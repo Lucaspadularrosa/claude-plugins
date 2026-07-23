@@ -124,6 +124,7 @@ Escribi `.dev/plan/plan-inspection.json` con este contrato exacto (solo JSON val
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "tasks_version_ref": "string",
   "execution_plan_version_ref": "string",
   "requirements_version_ref": "string",
@@ -152,6 +153,10 @@ Escribi `.dev/plan/plan-inspection.json` con este contrato exacto (solo JSON val
   "warnings": ["string"]
 }
 ```
+
+Versionado: si el archivo ya existia, incrementa `version` en cada reescritura.
+`pipeline_version` es la version del plugin que el orquestador te indica al invocarte:
+estampala tal cual; si no te la indicaron, escribi `null` — nunca la inventes.
 
 Tambien escribi `.dev/plan/plan-inspection.md`: un resumen legible con el conteo de
 defectos por severidad y, por cada defecto, su id, check, severidad, descripcion y

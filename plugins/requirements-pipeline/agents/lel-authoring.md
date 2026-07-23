@@ -91,7 +91,7 @@ cercas de markdown):
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"]},
+  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "pipeline_version": "string"},
   "symbols": [
     {
       "id": "SYM-001",
@@ -119,6 +119,9 @@ cercas de markdown):
 Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archivo
 (modo actualizacion incluido); `metadata.updated_at` se actualiza siempre. Las etapas
 posteriores citan este numero en sus `lel_version_ref` para detectar desactualizacion.
+`metadata.pipeline_version` es la version del plugin que el orquestador te indica al
+invocarte: estampala tal cual; si no te la indicaron, escribi `null` — nunca la
+inventes.
 
 NO escribas `.dev/requirements/lel.md`: es una vista derivada que el orquestador
 regenera por script desde `lel.json` al cierre de la corrida. Tu unica salida es el JSON.

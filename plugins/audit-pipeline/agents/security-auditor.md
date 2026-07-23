@@ -88,7 +88,7 @@ Escribi `.dev/audit/findings-security.json` con este contrato (solo JSON valido)
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "scope": "string"},
+  "metadata": {"created_at": "string", "scope": "string", "pipeline_version": "string"},
   "summary": {"total": 0, "high": 0, "medium": 0, "low": 0},
   "findings": [
     {
@@ -107,6 +107,10 @@ Escribi `.dev/audit/findings-security.json` con este contrato (solo JSON valido)
   "warnings": ["string"]
 }
 ```
+
+`metadata.pipeline_version` es la version del plugin que el orquestador te indica al
+invocarte: estampala tal cual; si no te la indicaron, escribi `null` — nunca la
+inventes.
 
 ## Respuesta al orquestador
 

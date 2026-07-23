@@ -78,6 +78,16 @@ donde estan, nunca el valor.
   registra los comandos estandar de ese stack como `validated: false`, con la nota de
   que el primer feature debe crear el esqueleto del proyecto. Para la base de seguridad,
   deriva los mecanismos nativos del framework elegido y los ADRs de seguridad si existen.
+- **Modo regeneracion**: el orquestador te re-invoca cuando el perfil quedo stale —
+  (a) le falta alguna clave del contrato vigente, (b) termino la primera feature de
+  un greenfield, o (c) se resolvio una decision de stack abierta (te puede pasar la
+  decision tomada). Re-deriva **ambos** perfiles completos contra el contrato de este
+  prompt (no contra el formato del perfil viejo), incrementando `version`: en (b),
+  el esqueleto ya existe — re-evalua `greenfield` (normalmente pasa a `false`) y
+  valida los comandos ejecutandolos ahora que se puede; en (c), refleja la decision
+  resuelta y quitala de `open_questions`. Conserva del perfil previo lo que siga
+  respaldado por evidencia; lo que la evidencia nueva contradiga se reescribe, no se
+  arrastra.
 - **Base de seguridad por evidencia, no checklist inventado.** Cada `control` cita el
   mecanismo nativo real del stack (`evidence`); si el stack no da algo nativo para una
   categoria aplicable, no lo inventes: marca `mechanism` como ausente y registra el
@@ -98,7 +108,7 @@ Contrato exacto:
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "updated_at": "string", "technical_design_version_ref": "string", "greenfield": false},
+  "metadata": {"created_at": "string", "updated_at": "string", "technical_design_version_ref": "string", "greenfield": false, "pipeline_version": "string"},
   "stack": [
     {"layer": "backend|frontend|database|infra|testing|other", "technology": "string", "version": "string", "evidence": "composer.json"}
   ],
@@ -127,7 +137,9 @@ Contrato exacto:
 Versionado: `version` empieza en 1 y se incrementa en cada reescritura;
 `metadata.updated_at` se actualiza siempre. `technical_design_version_ref` cita la
 `version` de `technical-design.json` si existe: si el diseno cambia, el perfil debe
-regenerarse.
+regenerarse. `metadata.pipeline_version` es la version del plugin que el orquestador
+te indica al invocarte: estampala tal cual en ambos perfiles; si no te la indicaron,
+escribi `null` — nunca la inventes.
 
 ### 2. `.dev/build/security-baseline.json`
 
@@ -138,7 +150,7 @@ ausencia). Contrato exacto:
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "updated_at": "string", "stack_profile_version_ref": "string", "owasp_reference": "OWASP Top 10 2021", "greenfield": false},
+  "metadata": {"created_at": "string", "updated_at": "string", "stack_profile_version_ref": "string", "owasp_reference": "OWASP Top 10 2021", "greenfield": false, "pipeline_version": "string"},
   "attack_surface": [
     {"kind": "web|api|cli|library|service", "evidence": "string (rutas/vistas, endpoints, entrypoint de consola, manifiesto de publicacion, worker)", "notes": "string"}
   ],

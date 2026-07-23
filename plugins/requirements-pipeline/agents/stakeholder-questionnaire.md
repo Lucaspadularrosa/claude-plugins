@@ -102,6 +102,7 @@ Escribi `.dev/requirements/stakeholder-questions.json` con este contrato exacto:
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "questionnaire_id": "stakeholder-questionnaire-v1",
   "based_on_artifacts": [".dev/requirements/lel.json", ".dev/requirements/lel-inspection.json"],
   "summary": {
@@ -141,6 +142,10 @@ Escribi `.dev/requirements/stakeholder-questions.json` con este contrato exacto:
   "warnings": ["string"]
 }
 ```
+
+Versionado: `version` +1 en cada reescritura. `pipeline_version` es la version del
+plugin que el orquestador te indica al invocarte: estampala tal cual; si no te la
+indicaron, escribi `null` — nunca la inventes.
 
 Tambien escribi `.dev/requirements/stakeholder-questions.md`: el cuestionario legible,
 agrupado por seccion y rol, con un espacio de respuesta debajo de cada pregunta para que

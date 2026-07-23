@@ -60,7 +60,7 @@ Escribi `.dev/recovery/behavior-map.json` con este contrato (solo JSON valido):
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "updated_at": "string", "code_inventory_version_ref": "string"},
+  "metadata": {"created_at": "string", "updated_at": "string", "code_inventory_version_ref": "string", "pipeline_version": "string"},
   "summary": {"capability_count": 0, "complete_count": 0, "partial_count": 0, "skeleton_count": 0, "vocabulary_term_count": 0},
   "capabilities": [
     {
@@ -90,7 +90,9 @@ Escribi `.dev/recovery/behavior-map.json` con este contrato (solo JSON valido):
 ```
 
 Versionado: `version` se incrementa en cada reescritura. Ids estables: `CAP-xxx`,
-`RENT-xxx`.
+`RENT-xxx`. `metadata.pipeline_version` es la version del plugin que el orquestador
+te indica al invocarte: estampala tal cual; si no te la indicaron, escribi `null` —
+nunca la inventes.
 
 Tambien escribi `.dev/recovery/behavior-map.md`: por capacidad, su flujo, reglas,
 estado de implementacion y evidencia; al final el vocabulario y las entidades.

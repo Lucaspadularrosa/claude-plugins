@@ -73,6 +73,26 @@ Antes de empezar, verifica que existan:
 Si falta el plan, indicale al usuario que primero corra `/planificar`
 (`planning-pipeline`).
 
+**Version del pipeline**: antes de arrancar, lee la `version` de
+`${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` — es la version del plugin cargada
+en esta sesion. Con ella:
+
+- **Pasasela a cada subagente al invocarlo** ("pipeline_version: X.Y.Z"): todo
+  artefacto JSON que emiten la estampa como `pipeline_version`.
+- **Compara con los artefactos previos**: lee el `pipeline_version` del ultimo
+  artefacto relevante del build (`stack-profile.json`, o el veredicto mas reciente en
+  `reviews/`). Si difiere de la cargada, avisale al usuario ("los artefactos previos
+  se generaron con vX, estas corriendo vY") y recomenda revisar que los contratos no
+  hayan cambiado en el medio antes de seguir. Un artefacto sin `pipeline_version`
+  (o en `null`) es anterior al versionado: avisalo igual, como version desconocida.
+- **Instalacion desactualizada (best-effort)**: si podes leer
+  `~/.claude/plugins/known_marketplaces.json` y el marketplace de este plugin es un
+  directorio local, compara la version de este plugin en su
+  `.claude-plugin/marketplace.json` con la cargada: si la local es mas nueva, avisa
+  que el update del plugin requiere **reiniciar la sesion** — estas corriendo una
+  copia vieja. Si algo de esto no es accesible, segui sin bloquear: el aviso es
+  informativo, no compuerta.
+
 ## Subagentes (en `agents/` del plugin)
 
 | Subagente | Rol | Cuando |
@@ -88,7 +108,19 @@ Si falta el plan, indicale al usuario que primero corra `/planificar`
 - **Perfil de stack y base de seguridad**: si `.dev/build/stack-profile.json` o
   `.dev/build/security-baseline.json` no existen, o el `technical_design_version_ref`
   del perfil no coincide con la version actual del diseno, invoca `stack-profiler` antes
-  que nada (emite ambos en una pasada). Si el perfil tiene `open_questions` (no hay
+  que nada (emite ambos en una pasada). Ademas, el perfil quedo **stale** y se regenera
+  (re-invoca `stack-profiler` en modo regeneracion) cuando se cumple cualquiera de
+  estos disparadores:
+  - (a) al perfil le falta alguna clave del contrato vigente (ej.: `ci`,
+    `domain_naming`): fue generado por una version anterior del plugin;
+  - (b) **termino la primera feature de un greenfield** (el perfil dice
+    `greenfield: true` y la primera feature ya mergeo): el esqueleto ya existe y los
+    comandos ahora se pueden validar de verdad;
+  - (c) **se resolvio una decision de stack abierta** (una `open_question` del perfil,
+    o una eleccion de tecnologia que el perfil daba por indefinida, quedo decidida en
+    la sesion o en el diseno).
+  Chequea los tres disparadores al asegurar el perfil en cada corrida, no solo la
+  primera vez. Si el perfil tiene `open_questions` (no hay
   comando de test, no se sabe la rama de integracion), resolvelas con el usuario antes
   de construir: sin verificacion no hay build. Si la base de seguridad quedo con huecos
   (ej.: sin comando de audit de dependencias), no bloquea el build, pero avisale al
@@ -275,7 +307,9 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
    lote entero en paralelo: construi primero UNA feature del lote en secuencia (su
    primera tarea crea el esqueleto), mergeala por PR como siempre (avisa que ese
    merge es bloqueante), y recien despues paraleliza el resto — N agentes creando N
-   esqueletos a la vez colisionan seguro.
+   esqueletos a la vez colisionan seguro. Con esa primera feature mergeada, regenera
+   el perfil antes de paralelizar (disparador (b) de las convenciones): el resto del
+   lote construye contra un perfil validado, no contra el fosil del greenfield.
 3. Prepara un **worktree por feature**, y marca cada feature `in_progress` recien
    cuando su worktree quedo listo:
    `git worktree add ../{repo}-wt-{slug} -b feature/{slug} {rama_integracion}`.

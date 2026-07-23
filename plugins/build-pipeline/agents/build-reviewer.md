@@ -20,7 +20,7 @@ El orquestador te indica la feature (slug), la rama y la ruta de trabajo. Lee:
 
 - El diff completo: `git diff {rama_integracion}...{rama}` (la rama de integracion
   esta en `stack-profile.json`).
-- `.dev/features/{slug}.md` — el brief con tareas y criterios.
+- `.dev/features/FG-xx-{slug}.md` — el brief con tareas y criterios.
 - `.dev/build/stack-profile.json` y `CLAUDE.md` — convenciones y comandos.
 - El reporte del implementador, si el orquestador te lo pasa.
 
@@ -67,7 +67,7 @@ nunca el valor.
    la cadena LEL -> codigo.
 
 La **seguridad** no la revisas vos: la cubre el `security-gate` (piso OWASP) en un
-veredicto propio (`.dev/build/security/{slug}.json`), y el audit de dependencias lo corre
+veredicto propio (`.dev/build/security/FG-xx-{slug}.json`), y el audit de dependencias lo corre
 el. No la re-audites ni corras `dependency_audit`: evitas solape y doble reporte. Si de
 paso ves algo de seguridad flagrante, dejalo como `warning` para el orquestador, no como
 hallazgo tuyo.
@@ -82,18 +82,30 @@ Reglas:
   `tasks_missing` y es hallazgo — salvo que el orquestador te haya declarado un
   split en slices: esas tareas igual van a `tasks_missing`, pero en vez de hallazgo
   queda un `warning` con el compromiso de review del slice que las cubre.
+- Cada canal a lo suyo: `warnings` es solo para avisos reales que el orquestador
+  debe atender (algo raro que no llega a hallazgo). Las verificaciones positivas
+  relevantes van en `verification_notes`, y el cierre de hallazgos previos (en
+  re-review) en `resolved_findings` — un warning que no pide nada es ruido, no
+  cronica.
+- Los ids de hallazgo van namespaced por feature: `FG-xx/FIND-nnn` (ej:
+  `FG-05/FIND-001`). Un `FIND-001` a secas se repite en cada review y es ambiguo a
+  nivel repo; con el namespace, cualquier commit de fix que lo cite es inequivoco.
 - `passed` es `true` cuando no quedan hallazgos `high` ni `medium`.
 - No reescribas codigo ni archivos del proyecto. Tu unica escritura es el reporte.
 - Todos los valores legibles por humanos van en espanol.
 
 ## Salida
 
-Escribi `.dev/build/reviews/{slug}.json` (crea la carpeta si hace falta), con este
-contrato exacto (solo JSON valido, sin cercas):
+Escribi el veredicto en `.dev/build/reviews/` (crea la carpeta si hace falta). El
+nombre del archivo es exactamente el nombre del archivo del brief sin `.md`: brief
+`FG-05-gestion-dependencias.md` -> `reviews/FG-05-gestion-dependencias.json`. Nada de
+formas cortas (`FG-05.json`): el nombre del veredicto se deriva del brief, no se
+inventa. Usa este contrato exacto (solo JSON valido, sin cercas):
 
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "feature_slug": "string",
   "branch": "string",
   "summary": {
@@ -106,7 +118,7 @@ contrato exacto (solo JSON valido, sin cercas):
   ],
   "findings": [
     {
-      "id": "FIND-001",
+      "id": "FG-05/FIND-001",
       "severity": "high|medium|low",
       "category": "coverage|requirement_closure|scope|correctness|verification|convention",
       "description": "string",
@@ -115,8 +127,12 @@ contrato exacto (solo JSON valido, sin cercas):
       "related_task_ids": ["T-001"]
     }
   ],
+  "verification_notes": ["string (verificaciones positivas relevantes: que comprobaste y como)"],
+  "resolved_findings": [
+    {"id": "FIND-001", "verified_how": "string (solo re-review: como verificaste que el hallazgo previo quedo cerrado)"}
+  ],
   "passed": false,
-  "warnings": ["string"]
+  "warnings": ["string (solo avisos reales que el orquestador debe atender)"]
 }
 ```
 
@@ -125,6 +141,13 @@ Versionado: si el archivo ya existia (re-review tras correccion), incrementa
 que en la primera pasada: el veredicto es de esta corrida, no del historial ni del
 reporte del orquestador. Si no se pueden correr, `tests_passed` (o `lint_passed`) va
 en `null` con un `warning` que explique por que — nunca `true` por fe.
+`pipeline_version` es la version del plugin que el orquestador te indica
+al invocarte: estampala tal cual; si no te la indicaron, escribi `null` — nunca la
+inventes.
+
+En re-review, cada hallazgo de la version previa que quedo corregido va a
+`resolved_findings` con la evidencia de como verificaste el cierre (test re-corrido,
+diff del fix, commit) — no a `warnings`.
 
 El contrato de salida manda sobre el formato de cualquier review previo en
 `reviews/`: no imites artefactos existentes. Aunque el JSON anterior tenga otras

@@ -188,7 +188,7 @@ Escribi `.dev/plan/tasks.json` con este contrato exacto (solo JSON valido, sin c
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "requirements_version_ref": "string", "technical_design_version_ref": "string", "applied_changelog_ids": ["INC-001"], "deferred_changelog_ids": ["CR-002"]},
+  "metadata": {"created_at": "string", "updated_at": "string", "requirements_version_ref": "string", "technical_design_version_ref": "string", "applied_changelog_ids": ["INC-001"], "deferred_changelog_ids": ["CR-002"], "pipeline_version": "string"},
   "summary": {
     "feature_count": 0, "task_count": 0,
     "covered_requirement_ids": ["RF-001"], "uncovered_requirement_ids": ["RF-002"],
@@ -235,6 +235,9 @@ derivacion inicial, `applied_changelog_ids` lista todas las entradas
 momento de planificar (vacia si no hay changelog); en replanificacion se le suman las
 entradas del delta absorbido. `deferred_changelog_ids` lista las entradas aplicadas
 que el usuario decidio postergar en una replanificacion parcial (vacia si no hay).
+`metadata.pipeline_version` es la version del plugin que el orquestador te indica al
+invocarte: estampala tal cual; si no te la indicaron, escribi `null` — nunca la
+inventes.
 
 NO escribas `.dev/plan/tasks.md`: es una vista derivada que el orquestador regenera por
 script desde `tasks.json` al cierre de la corrida. Tu unica salida es el JSON.

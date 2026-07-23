@@ -34,6 +34,21 @@ changelog.
 
 ### Paso 0 - Contexto
 
+**Version del pipeline**: lee la `version` de
+`${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` — es la version del plugin cargada
+en esta sesion. Pasasela a cada subagente al invocarlo ("pipeline_version: X.Y.Z"):
+todo artefacto JSON que emiten la estampa como `pipeline_version`. Si ya hay una
+corrida previa, compara esa version con el `pipeline_version` de
+`.dev/recovery/code-inventory.json`: si difieren, avisale al usuario ("los artefactos
+previos se generaron con vX, estas corriendo vY") y recomenda revisar antes de
+actualizar incremental sobre ellos (un artefacto sin `pipeline_version` es anterior
+al versionado: avisalo como version desconocida). Best-effort: si podes leer
+`~/.claude/plugins/known_marketplaces.json` y el marketplace de este plugin es un
+directorio local, compara la version de este plugin en su
+`.claude-plugin/marketplace.json` con la cargada; si la local es mas nueva, avisa que
+el update del plugin requiere **reiniciar la sesion**. Si algo de esto no es
+accesible, segui sin bloquear: el aviso es informativo, no compuerta.
+
 Si `.dev/requirements/` ya tiene artefactos (proyecto que ya uso la suite), avisale al
 usuario que la comprension va a actualizar incremental sin pisar lo baselineado. Si
 existe `.dev/recovery/owner-questions.md` sin su `owner-answers.md` (cuestionario

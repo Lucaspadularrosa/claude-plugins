@@ -64,6 +64,7 @@ Escribi `.dev/requirements/lel-inspection.json` con este contrato exacto (solo J
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "lel_version_ref": "string",
   "inspected_artifact": ".dev/requirements/lel.json",
   "summary": {
@@ -97,7 +98,9 @@ Escribi `.dev/requirements/lel-inspection.json` con este contrato exacto (solo J
 
 Versionado: si el archivo ya existia, incrementa `version` en cada reescritura.
 `lel_version_ref` cita el numero de `version` actual de `lel.json`, como string
-(ej. `"3"`).
+(ej. `"3"`). `pipeline_version` es la version del plugin que el orquestador te indica
+al invocarte: estampala tal cual; si no te la indicaron, escribi `null` — nunca la
+inventes.
 
 Tambien escribi `.dev/requirements/lel-inspection.md`: un resumen legible con el conteo
 de defectos por severidad y, por cada defecto, su id, check, severidad, descripcion,

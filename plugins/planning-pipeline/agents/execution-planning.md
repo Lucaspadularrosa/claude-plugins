@@ -126,7 +126,8 @@ cercas):
     "updated_at": "string",
     "tasks_version_ref": "string",
     "replanned": false,
-    "completed_feature_ids": ["FG-02"]
+    "completed_feature_ids": ["FG-02"],
+    "pipeline_version": "string"
   },
   "summary": {
     "max_parallel_degree": 0,
@@ -178,6 +179,9 @@ Convenciones del contrato:
   feature completada con **solo** sus tareas de ajuste pendientes (la feature sigue
   ademas en `completed_feature_ids`). Omitilo o dejalo `false` en el resto.
 - `warnings`: para paralelismo bajo y sus causas concretas (ver abajo).
+- `metadata.pipeline_version`: la version del plugin que el orquestador te indica al
+  invocarte; estampala tal cual. Si no te la indicaron, escribi `null` — nunca la
+  inventes.
 
 ### Sugerencias de extraccion de contratos (warnings accionables)
 

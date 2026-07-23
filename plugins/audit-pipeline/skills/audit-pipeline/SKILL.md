@@ -41,6 +41,21 @@ herramienta Task (en paralelo cuando se puede), consolidas y reportas.
 
 ### Paso 1 - Alcance y contexto
 
+- **Version del pipeline**: lee la `version` de
+  `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` — es la version del plugin
+  cargada en esta sesion. Pasasela a cada subagente al invocarlo
+  ("pipeline_version: X.Y.Z"): todo artefacto JSON que emiten la estampa como
+  `pipeline_version`; el `audit-report.json`, que lo escribis vos, tambien la lleva.
+  Si hay una auditoria previa, compara esa version con el
+  `metadata.pipeline_version` de `.dev/audit/audit-report.json`: si difieren, avisale
+  al usuario ("los artefactos previos se generaron con vX, estas corriendo vY") — un
+  artefacto sin `pipeline_version` es anterior al versionado: avisalo como version
+  desconocida. Best-effort: si podes leer
+  `~/.claude/plugins/known_marketplaces.json` y el marketplace de este plugin es un
+  directorio local, compara la version de este plugin en su
+  `.claude-plugin/marketplace.json` con la cargada; si la local es mas nueva, avisa
+  que el update del plugin requiere **reiniciar la sesion**. Si algo de esto no es
+  accesible, segui sin bloquear: el aviso es informativo, no compuerta.
 - Alcance: `bugs`, `seguridad`, `mejoras`, una ruta/modulo, o nada (= las tres
   dimensiones sobre todo el repo). Resolvelo desde los argumentos del usuario.
 - Contexto disponible (pasaselo a los auditores que corresponda): el stack-profile y la
@@ -82,7 +97,7 @@ Escribi vos (orquestador) `.dev/audit/audit-report.json` y `.dev/audit/audit-rep
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "run_id": "AUD-001", "scope": "string", "dimensions": ["bugs", "security", "improvements"], "baseline_available": false},
+  "metadata": {"created_at": "string", "run_id": "AUD-001", "scope": "string", "dimensions": ["bugs", "security", "improvements"], "baseline_available": false, "pipeline_version": "string"},
   "summary": {
     "confirmed": {"high": 0, "medium": 0, "low_unverified": 0},
     "refuted": 0, "needs_human": 0
