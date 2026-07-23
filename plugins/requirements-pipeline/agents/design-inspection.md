@@ -91,6 +91,7 @@ valido, sin cercas de markdown):
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "data_model_version_ref": "string",
   "technical_design_version_ref": "string",
   "inspected_artifacts": [".dev/requirements/data-model.json", ".dev/requirements/technical-design.json"],
@@ -125,7 +126,9 @@ valido, sin cercas de markdown):
 
 Versionado: si el archivo ya existia, incrementa `version` en cada reescritura. Los
 campos `*_version_ref` citan el numero de `version` actual del archivo referenciado,
-como string (ej. `"3"`).
+como string (ej. `"3"`). `pipeline_version` es la version del plugin que el
+orquestador te indica al invocarte: estampala tal cual; si no te la indicaron, escribi
+`null` — nunca la inventes.
 
 Tambien escribi `.dev/requirements/design-inspection.md`: un resumen legible con el
 paradigma de base de datos detectado, el conteo de defectos por severidad y, por cada

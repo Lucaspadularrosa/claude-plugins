@@ -172,7 +172,7 @@ Escribi `.dev/requirements/requirements.json` con este contrato exacto (solo JSO
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "lel_version_ref": "string", "scenario_version_ref": "string"},
+  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "lel_version_ref": "string", "scenario_version_ref": "string", "pipeline_version": "string"},
   "summary": {
     "total_requirements": 0, "functional_count": 0, "non_functional_count": 0,
     "high_priority": 0, "medium_priority": 0, "low_priority": 0,
@@ -238,6 +238,9 @@ Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archi
 `lel_version_ref` y `scenario_version_ref` citan el numero de `version` actual de
 `lel.json` y `scenarios.json`, como string (ej. `"3"`). Las etapas posteriores usan
 estas referencias para detectar cuando la especificacion quedo desactualizada.
+`metadata.pipeline_version` es la version del plugin que el orquestador te indica al
+invocarte: estampala tal cual; si no te la indicaron, escribi `null` — nunca la
+inventes.
 
 Extensiones validas en lineas de base reconstruidas por `recovery-pipeline` (los
 consumidores las ignoran si no las usan): `"origin": "recovered"` por requisito y

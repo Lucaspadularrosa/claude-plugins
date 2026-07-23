@@ -147,7 +147,7 @@ tome como diseño y no las improvise:
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "lel_version_ref": "string", "requirements_version_ref": "string"},
+  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "lel_version_ref": "string", "requirements_version_ref": "string", "pipeline_version": "string"},
   "summary": {"entity_count": 0, "relationship_count": 0, "covered_symbol_ids": ["SYM-001"], "uncovered_symbol_ids": ["SYM-002"]},
   "entities": [
     {
@@ -181,7 +181,7 @@ tome como diseño y no las improvise:
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "requirements_version_ref": "string", "data_model_version_ref": "string"},
+  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "requirements_version_ref": "string", "data_model_version_ref": "string", "pipeline_version": "string"},
   "summary": {"module_count": 0, "api_contract_count": 0, "screen_count": 0, "decision_count": 0},
   "stack": [
     {"layer": "string", "technology": "string", "rationale": "string", "evidence_refs": ["CTX-001"]}
@@ -213,7 +213,9 @@ correccion incluido); `metadata.updated_at` se actualiza siempre. Los campos
 string (ej. `"3"`): `requirements_version_ref` el de `requirements.json`,
 `lel_version_ref` el de `lel.json`, `data_model_version_ref` el de `data-model.json`.
 El pipeline de planificacion usa estas referencias para detectar cuando el plan quedo
-desactualizado respecto del diseno.
+desactualizado respecto del diseno. `metadata.pipeline_version` es la version del
+plugin que el orquestador te indica al invocarte: estampala tal cual en ambos
+archivos; si no te la indicaron, escribi `null` — nunca la inventes.
 
 ### 3 y 4. Versiones legibles
 

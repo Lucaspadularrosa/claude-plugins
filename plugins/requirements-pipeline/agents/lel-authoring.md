@@ -81,7 +81,7 @@ cercas de markdown):
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"]},
+  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "pipeline_version": "string"},
   "symbols": [
     {
       "id": "SYM-001",
@@ -109,6 +109,9 @@ cercas de markdown):
 Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archivo
 (modo actualizacion incluido); `metadata.updated_at` se actualiza siempre. Las etapas
 posteriores citan este numero en sus `lel_version_ref` para detectar desactualizacion.
+`metadata.pipeline_version` es la version del plugin que el orquestador te indica al
+invocarte: estampala tal cual; si no te la indicaron, escribi `null` — nunca la
+inventes.
 
 Tambien escribi `.dev/requirements/lel.md`: un resumen legible con el nombre del proyecto,
 el resumen del dominio y, por cada simbolo, su id, nombre canonico, tipo, nociones e

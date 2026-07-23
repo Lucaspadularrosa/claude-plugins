@@ -109,6 +109,7 @@ contrato exacto (solo JSON valido, sin cercas):
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "feature_slug": "string",
   "branch": "string",
   "summary": {
@@ -143,6 +144,8 @@ Notas del contrato:
 - `applicable_categories` copia las del baseline; `categories_reviewed` son las que el
   diff efectivamente toco y revisaste.
 - Versionado: si el archivo ya existia (re-review tras correccion), incrementa `version`.
+- `pipeline_version`: la version del plugin que el orquestador te indica al invocarte;
+  estampala tal cual. Si no te la indicaron, escribi `null` — nunca la inventes.
 
 Tu mensaje final al orquestador resume el veredicto: `passed` o no, los hallazgos
 `high`/`medium` en una linea cada uno, el resultado del `dependency_audit`, y si dejaste

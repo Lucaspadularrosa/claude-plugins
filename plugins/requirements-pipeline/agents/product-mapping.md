@@ -86,7 +86,7 @@ valido, sin cercas):
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "lel_version_ref": "string", "source_artifacts": ["string"]},
+  "metadata": {"created_at": "string", "updated_at": "string", "lel_version_ref": "string", "source_artifacts": ["string"], "pipeline_version": "string"},
   "summary": {
     "feature_count": 0,
     "stub_count": 0, "elaborated_count": 0, "baselined_count": 0, "deprecated_count": 0,
@@ -127,7 +127,9 @@ valido, sin cercas):
 
 Versionado: `version` empieza en 1 y se incrementa en cada reescritura;
 `metadata.updated_at` se actualiza siempre. `lel_version_ref` cita la `version` actual
-de `lel.json`, como string.
+de `lel.json`, como string. `metadata.pipeline_version` es la version del plugin que
+el orquestador te indica al invocarte: estampala tal cual; si no te la indicaron,
+escribi `null` — nunca la inventes.
 
 Tambien escribi `.dev/requirements/product-map.md`: el mapa legible, agrupado por
 estado y ordenado por prioridad: por cada feature su id, nombre, prioridad, estado y

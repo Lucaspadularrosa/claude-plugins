@@ -77,6 +77,7 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "summary": {
     "section_count": 0,
     "lel_candidate_count": 0,
@@ -102,6 +103,7 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "candidates": [
     {
       "id": "LEL-CAND-001",
@@ -129,6 +131,7 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "items": [
     {
       "id": "CTX-001",
@@ -146,7 +149,9 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
 Devolve solo JSON valido en cada archivo, sin cercas de markdown.
 
 Versionado: `version` empieza en 1; si reescribis un archivo que ya existia, incrementa
-su `version`.
+su `version`. `pipeline_version` es la version del plugin que el orquestador te indica
+al invocarte: estampala tal cual en cada archivo que escribas; si no te la indicaron,
+escribi `null` — nunca la inventes.
 
 ## Antes de terminar
 

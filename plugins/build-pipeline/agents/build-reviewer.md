@@ -89,6 +89,7 @@ contrato exacto (solo JSON valido, sin cercas):
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "feature_slug": "string",
   "branch": "string",
   "summary": {
@@ -116,7 +117,9 @@ contrato exacto (solo JSON valido, sin cercas):
 ```
 
 Versionado: si el archivo ya existia (re-review tras correccion), incrementa
-`version`.
+`version`. `pipeline_version` es la version del plugin que el orquestador te indica
+al invocarte: estampala tal cual; si no te la indicaron, escribi `null` — nunca la
+inventes.
 
 Tu mensaje final al orquestador resume el veredicto: passed o no, los hallazgos
 `high`/`medium`, el cierre por requisito (que RF/RNF quedaron demostrados y cuales

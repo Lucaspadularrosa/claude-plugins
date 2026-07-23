@@ -81,7 +81,7 @@ Escribi `.dev/requirements/scenarios.json` con este contrato exacto (solo JSON v
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "lel_version_ref": "string"},
+  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "lel_version_ref": "string", "pipeline_version": "string"},
   "summary": {
     "total_scenarios": 0, "current_scenarios": 0, "future_scenarios": 0,
     "total_episodes": 0, "total_exceptions": 0,
@@ -111,6 +111,9 @@ Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archi
 `metadata.updated_at` se actualiza siempre. `lel_version_ref` cita el numero de
 `version` actual de `lel.json`, como string (ej. `"3"`). Las etapas posteriores citan
 la `version` de este archivo en sus `scenario_version_ref`.
+`metadata.pipeline_version` es la version del plugin que el orquestador te indica al
+invocarte: estampala tal cual; si no te la indicaron, escribi `null` — nunca la
+inventes.
 
 Tambien escribi `.dev/requirements/scenarios.md`: un resumen legible con, por cada
 Escenario, su id, titulo, objetivo, contexto, actores, recursos, episodios numerados y

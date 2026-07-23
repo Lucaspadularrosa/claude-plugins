@@ -37,6 +37,30 @@ manejas las pausas con el usuario.
 
 Todos los archivos se generan en `.dev/requirements/` del proyecto actual.
 
+## Version del pipeline (precondicion)
+
+Antes de arrancar cualquier modo, lee la `version` de
+`${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` — es la version del plugin cargada
+en esta sesion. Con ella:
+
+- **Pasasela a cada subagente al invocarlo** ("pipeline_version: X.Y.Z"): todo
+  artefacto JSON que emiten la estampa como `pipeline_version`; las entradas del
+  changelog, que las escribis vos, tambien la llevan.
+- **Compara con los artefactos previos**: si ya hay linea de base, lee el
+  `pipeline_version` de la ultima entrada de `changelog.json` (o de `lel.json` si no
+  hay changelog). Si difiere de la cargada, avisale al usuario ("los artefactos
+  previos se generaron con vX, estas corriendo vY") y recomenda revisar que los
+  contratos no hayan cambiado en el medio antes de seguir. Un artefacto sin
+  `pipeline_version` (o en `null`) es anterior al versionado: avisalo igual, como
+  version desconocida.
+- **Instalacion desactualizada (best-effort)**: si podes leer
+  `~/.claude/plugins/known_marketplaces.json` y el marketplace de este plugin es un
+  directorio local, compara la version de este plugin en su
+  `.claude-plugin/marketplace.json` con la cargada: si la local es mas nueva, avisa
+  que el update del plugin requiere **reiniciar la sesion** — estas corriendo una
+  copia vieja. Si algo de esto no es accesible, segui sin bloquear: el aviso es
+  informativo, no compuerta.
+
 ## Artefactos de control
 
 Ademas de los artefactos del metodo (LEL, escenarios, requisitos, diseno), el pipeline
@@ -69,6 +93,7 @@ La historia de la linea de base. Una entrada por corrida:
         {"kind": "new|modified|deprecated|already_covered", "target_kind": "requirement|scenario|feature|symbol|entity", "target_id": "RF-007", "covered_by": "RF-012", "confirmed_by_user": true, "resolution": "applied|rejected"}
       ],
       "artifact_versions": {"lel.json": {"before": "2", "after": "3"}},
+      "pipeline_version": "string",
       "notes": "string"
     }
   ]

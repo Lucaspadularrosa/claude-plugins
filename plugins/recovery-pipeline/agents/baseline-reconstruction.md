@@ -78,6 +78,10 @@ Reglas duras:
 - Todos los valores legibles por humanos van en espanol.
 - Versionado estandar de la suite: `version` +1 por reescritura; `*_version_ref` citan
   la version del archivo referenciado.
+- `pipeline_version`: el orquestador te indica al invocarte la version del plugin;
+  estampala tal cual en cada JSON que escribas, en la misma posicion que usa el
+  contrato de `requerimientos` (en `metadata` si el artefacto la tiene; si no, en la
+  raiz). Si no te la indicaron, escribi `null` — nunca la inventes.
 
 ## Salida
 

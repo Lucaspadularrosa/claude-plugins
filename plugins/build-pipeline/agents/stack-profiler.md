@@ -98,7 +98,7 @@ Contrato exacto:
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "updated_at": "string", "technical_design_version_ref": "string", "greenfield": false},
+  "metadata": {"created_at": "string", "updated_at": "string", "technical_design_version_ref": "string", "greenfield": false, "pipeline_version": "string"},
   "stack": [
     {"layer": "backend|frontend|database|infra|testing|other", "technology": "string", "version": "string", "evidence": "composer.json"}
   ],
@@ -127,7 +127,9 @@ Contrato exacto:
 Versionado: `version` empieza en 1 y se incrementa en cada reescritura;
 `metadata.updated_at` se actualiza siempre. `technical_design_version_ref` cita la
 `version` de `technical-design.json` si existe: si el diseno cambia, el perfil debe
-regenerarse.
+regenerarse. `metadata.pipeline_version` es la version del plugin que el orquestador
+te indica al invocarte: estampala tal cual en ambos perfiles; si no te la indicaron,
+escribi `null` — nunca la inventes.
 
 ### 2. `.dev/build/security-baseline.json`
 
@@ -138,7 +140,7 @@ ausencia). Contrato exacto:
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "updated_at": "string", "stack_profile_version_ref": "string", "owasp_reference": "OWASP Top 10 2021", "greenfield": false},
+  "metadata": {"created_at": "string", "updated_at": "string", "stack_profile_version_ref": "string", "owasp_reference": "OWASP Top 10 2021", "greenfield": false, "pipeline_version": "string"},
   "attack_surface": [
     {"kind": "web|api|cli|library|service", "evidence": "string (rutas/vistas, endpoints, entrypoint de consola, manifiesto de publicacion, worker)", "notes": "string"}
   ],

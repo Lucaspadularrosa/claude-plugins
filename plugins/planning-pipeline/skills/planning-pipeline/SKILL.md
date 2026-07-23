@@ -38,6 +38,27 @@ re-inicializa tambien `progress.json` (el progreso viejo pierde sentido con ids
 nuevos). Si hay plan pero todo esta `pending`, avisa igual que vas a pisar el plan y
 pedi el OK antes.
 
+**Version del pipeline**: antes de arrancar, lee la `version` de
+`${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` — es la version del plugin cargada
+en esta sesion. Con ella:
+
+- **Pasasela a cada subagente al invocarlo** ("pipeline_version: X.Y.Z"): todo
+  artefacto JSON que emiten la estampa como `pipeline_version`; `progress.json`, que
+  lo escribis vos, tambien la lleva.
+- **Compara con los artefactos previos**: si existe `.dev/plan/tasks.json`, lee su
+  `metadata.pipeline_version`. Si difiere de la cargada, avisale al usuario ("el plan
+  previo se genero con vX, estas corriendo vY") y recomenda revisar que los contratos
+  no hayan cambiado en el medio antes de replanificar sobre el. Un artefacto sin
+  `pipeline_version` (o en `null`) es anterior al versionado: avisalo igual, como
+  version desconocida.
+- **Instalacion desactualizada (best-effort)**: si podes leer
+  `~/.claude/plugins/known_marketplaces.json` y el marketplace de este plugin es un
+  directorio local, compara la version de este plugin en su
+  `.claude-plugin/marketplace.json` con la cargada: si la local es mas nueva, avisa
+  que el update del plugin requiere **reiniciar la sesion** — estas corriendo una
+  copia vieja. Si algo de esto no es accesible, segui sin bloquear: el aviso es
+  informativo, no compuerta.
+
 ## Subagentes (en `agents/` del plugin)
 
 | Orden | Subagente | Lee | Escribe |
@@ -67,6 +88,7 @@ El estado de ejecucion del plan. Lo inicializas vos al cerrar `/planificar` (tod
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "updated_at": "string",
   "features": [
     {"feature_id": "FG-01", "status": "pending|in_progress|done", "branch": "string", "notes": "string"}
