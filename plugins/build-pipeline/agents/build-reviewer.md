@@ -77,6 +77,11 @@ Reglas:
 - Pocos hallazgos y utiles; prioriza lo que bloquea el PR. `high` = no puede
   mergearse asi; `medium` = corregir antes del PR; `low` = sugerencia.
 - Cada hallazgo cita evidencia (archivo, linea o commit) y propone la correccion.
+- Toda tarea del brief queda clasificada en el veredicto: en `tasks_covered` o en
+  `tasks_missing`, nunca fuera de ambas. Una tarea ausente del diff va SIEMPRE a
+  `tasks_missing` y es hallazgo — salvo que el orquestador te haya declarado un
+  split en slices: esas tareas igual van a `tasks_missing`, pero en vez de hallazgo
+  queda un `warning` con el compromiso de review del slice que las cubre.
 - `passed` es `true` cuando no quedan hallazgos `high` ni `medium`.
 - No reescribas codigo ni archivos del proyecto. Tu unica escritura es el reporte.
 - Todos los valores legibles por humanos van en espanol.
