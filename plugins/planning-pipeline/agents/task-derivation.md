@@ -45,6 +45,10 @@ de lo anterior lee `.dev/plan/tasks.json` (el plan previo) y `.dev/plan/progress
   `{"base_version": ..., "adds": {...}, "updates": {...}, "removes": [...]}`, y
   reportarlo explicitamente al orquestador como delta pendiente de merge. Ningun otro
   formato ni archivo de trabajo: el orquestador lo mergea al canonico y lo borra.
+- La falta de herramientas NUNCA justifica compactar, resumir ni eliminar campos de
+  tareas existentes (`acceptance_criteria` incluidos): con Edit las modificaciones
+  son quirurgicas, y si aun asi no podes, emiti el delta oficial — jamas degrades el
+  canonico para poder reescribirlo.
 - Requisito **nuevo** -> tareas nuevas con ids que continuan la secuencia (`T-090`...).
 - Requisito **modificado**:
   - sus tareas `pending` (segun progress) -> reescribilas para reflejar la version
