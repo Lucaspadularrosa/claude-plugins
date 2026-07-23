@@ -188,7 +188,11 @@ Construye una feature, con aprobacion del plan de implementacion antes de codear
 5. Invoca `build-reviewer` y `security-gate` (podes lanzarlos en paralelo: ambos son de
    solo lectura y emiten veredictos separados). Si cualquiera reporta hallazgos `high` o
    `medium`, re-invoca `feature-implementer` en **modo correccion** con los veredictos
-   de ambos y volve a revisar con los dos. Tope: **3 rondas de review**; si al tercer
+   de ambos y volve a revisar con los dos. Tras el modo correccion la re-review es
+   SIEMPRE obligatoria — aunque el fix sea de una linea: `build-reviewer` (y
+   `security-gate` si su veredicto tuvo hallazgos) vuelven a correr y persisten un
+   veredicto nuevo; ningun PR se abre con un veredicto en disco en `passed: false`.
+   Tope: **3 rondas de review**; si al tercer
    intento algo sigue sin pasar — o el implementador reporto un hallazgo
    `no_corregible` (p. ej. vulnerabilidad de una dependencia sin fix publicado) —
    marca lo afectado `blocked` en `progress.json`, deja la rama y los veredictos como
@@ -262,7 +266,10 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
    segun el reporte (`done` las verificadas, `blocked` con motivo las que no) y lanza
    su `build-reviewer` y su `security-gate` (tambien en paralelo entre features).
    Hallazgos `high`/`medium` de cualquiera de los dos: re-invoca al implementador de
-   esa feature en **modo correccion** con ambos veredictos y re-revisa. Tope: **3
+   esa feature en **modo correccion** con ambos veredictos y re-revisa SIEMPRE —
+   aunque el fix sea de una linea, `build-reviewer` (y `security-gate` si aplica)
+   vuelven a correr y persisten un veredicto nuevo; ningun PR se abre con un
+   veredicto en disco en `passed: false`. Tope: **3
    rondas de review por feature**; si no pasa — o hay un hallazgo `no_corregible`
    (p. ej. vulnerabilidad de dependencia sin fix) — la feature queda **bloqueada**:
    anota `BLOQUEADA: <motivo>` en sus `notes` de `progress.json`, deja la rama y el
