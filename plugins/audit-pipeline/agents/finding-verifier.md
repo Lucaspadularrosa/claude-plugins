@@ -67,7 +67,9 @@ credenciales al veredicto: señala donde estan, nunca el valor.
 
 ## Salida
 
-Tu mensaje final al orquestador es el veredicto, en este formato JSON (solo el JSON):
+Tu mensaje final al orquestador es el veredicto, en este formato JSON (solo el JSON —
+sin narracion adicional, sin reproducir el codigo analizado: sos el unico agente de la
+suite cuyo entregable ES la respuesta, y aun asi es compacta):
 
 ```json
 {

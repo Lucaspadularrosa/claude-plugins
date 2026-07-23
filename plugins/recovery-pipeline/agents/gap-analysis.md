@@ -124,3 +124,16 @@ Versionado: `version` +1 por reescritura.
 - El dueño lee `state-report.md` y entiende el estado real de su app en cinco minutos.
 - Las preguntas se pueden responder sin abrir un solo archivo de codigo.
 - Nada del reporte es opinion sin evidencia.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — el estado general de la app, los huecos `high` y cuantas preguntas van al dueño.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

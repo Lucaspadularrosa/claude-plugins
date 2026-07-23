@@ -105,6 +105,13 @@ no contra el mapa completo.
   impactos del LEL (limites, plazos, exclusiones) que no esta capturada en
   `business_rules` es defecto `medium` — quedaria muestreada por ejemplos sin
   enunciado unico, y puede divergir entre requisitos.
+- `REQ-CHECK-014`: sincronia de las vistas derivadas. `requirements.md` (y
+  `scenarios.md`, si existe `scenarios.json`) arranca con el encabezado
+  `Derivado de <json> version N — no editar a mano` y ese N coincide con la `version`
+  actual del `.json` correspondiente. Version distinta, encabezado ausente o `.md`
+  faltante: defecto `medium` — el script de cierre no corrio y la vista legible
+  miente. La correccion NO es reescribir el `.md` a mano: es que el orquestador
+  re-corra el script de derivacion.
 
 ## Salida
 
@@ -167,3 +174,16 @@ descripcion y correccion propuesta. Indica claramente si la especificacion pasa.
 - El reporte garantiza que la especificacion puede alimentar la planificacion: cobertura
   total de escenarios, sin requisitos sin evidencia, dependencias sanas y todos los
   campos que las tareas necesitan.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — passed o no, conteo de defectos por severidad y los `high`/`medium` en una linea cada uno.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

@@ -194,16 +194,10 @@ Si la causa son multiples aristas, listalas todas y sugeri extraer las productor
 contratos. El objetivo es que el lazo de correccion pueda actuar sin reconstruir el
 rastro a mano.
 
-Tambien escribi `.dev/plan/execution-plan.md`: arranca con un encabezado ejecutivo con
-las metricas clave:
-- "Maximo paralelismo: N agentes simultaneos (lote BATCH-X)".
-- "Critical path: N turnos".
-- "Lotes realmente seriales: N de M".
-
-Despues, la ronda de contratos (si existe) y, por cada lote, sus features con sus
-tareas en orden de ejecucion, que espera cada una (`waits_for`) y una linea de
-rationale. Al final, una seccion "Sugerencias de extraccion de contratos" con los
-warnings accionables en formato legible.
+NO escribas `.dev/plan/execution-plan.md`: es una vista derivada que el orquestador
+regenera por script desde `execution-plan.json` al cierre de la corrida (incluye el
+encabezado ejecutivo de metricas y los warnings accionables en formato legible). Tu
+unica salida es el JSON.
 
 ## Antes de terminar
 
@@ -236,3 +230,16 @@ warnings accionables en formato legible.
   BATCH-2" (accionable).
 - Cuando un lote queda con una sola feature, el rationale explica que dependencias hard
   la aislaron.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — metricas clave (paralelismo maximo, critical path, lotes seriales) y los warnings accionables.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

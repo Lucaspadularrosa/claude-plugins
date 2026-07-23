@@ -114,3 +114,16 @@ correccion propuesta y pregunta al stakeholder si la hubiera.
 - El reporte distingue defectos confirmados de dudas.
 - Cada defecto incluye correccion propuesta o pregunta stakeholder.
 - Las severidades reflejan el impacto sobre escenarios y requisitos.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — passed o no, conteo de defectos por severidad y los `high` en una linea cada uno.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

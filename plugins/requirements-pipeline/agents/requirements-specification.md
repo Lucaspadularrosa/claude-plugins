@@ -254,11 +254,9 @@ consumidores las ignoran si no las usan): `"origin": "recovered"` por requisito 
 `"code_refs": ["ruta/archivo.ext:123"]` opcional en cualquier item — la traza al
 codigo.
 
-Tambien escribi `.dev/requirements/requirements.md`: la especificacion legible con un
-resumen, las **reglas de negocio** (id, enunciado y que criterios las hacen cumplir),
-las features y, por cada requisito, su id, enunciado, feature, prioridad,
-esfuerzo estimado, dependencias, criterios de aceptacion (Given/When/Then) y trazabilidad
-a Escenarios y LEL.
+NO escribas `.dev/requirements/requirements.md`: es una vista derivada que el orquestador
+regenera por script desde `requirements.json` al cierre de la corrida. Tu unica salida es
+el JSON.
 
 ## Antes de terminar
 
@@ -280,3 +278,16 @@ a Escenarios y LEL.
 - Cada requisito tiene prioridad, esfuerzo estimado y criterios de aceptacion Gherkin.
 - Las dependencias permiten ordenar los requisitos para planificar tareas y sprints.
 - La especificacion cierra la linea de base de requisitos.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — requisitos emitidos por feature, version resultante y `proposed_baseline_changes` si los hay.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

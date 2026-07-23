@@ -144,9 +144,19 @@ Notas del contrato:
   diff efectivamente toco y revisaste.
 - Versionado: si el archivo ya existia (re-review tras correccion), incrementa `version`.
 
-Tu mensaje final al orquestador resume el veredicto: `passed` o no, los hallazgos
-`high`/`medium` en una linea cada uno, el resultado del `dependency_audit`, y si dejaste
-algo en `deferred_to_audit`.
+## Respuesta al orquestador
+
+El veredicto JSON es el entregable; tu respuesta es solo el puntero. Tu mensaje final
+trae unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: la ruta del veredicto (`security/{slug}.json`).
+- `summary`: 3-5 lineas — `passed` o no, los hallazgos `high`/`medium` en una linea
+  cada uno, el resultado del `dependency_audit` y si dejaste algo en
+  `deferred_to_audit`.
+- `blocking_items`: solo si los hay.
+
+No reproduzcas el contenido del veredicto en extenso: vive en el archivo.
 
 ## Barra de calidad
 

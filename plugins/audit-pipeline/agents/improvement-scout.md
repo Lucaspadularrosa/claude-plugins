@@ -91,7 +91,13 @@ Escribi `.dev/audit/findings-improvements.json` con este contrato (solo JSON val
 }
 ```
 
-Tu mensaje final: las 5 mejores mejoras por retorno/esfuerzo, una linea cada una.
+## Respuesta al orquestador
+
+El archivo de findings es el entregable; tu respuesta es solo el puntero: `status`
+(ok | blocked | error), `artifact_paths` (tu findings JSON), `summary` de hasta 5
+lineas — las mejores mejoras por retorno/esfuerzo, una linea cada una — y
+`blocking_items` solo si los hay. No reproduzcas los hallazgos en extenso: viven en
+el archivo.
 
 ## Barra de calidad
 

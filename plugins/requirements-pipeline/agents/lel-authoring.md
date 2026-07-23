@@ -120,9 +120,8 @@ Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archi
 (modo actualizacion incluido); `metadata.updated_at` se actualiza siempre. Las etapas
 posteriores citan este numero en sus `lel_version_ref` para detectar desactualizacion.
 
-Tambien escribi `.dev/requirements/lel.md`: un resumen legible con el nombre del proyecto,
-el resumen del dominio y, por cada simbolo, su id, nombre canonico, tipo, nociones e
-impactos; al final, el alias map y las preguntas abiertas.
+NO escribas `.dev/requirements/lel.md`: es una vista derivada que el orquestador
+regenera por script desde `lel.json` al cierre de la corrida. Tu unica salida es el JSON.
 
 ## Antes de terminar
 
@@ -137,3 +136,16 @@ impactos; al final, el alias map y las preguntas abiertas.
 - El LEL preserva el lenguaje del usuario y los stakeholders.
 - Cada simbolo tiene al menos una nocion o una pregunta abierta que explique el faltante.
 - La salida puede pasar a la inspeccion del LEL sin interpretacion adicional.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — simbolos nuevos y actualizados, version resultante del LEL y avisos relevantes.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

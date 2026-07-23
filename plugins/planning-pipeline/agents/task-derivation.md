@@ -236,8 +236,8 @@ momento de planificar (vacia si no hay changelog); en replanificacion se le suma
 entradas del delta absorbido. `deferred_changelog_ids` lista las entradas aplicadas
 que el usuario decidio postergar en una replanificacion parcial (vacia si no hay).
 
-Tambien escribi `.dev/plan/tasks.md`: un resumen legible con, por cada feature, sus tareas
-(id, titulo, prioridad, complejidad, dependencias y requisitos que cubre).
+NO escribas `.dev/plan/tasks.md`: es una vista derivada que el orquestador regenera por
+script desde `tasks.json` al cierre de la corrida. Tu unica salida es el JSON.
 
 ## Antes de terminar
 
@@ -266,3 +266,16 @@ Tambien escribi `.dev/plan/tasks.md`: un resumen legible con, por cada feature, 
 - Todo requisito `active` tiene tarea.
 - Las dependencias permiten calcular los lotes de ejecucion paralela y detectar
   oportunidades de extraer mas contratos.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — features y tareas derivadas, version resultante y los conflictos de replanificacion si los hay.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

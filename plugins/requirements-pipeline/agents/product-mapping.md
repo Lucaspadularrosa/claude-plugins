@@ -129,10 +129,9 @@ Versionado: `version` empieza en 1 y se incrementa en cada reescritura;
 `metadata.updated_at` se actualiza siempre. `lel_version_ref` cita la `version` actual
 de `lel.json`, como string.
 
-Tambien escribi `.dev/requirements/product-map.md`: el mapa legible, agrupado por
-estado y ordenado por prioridad: por cada feature su id, nombre, prioridad, estado y
-sus escenarios stub; al final, las propuestas pendientes (si las hay) con el antes y
-despues resumido.
+NO escribas `.dev/requirements/product-map.md`: es una vista derivada que el orquestador
+regenera por script desde `product-map.json` al cierre de la corrida. Tu unica salida es
+el JSON.
 
 ## Antes de terminar
 
@@ -151,3 +150,16 @@ despues resumido.
 - Ningun stub gasta profundidad: titulo, objetivo y actores alcanzan.
 - El usuario puede mirar el `.md` y decidir en minutos que elaborar en el proximo
   incremento.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — features nuevas o actualizadas, conteo por estado y `pending_proposals` si las hay.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

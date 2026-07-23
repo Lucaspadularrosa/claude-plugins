@@ -106,3 +106,16 @@ estado de implementacion y evidencia; al final el vocabulario y las entidades.
 - Cada capacidad se puede verificar abriendo los archivos citados.
 - Los estados `partial`/`skeleton`/`dead` estan justificados con la evidencia de que
   falta — son el insumo principal del analisis de huecos.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — capacidades por estado (complete/partial/skeleton/dead) y lo que quedo sin cubrir.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

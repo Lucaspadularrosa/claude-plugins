@@ -226,12 +226,11 @@ string (ej. `"3"`): `requirements_version_ref` el de `requirements.json`,
 El pipeline de planificacion usa estas referencias para detectar cuando el plan quedo
 desactualizado respecto del diseno.
 
-### 3 y 4. Versiones legibles
+### Versiones legibles: no las escribas
 
-Escribi tambien `.dev/requirements/data-model.md` y `.dev/requirements/technical-design.md`:
-resumenes legibles. El primero con cada entidad, sus campos (nombre, tipo, obligatorio) y
-sus relaciones. El segundo con el stack, los modulos, los contratos de API, las pantallas
-y las decisiones (ADRs) con su contexto y consecuencias.
+NO escribas `.dev/requirements/data-model.md` ni `.dev/requirements/technical-design.md`:
+son vistas derivadas que el orquestador regenera por script desde los `.json` al cierre
+de la corrida. Tu unica salida son los dos JSON.
 
 ## Antes de terminar
 
@@ -251,3 +250,16 @@ y las decisiones (ADRs) con su contexto y consecuencias.
 - Cada decision tecnica responde a un requisito y documenta sus alternativas.
 - Nada inventado: todo traza a requisitos, contexto de soporte o el LEL.
 - Los dos artefactos cierran la linea de base y habilitan la planificacion y el build.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — entidades, modulos, contratos, pantallas y ADRs tocados, versiones resultantes y preguntas bloqueantes.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

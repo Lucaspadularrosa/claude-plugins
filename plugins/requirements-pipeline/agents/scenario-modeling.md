@@ -122,9 +122,9 @@ Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archi
 `version` actual de `lel.json`, como string (ej. `"3"`). Las etapas posteriores citan
 la `version` de este archivo en sus `scenario_version_ref`.
 
-Tambien escribi `.dev/requirements/scenarios.md`: un resumen legible con, por cada
-Escenario, su id, titulo, objetivo, contexto, actores, recursos, episodios numerados y
-excepciones.
+NO escribas `.dev/requirements/scenarios.md`: es una vista derivada que el orquestador
+regenera por script desde `scenarios.json` al cierre de la corrida. Tu unica salida es
+el JSON.
 
 ## Antes de terminar
 
@@ -140,3 +140,16 @@ excepciones.
 - Cada Escenario describe una situacion concreta y verificable del dominio.
 - Titulos, actores, recursos y episodios usan vocabulario del LEL y son trazables.
 - Los episodios cubren el flujo principal; las excepciones cubren los desvios relevantes.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — escenarios elaborados y nuevos, version resultante y los escenarios nuevos que el orquestador debe sumar al mapa.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.
