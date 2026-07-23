@@ -54,7 +54,7 @@ build lo tome como vigente.
   patron EXACTO: `.dev/features/FG-xx-{slug}.md`, donde `FG-xx` es el id de la
   feature con `FG` en MAYUSCULA y `{slug}` es el nombre de la feature en kebab-case
   (minusculas, sin acentos, palabras unidas por guiones). Ejemplo:
-  `FG-05-gestion-dependencias.md`. Nada de variantes (`fg-05-...`, `FG-05.md` sin
+  `FG-05-carrito-compras.md`. Nada de variantes (`fg-05-...`, `FG-05.md` sin
   slug): los agentes de build derivan de este nombre el del veredicto. El nombre del
   archivo de una feature es **estable**: en replanificacion usa el del brief ya
   existente de esa `FG-xx` aunque el nombre de la feature haya cambiado (actualiza el
@@ -124,7 +124,7 @@ Cada brief tiene estas secciones:
   corrida (todas en la planificacion inicial; solo las indicadas en replanificacion).
 - Verifica que el nombre de cada archivo cumple el patron exacto `FG-xx-{slug}.md`
   (`FG` en mayuscula, slug en kebab-case minuscula; ej:
-  `FG-05-gestion-dependencias.md`), sin variantes de casing ni archivos sin slug.
+  `FG-05-carrito-compras.md`), sin variantes de casing ni archivos sin slug.
 - Verifica que cada brief cita ids reales de requisitos, tareas, modulos y entidades.
 - Verifica que ninguna tarea de una feature quedo fuera de su brief.
 - Verifica que TODO criterio de aceptacion de los requisitos de la feature quedo

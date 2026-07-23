@@ -98,7 +98,7 @@ Reglas:
 
 Escribi el veredicto en `.dev/build/reviews/` (crea la carpeta si hace falta). El
 nombre del archivo es exactamente el nombre del archivo del brief sin `.md`: brief
-`FG-05-gestion-dependencias.md` -> `reviews/FG-05-gestion-dependencias.json`. Nada de
+`FG-05-carrito-compras.md` -> `reviews/FG-05-carrito-compras.json`. Nada de
 formas cortas (`FG-05.json`): el nombre del veredicto se deriva del brief, no se
 inventa. Usa este contrato exacto (solo JSON valido, sin cercas):
 

@@ -108,7 +108,7 @@ nativo) quedaron manejados o reportados, no ignorados.
 
 Escribi el veredicto en `.dev/build/security/` (crea la carpeta si hace falta). El
 nombre del archivo es exactamente el nombre del archivo del brief sin `.md`: brief
-`FG-05-gestion-dependencias.md` -> `security/FG-05-gestion-dependencias.json`. Nada de
+`FG-05-carrito-compras.md` -> `security/FG-05-carrito-compras.json`. Nada de
 formas cortas (`FG-05.json`): el nombre del veredicto se deriva del brief, no se
 inventa. Usa este contrato exacto (solo JSON valido, sin cercas):
 
