@@ -26,7 +26,7 @@ Convenciones transversales de la suite (aplican a todos los archivos):
   ignoran si no las usan): `"origin": "recovered"` por requisito, y
   `"code_refs": ["ruta/archivo.ext:123"]` opcional en features, escenarios,
   requisitos y entidades — la traza al codigo. Los `evidence_refs` de mapa,
-  escenarios y requisitos citan **ids de la suite** (`SYM-xxx`, `SCN-xxx`,
+  escenarios y requisitos citan **ids de la suite** (`LEL-xxx`, `SCN-xxx`,
   `OWN-xxx`); el `archivo:linea` va en `code_refs` y en los `evidence_refs` del LEL
   (que son strings libres).
 - Todos los valores legibles por humanos en espanol.
@@ -53,11 +53,11 @@ Convenciones transversales de la suite (aplican a todos los archivos):
       "value": "high|medium|low",
       "value_rationale": "string (en reconstruccion: derivalo de la centralidad en el codigo — que protege datos o ingresos, que usa todo el mundo)",
       "status": "stub|elaborated|baselined|deprecated",
-      "lel_symbol_ids": ["SYM-001"],
+      "lel_symbol_ids": ["LEL-001"],
       "scenario_stubs": [
-        {"id": "SCN-001", "title": "string", "goal": "string", "actors": ["string"], "status": "stub|elaborated|baselined|deprecated", "evidence_refs": ["SYM-001"]}
+        {"id": "SCN-001", "title": "string", "goal": "string", "actors": ["string"], "status": "stub|elaborated|baselined|deprecated", "evidence_refs": ["LEL-001"]}
       ],
-      "evidence_refs": ["SYM-001"],
+      "evidence_refs": ["LEL-001"],
       "discovered_in": "REC-001"
     }
   ],
@@ -67,7 +67,7 @@ Convenciones transversales de la suite (aplican a todos los archivos):
 ```
 
 En reconstruccion, `discovered_in` cita la corrida `REC-xxx` y los `evidence_refs`
-citan simbolos del LEL (`SYM-xxx`); la traza al codigo va en `code_refs`.
+citan simbolos del LEL (`LEL-xxx`); la traza al codigo va en `code_refs`.
 
 ## 2. `lel.json`
 
@@ -78,22 +78,22 @@ citan simbolos del LEL (`SYM-xxx`); la traza al codigo va en `code_refs`.
   "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"]},
   "symbols": [
     {
-      "id": "SYM-001",
+      "id": "LEL-001",
       "canonical_name": "string",
       "names": ["string"],
       "type": "sujeto|objeto|verbo|estado",
       "status": "active|deprecated|proposed",
       "notions": [{"id": "NOT-001", "statement": "string", "evidence_refs": ["ruta/archivo.ext:123"]}],
-      "impacts": [{"id": "IMP-001", "statement": "string", "evidence_refs": ["ruta/archivo.ext:123"], "referenced_symbol_ids": ["SYM-002"]}],
+      "impacts": [{"id": "IMP-001", "statement": "string", "evidence_refs": ["ruta/archivo.ext:123"], "referenced_symbol_ids": ["LEL-002"]}],
       "aliases": ["string"],
-      "related_symbol_ids": ["SYM-002"],
+      "related_symbol_ids": ["LEL-002"],
       "open_questions": ["string"],
       "assumptions": ["string"],
       "revision": {"created_from": ["string"], "last_changed_reason": "REC-001"}
     }
   ],
-  "alias_map": [{"alias": "string", "symbol_id": "SYM-001", "confidence": "high|medium|low", "evidence_refs": ["string"]}],
-  "open_questions": [{"id": "Q-001", "question": "string", "blocking": true, "target_role": "string", "reason": "string", "related_symbol_ids": ["SYM-001"]}],
+  "alias_map": [{"alias": "string", "symbol_id": "LEL-001", "confidence": "high|medium|low", "evidence_refs": ["string"]}],
+  "open_questions": [{"id": "Q-001", "question": "string", "blocking": true, "target_role": "string", "reason": "string", "related_symbol_ids": ["LEL-001"]}],
   "traceability_links": [{"source": {"kind": "source|symbol|notion|impact|alias|question", "id": "string"}, "target": {"kind": "source|symbol|notion|impact|alias|question", "id": "string"}, "relationship": "derived_from|defines|mentions|aliases|questions|relates_to"}],
   "assumptions": ["string"],
   "warnings": ["string"]
@@ -110,22 +110,22 @@ citan simbolos del LEL (`SYM-xxx`); la traza al codigo va en `code_refs`.
   "summary": {
     "total_scenarios": 0, "current_scenarios": 0, "future_scenarios": 0,
     "total_episodes": 0, "total_exceptions": 0,
-    "covered_symbol_ids": ["SYM-001"], "uncovered_symbol_ids": ["SYM-002"], "blocking_questions": 0
+    "covered_symbol_ids": ["LEL-001"], "uncovered_symbol_ids": ["LEL-002"], "blocking_questions": 0
   },
   "scenarios": [
     {
       "id": "SCN-001", "title": "string", "goal": "string",
       "scenario_type": "current|future", "status": "active|proposed|deprecated",
-      "context": {"geographic_location": "string", "temporality": "string", "preconditions": ["string"], "evidence_refs": ["SYM-001"]},
-      "actors": [{"id": "ACT-001", "name": "string", "lel_symbol_id": "SYM-001", "evidence_refs": ["SYM-001"]}],
-      "resources": [{"id": "RES-001", "name": "string", "lel_symbol_id": "SYM-002", "evidence_refs": ["SYM-002"]}],
-      "episodes": [{"id": "EP-001", "sentence": "string", "episode_type": "simple|conditional|optional", "condition": "string", "referenced_scenario_id": "SCN-002", "referenced_symbol_ids": ["SYM-001"], "evidence_refs": ["IMP-001"]}],
-      "exceptions": [{"id": "EXC-001", "cause": "string", "solution": "string", "referenced_scenario_id": "SCN-003", "evidence_refs": ["SYM-001"]}],
-      "lel_symbol_ids": ["SYM-001"], "related_scenario_ids": ["SCN-002"],
-      "open_questions": ["string"], "assumptions": ["string"], "evidence_refs": ["SYM-001"]
+      "context": {"geographic_location": "string", "temporality": "string", "preconditions": ["string"], "evidence_refs": ["LEL-001"]},
+      "actors": [{"id": "ACT-001", "name": "string", "lel_symbol_id": "LEL-001", "evidence_refs": ["LEL-001"]}],
+      "resources": [{"id": "RES-001", "name": "string", "lel_symbol_id": "LEL-002", "evidence_refs": ["LEL-002"]}],
+      "episodes": [{"id": "EP-001", "sentence": "string", "episode_type": "simple|conditional|optional", "condition": "string", "referenced_scenario_id": "SCN-002", "referenced_symbol_ids": ["LEL-001"], "evidence_refs": ["IMP-001"]}],
+      "exceptions": [{"id": "EXC-001", "cause": "string", "solution": "string", "referenced_scenario_id": "SCN-003", "evidence_refs": ["LEL-001"]}],
+      "lel_symbol_ids": ["LEL-001"], "related_scenario_ids": ["SCN-002"],
+      "open_questions": ["string"], "assumptions": ["string"], "evidence_refs": ["LEL-001"]
     }
   ],
-  "open_questions": [{"id": "Q-001", "question": "string", "blocking": true, "target_role": "string", "reason": "string", "related_scenario_ids": ["SCN-001"], "related_symbol_ids": ["SYM-001"]}],
+  "open_questions": [{"id": "Q-001", "question": "string", "blocking": true, "target_role": "string", "reason": "string", "related_scenario_ids": ["SCN-001"], "related_symbol_ids": ["LEL-001"]}],
   "traceability_links": [{"source": {"kind": "symbol|scenario|episode|exception|question", "id": "string"}, "target": {"kind": "symbol|scenario|episode|exception|question", "id": "string"}, "relationship": "derived_from|uses|triggers|handles|questions|relates_to"}],
   "assumptions": ["string"],
   "warnings": ["string"]
@@ -164,7 +164,7 @@ Los `evidence_refs` de escenarios apuntan a simbolos/impactos del LEL existentes
         {"id": "AC-001", "given": "string", "when": "string", "then": "string"}
       ],
       "source_scenario_ids": ["SCN-001"], "source_episode_ids": ["EP-001"],
-      "lel_symbol_ids": ["SYM-001"], "rationale": "string",
+      "lel_symbol_ids": ["LEL-001"], "rationale": "string",
       "origin": "recovered",
       "assumptions": ["string"], "open_questions": ["string"], "evidence_refs": ["SCN-001"]
     }
@@ -180,9 +180,9 @@ Los `evidence_refs` de escenarios apuntan a simbolos/impactos del LEL existentes
       "verification_method": "test|demonstration|inspection|analysis",
       "metric": "string",
       "acceptance_criteria": [
-        {"id": "AC-001", "given": "string", "when": "string", "then": "string"}
+        {"id": "AC-002", "given": "string", "when": "string", "then": "string"}
       ],
-      "source_scenario_ids": ["SCN-001"], "lel_symbol_ids": ["SYM-001"],
+      "source_scenario_ids": ["SCN-001"], "lel_symbol_ids": ["LEL-001"],
       "rationale": "string", "assumptions": ["string"], "open_questions": ["string"], "evidence_refs": ["SCN-001"]
     }
   ],
@@ -191,7 +191,7 @@ Los `evidence_refs` de escenarios apuntan a simbolos/impactos del LEL existentes
       "id": "BR-001", "statement": "string (invariante del dominio, en voz declarativa)",
       "kind": "invariant|constraint|derivation",
       "status": "active|proposed|deprecated",
-      "lel_symbol_ids": ["SYM-001"], "source_scenario_ids": ["SCN-001"],
+      "lel_symbol_ids": ["LEL-001"], "source_scenario_ids": ["SCN-001"],
       "enforced_by": ["RF-007/AC-002"],
       "rationale": "string", "open_questions": ["string"], "evidence_refs": ["SCN-001"]
     }
@@ -221,25 +221,25 @@ invariantes que el codigo no demuestra.
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
   "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "lel_version_ref": "string", "requirements_version_ref": "string"},
-  "summary": {"entity_count": 0, "relationship_count": 0, "covered_symbol_ids": ["SYM-001"], "uncovered_symbol_ids": ["SYM-002"]},
+  "summary": {"entity_count": 0, "relationship_count": 0, "covered_symbol_ids": ["LEL-001"], "uncovered_symbol_ids": ["LEL-002"]},
   "entities": [
     {
       "id": "ENT-001",
       "name": "string",
-      "lel_symbol_id": "SYM-001",
+      "lel_symbol_id": "LEL-001",
       "description": "string",
       "fields": [
         {"name": "string", "type": "string", "required": true, "unique": false, "notes": "string"}
       ],
       "primary_key": ["string"],
       "source_requirement_ids": ["RF-001"],
-      "evidence_refs": ["SYM-001"],
+      "evidence_refs": ["LEL-001"],
       "assumptions": ["string"],
       "open_questions": ["string"]
     }
   ],
   "relationships": [
-    {"id": "REL-001", "type": "one_to_one|one_to_many|many_to_one|many_to_many", "from_entity_id": "ENT-001", "to_entity_id": "ENT-002", "name": "string", "notes": "string", "evidence_refs": ["SYM-001"]}
+    {"id": "REL-001", "type": "one_to_one|one_to_many|many_to_one|many_to_many", "from_entity_id": "ENT-001", "to_entity_id": "ENT-002", "name": "string", "notes": "string", "evidence_refs": ["LEL-001"]}
   ],
   "open_questions": [{"id": "Q-001", "question": "string", "blocking": true, "target_role": "string", "reason": "string"}],
   "traceability_links": [{"source": {"kind": "symbol|requirement|entity|relationship", "id": "string"}, "target": {"kind": "symbol|requirement|entity|relationship", "id": "string"}, "relationship": "derived_from|models|relates_to"}],

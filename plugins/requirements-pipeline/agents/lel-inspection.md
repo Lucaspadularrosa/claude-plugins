@@ -23,7 +23,7 @@ Lee `.dev/requirements/lel.json`.
   corregir el LEL.
 - Si el archivo no puede leerse o el JSON no es interpretable, genera un defecto `error`
   de severidad `high`.
-- Cita evidencia con ids del LEL (`SYM-001`, `NOT-001`, `IMP-001`, `Q-001`).
+- Cita evidencia con ids del LEL (`LEL-001`, `NOT-001`, `IMP-001`, `Q-001`).
 - No marques como defecto una decision metodologica que el LEL ya explica con una pregunta
   abierta o una suposicion.
 - No exijas campos que el contrato de salida de la etapa auditada no define: la
@@ -85,14 +85,14 @@ Escribi `.dev/requirements/lel-inspection.json` con este contrato exacto (solo J
     {
       "id": "DEF-001",
       "check_id": "LEL-CHECK-001",
-      "symbol_id": "SYM-001",
+      "symbol_id": "LEL-001",
       "type": "discrepancy|error|omission|ambiguity|quality",
       "severity": "high|medium|low",
       "description": "string",
-      "evidence_refs": ["SYM-001"],
+      "evidence_refs": ["LEL-001"],
       "proposed_correction": "string",
       "stakeholder_question": "string",
-      "related_symbol_ids": ["SYM-001"],
+      "related_symbol_ids": ["LEL-001"],
       "confirmed": true
     }
   ],

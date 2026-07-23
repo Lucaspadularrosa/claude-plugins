@@ -135,7 +135,7 @@ Escribi `.dev/requirements/stakeholder-questions.json` con este contrato exacto:
       "source_defect_ids": ["DEF-001"],
       "source_open_question_ids": ["Q-001"],
       "source_gap_ids": ["GAP-001"],
-      "related_symbol_ids": ["SYM-001"]
+      "related_symbol_ids": ["LEL-001"]
     }
   ],
   "assumptions": ["string"],

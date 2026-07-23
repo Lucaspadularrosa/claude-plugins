@@ -88,8 +88,11 @@ cero. Al terminar, incrementa `version` y actualiza `metadata.updated_at`.
   `uncovered_scenario_ids` lista los Escenarios `active` que ningun requisito cubre.
 - Usa ids estables: `RF-001` para funcionales, `RNF-001` para no funcionales, `Q-001`
   para preguntas abiertas, `FG-01` para features y `AC-001` para criterios de aceptacion.
-  Los `AC-xxx` se numeran **por requisito** (cada requisito arranca en `AC-001`); para
-  citar un criterio fuera de su requisito usa la forma compuesta (`RF-007/AC-002`).
+  Los `AC-xxx` se numeran de forma **global**: una sola secuencia para todo
+  `requirements.json`, y ningun id de AC se repite en todo el archivo (dos requisitos
+  nunca tienen cada uno su `AC-001`). Un id global hace la traza inequivoca; para citar
+  un criterio junto a su requisito usa la forma compuesta (`RF-007/AC-031`). Los
+  requisitos nuevos continuan la secuencia existente.
 - Deduplica por significado. Todos los valores legibles van en espanol.
 
 ### Agrupacion en features (`feature_groups` y `feature_group`)
@@ -204,7 +207,7 @@ Escribi `.dev/requirements/requirements.json` con este contrato exacto (solo JSO
         {"id": "AC-001", "given": "string", "when": "string", "then": "string"}
       ],
       "source_scenario_ids": ["SCN-001"], "source_episode_ids": ["EP-001"],
-      "lel_symbol_ids": ["SYM-001"], "rationale": "string",
+      "lel_symbol_ids": ["LEL-001"], "rationale": "string",
       "assumptions": ["string"], "open_questions": ["string"], "evidence_refs": ["SCN-001"]
     }
   ],
@@ -219,9 +222,9 @@ Escribi `.dev/requirements/requirements.json` con este contrato exacto (solo JSO
       "verification_method": "test|demonstration|inspection|analysis",
       "metric": "string",
       "acceptance_criteria": [
-        {"id": "AC-001", "given": "string", "when": "string", "then": "string"}
+        {"id": "AC-002", "given": "string", "when": "string", "then": "string"}
       ],
-      "source_scenario_ids": ["SCN-001"], "lel_symbol_ids": ["SYM-001"],
+      "source_scenario_ids": ["SCN-001"], "lel_symbol_ids": ["LEL-001"],
       "rationale": "string", "assumptions": ["string"], "open_questions": ["string"], "evidence_refs": ["SCN-001"]
     }
   ],
@@ -230,7 +233,7 @@ Escribi `.dev/requirements/requirements.json` con este contrato exacto (solo JSO
       "id": "BR-001", "statement": "string (invariante en voz declarativa, con sus limites explicitos)",
       "kind": "invariant|constraint|derivation",
       "status": "active|proposed|deprecated",
-      "lel_symbol_ids": ["SYM-001"], "source_scenario_ids": ["SCN-001"],
+      "lel_symbol_ids": ["LEL-001"], "source_scenario_ids": ["SCN-001"],
       "enforced_by": ["RF-007/AC-002"],
       "rationale": "string", "open_questions": ["string"], "evidence_refs": ["SCN-001"]
     }
@@ -266,6 +269,8 @@ el JSON.
 - Verifica que `requirements.json` es JSON valido.
 - Verifica que cada requisito tiene `feature_group`, al menos un `acceptance_criteria` y
   `estimated_effort`.
+- Verifica que ningun id de AC se repite en todo el archivo: la numeracion de `AC-xxx`
+  es global a `requirements.json`, no por requisito.
 - Verifica que cada id en `depends_on`, `feature_group`, `source_scenario_ids` y
   `lel_symbol_ids` apunta a un id existente; no dejes referencias colgadas.
 - Verifica que cada feature de `feature_groups` lista en `requirement_ids` exactamente los

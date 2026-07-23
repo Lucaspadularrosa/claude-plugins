@@ -159,12 +159,12 @@ tome como diseño y no las improvise:
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
   "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "lel_version_ref": "string", "requirements_version_ref": "string", "pipeline_version": "string"},
-  "summary": {"entity_count": 0, "relationship_count": 0, "covered_symbol_ids": ["SYM-001"], "uncovered_symbol_ids": ["SYM-002"]},
+  "summary": {"entity_count": 0, "relationship_count": 0, "covered_symbol_ids": ["LEL-001"], "uncovered_symbol_ids": ["LEL-002"]},
   "entities": [
     {
       "id": "ENT-001",
       "name": "string",
-      "lel_symbol_id": "SYM-001",
+      "lel_symbol_id": "LEL-001",
       "description": "string",
       "fields": [
         {"name": "string", "type": "string", "required": true, "unique": false, "notes": "string"}

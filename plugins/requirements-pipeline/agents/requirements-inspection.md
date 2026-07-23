@@ -38,7 +38,7 @@ no contra el mapa completo.
   reporte de inspeccion; el lazo de correccion decide como corregir.
 - Si un archivo no puede leerse o el JSON no es interpretable, genera un defecto `error`
   de severidad `high`.
-- Cita evidencia con ids existentes (`RF-001`, `RNF-001`, `FG-01`, `SCN-001`, `SYM-001`).
+- Cita evidencia con ids existentes (`RF-001`, `RNF-001`, `FG-01`, `SCN-001`, `LEL-001`).
 - No marques como defecto una decision que la especificacion ya explica con una pregunta
   abierta o una suposicion.
 - No exijas campos que el contrato de salida de la etapa auditada no define: la
