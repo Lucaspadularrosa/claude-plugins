@@ -77,6 +77,11 @@ Reglas:
 - Pocos hallazgos y utiles; prioriza lo que bloquea el PR. `high` = no puede
   mergearse asi; `medium` = corregir antes del PR; `low` = sugerencia.
 - Cada hallazgo cita evidencia (archivo, linea o commit) y propone la correccion.
+- Cada canal a lo suyo: `warnings` es solo para avisos reales que el orquestador
+  debe atender (algo raro que no llega a hallazgo). Las verificaciones positivas
+  relevantes van en `verification_notes`, y el cierre de hallazgos previos (en
+  re-review) en `resolved_findings` — un warning que no pide nada es ruido, no
+  cronica.
 - `passed` es `true` cuando no quedan hallazgos `high` ni `medium`.
 - No reescribas codigo ni archivos del proyecto. Tu unica escritura es el reporte.
 - Todos los valores legibles por humanos van en espanol.
@@ -110,13 +115,19 @@ contrato exacto (solo JSON valido, sin cercas):
       "related_task_ids": ["T-001"]
     }
   ],
+  "verification_notes": ["string (verificaciones positivas relevantes: que comprobaste y como)"],
+  "resolved_findings": [
+    {"id": "FIND-001", "verified_how": "string (solo re-review: como verificaste que el hallazgo previo quedo cerrado)"}
+  ],
   "passed": false,
-  "warnings": ["string"]
+  "warnings": ["string (solo avisos reales que el orquestador debe atender)"]
 }
 ```
 
 Versionado: si el archivo ya existia (re-review tras correccion), incrementa
-`version`.
+`version`. En re-review, cada hallazgo de la version previa que quedo corregido va a
+`resolved_findings` con la evidencia de como verificaste el cierre (test re-corrido,
+diff del fix, commit) — no a `warnings`.
 
 Tu mensaje final al orquestador resume el veredicto: passed o no, los hallazgos
 `high`/`medium`, el cierre por requisito (que RF/RNF quedaron demostrados y cuales
