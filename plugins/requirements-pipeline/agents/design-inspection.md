@@ -29,6 +29,9 @@ Lee:
   de severidad `high`.
 - Cita evidencia con ids del diseno (`ENT-001`, `REL-001`, `MOD-001`, `API-001`,
   `SCR-001`, `ADR-001`).
+- No exijas campos que el contrato de salida de la etapa auditada no define: la
+  ausencia de un campo que ningun contrato pide no es defecto. Si crees que deberia
+  existir, sugerilo en `warnings`.
 - Usa pocos defectos y utiles. Prioriza los que bloquean la construccion del sistema.
 - `confirmed` es `true` solo cuando el defecto surge directamente de los artefactos
   inspeccionados; `false` para sospechas que requieren confirmacion humana.
@@ -47,8 +50,9 @@ Antes de aplicar el checklist, determina el paradigma de base de datos a partir 
 - `none` si no hay base de datos, `unknown` si el stack no la define.
 
 Las verificaciones de formas normales (`DB-CHECK-002/003/004`) **solo aplican cuando
-`database_paradigm` es `relational`**. Si no lo es, saltealas, dejalo dicho en `warnings`
-y marca `summary.normal_form_checked` en `false`.
+`database_paradigm` es `relational`**. Si no lo es, saltealas, dejalo dicho en `warnings`,
+registralas como `skipped` (con el paradigma como `reason`) en `checks_applied` y marca
+`summary.normal_form_checked` en `false`.
 
 ## Checklist obligatorio
 
@@ -82,6 +86,13 @@ Diseno tecnico y coherencia:
   modelo de datos.
 - `DB-CHECK-012`: las referencias entre entidades son consistentes con las relaciones
   declaradas; no hay claves foraneas implicitas sin su relacion.
+- `DB-CHECK-013`: sincronia de las vistas derivadas. `data-model.md` y
+  `technical-design.md` arrancan con el encabezado
+  `Derivado de <json> version N — no editar a mano` y ese N coincide con la `version`
+  actual del `.json` correspondiente. Version distinta, encabezado ausente o `.md`
+  faltante: defecto `medium` — el script de cierre no corrio y la vista legible
+  miente. La correccion NO es reescribir el `.md` a mano: es que el orquestador
+  re-corra el script de derivacion.
 
 ## Salida
 
@@ -91,6 +102,7 @@ valido, sin cercas de markdown):
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "data_model_version_ref": "string",
   "technical_design_version_ref": "string",
   "inspected_artifacts": [".dev/requirements/data-model.json", ".dev/requirements/technical-design.json"],
@@ -103,6 +115,9 @@ valido, sin cercas de markdown):
     "low_severity": 0,
     "normal_form_checked": false
   },
+  "checks_applied": [
+    {"check_id": "DB-CHECK-001", "result": "ok|defect|skipped", "reason": "string (obligatorio si skipped)"}
+  ],
   "defects": [
     {
       "id": "DEF-001",
@@ -123,9 +138,17 @@ valido, sin cercas de markdown):
 }
 ```
 
+`checks_applied` es obligatorio y cubre el checklist **completo**, una entrada por
+check, incluidos los que no encontraron nada (`ok`) y los que no aplicaban o no
+pudiste evaluar (`skipped`, siempre con `reason`; tipico: las formas normales fuera
+del paradigma relacional). Un check salteado en silencio es invisible para el
+consumidor de la inspeccion: peor que un defecto.
+
 Versionado: si el archivo ya existia, incrementa `version` en cada reescritura. Los
 campos `*_version_ref` citan el numero de `version` actual del archivo referenciado,
-como string (ej. `"3"`).
+como string (ej. `"3"`). `pipeline_version` es la version del plugin que el
+orquestador te indica al invocarte: estampala tal cual; si no te la indicaron, escribi
+`null` — nunca la inventes.
 
 Tambien escribi `.dev/requirements/design-inspection.md`: un resumen legible con el
 paradigma de base de datos detectado, el conteo de defectos por severidad y, por cada
@@ -138,6 +161,9 @@ el diseno pasa.
 - Verifica que `database_paradigm` se determino del stack y que las verificaciones de
   formas normales se aplicaron solo si es `relational`.
 - Verifica que los conteos del `summary` coinciden con la lista de `defects`.
+- Verifica que `checks_applied` tiene una entrada por cada check del checklist
+  (`DB-CHECK-001` a `DB-CHECK-012`), que todo `skipped` tiene `reason` y que todo
+  check con defectos figura como `defect`.
 
 ## Barra de calidad
 
@@ -145,3 +171,16 @@ el diseno pasa.
 - Cada defecto incluye una correccion propuesta concreta.
 - La normalizacion se evalua solo cuando el stack lo justifica.
 - El reporte permite corregir el diseno en una corrida posterior sin perder trazabilidad.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — passed o no, conteo de defectos por severidad y los `high`/`medium` en una linea cada uno.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

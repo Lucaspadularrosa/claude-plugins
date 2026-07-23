@@ -71,7 +71,7 @@ Escribi `.dev/audit/findings-improvements.json` con este contrato (solo JSON val
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "scope": "string"},
+  "metadata": {"created_at": "string", "scope": "string", "pipeline_version": "string"},
   "summary": {"total": 0, "high": 0, "medium": 0, "low": 0},
   "findings": [
     {
@@ -91,7 +91,17 @@ Escribi `.dev/audit/findings-improvements.json` con este contrato (solo JSON val
 }
 ```
 
-Tu mensaje final: las 5 mejores mejoras por retorno/esfuerzo, una linea cada una.
+`metadata.pipeline_version` es la version del plugin que el orquestador te indica al
+invocarte: estampala tal cual; si no te la indicaron, escribi `null` — nunca la
+inventes.
+
+## Respuesta al orquestador
+
+El archivo de findings es el entregable; tu respuesta es solo el puntero: `status`
+(ok | blocked | error), `artifact_paths` (tu findings JSON), `summary` de hasta 5
+lineas — las mejores mejoras por retorno/esfuerzo, una linea cada una — y
+`blocking_items` solo si los hay. No reproduzcas los hallazgos en extenso: viven en
+el archivo.
 
 ## Barra de calidad
 

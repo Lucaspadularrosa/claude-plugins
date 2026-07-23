@@ -73,7 +73,7 @@ Cuando el orquestador te indica que hay reporte y cuestionario previos:
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "updated_at": "string", "behavior_map_version_ref": "string"},
+  "metadata": {"created_at": "string", "updated_at": "string", "behavior_map_version_ref": "string", "pipeline_version": "string"},
   "summary": {
     "overall_state": "string (una frase honesta del estado de la app)",
     "features_complete": 0, "features_partial": 0, "features_skeleton": 0, "dead_code_findings": 0,
@@ -100,6 +100,7 @@ de respuesta debajo de cada pregunta. Estructura JSON:
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "questions": [
     {"id": "OWN-001", "question": "string", "status": "open|answered", "feature_ids": ["FG-01"], "source_gap_ids": ["GAP-001"], "priority": "high|medium|low", "expected_answer_type": "free_text|yes_no|choice", "choices": ["string"]}
   ]
@@ -111,7 +112,9 @@ de respuesta debajo de cada pregunta. Estructura JSON:
 El reporte legible: el estado general en un parrafo, la tabla de features por estado,
 los huecos por tipo y las señales para auditoria.
 
-Versionado: `version` +1 por reescritura.
+Versionado: `version` +1 por reescritura. `pipeline_version` es la version del plugin
+que el orquestador te indica al invocarte: estampala tal cual en ambos JSON; si no te
+la indicaron, escribi `null` — nunca la inventes.
 
 ## Antes de terminar
 
@@ -124,3 +127,16 @@ Versionado: `version` +1 por reescritura.
 - El dueño lee `state-report.md` y entiende el estado real de su app en cinco minutos.
 - Las preguntas se pueden responder sin abrir un solo archivo de codigo.
 - Nada del reporte es opinion sin evidencia.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — el estado general de la app, los huecos `high` y cuantas preguntas van al dueño.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

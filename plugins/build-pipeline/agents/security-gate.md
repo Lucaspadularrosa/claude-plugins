@@ -30,7 +30,7 @@ El orquestador te indica la feature (slug), la rama y la ruta de trabajo. Lee:
   en `stack-profile.json`). Revisas **lo que la feature cambio**, no todo el repo.
 - `.dev/build/security-baseline.json` — tu vara: superficie de ataque, categorias OWASP
   aplicables, el mecanismo nativo de cada control, y el comando `dependency_audit`.
-- `.dev/features/{slug}.md` — el brief: su seccion de Seguridad (categorias aplicables,
+- `.dev/features/FG-xx-{slug}.md` — el brief: su seccion de Seguridad (categorias aplicables,
   requisitos/criterios de seguridad puntuales) y los contratos de API con `auth_required`.
 - `.dev/build/stack-profile.json` y `CLAUDE.md` — convenciones y comandos.
 - El reporte del implementador, si el orquestador te lo pasa (sus notas de seguridad).
@@ -99,16 +99,23 @@ nativo) quedaron manejados o reportados, no ignorados.
   el diff), no lo fuerces como hallazgo: registralo en `deferred_to_audit` con la
   pregunta que lo resolveria.
 - `passed` es `true` cuando no quedan hallazgos `high` ni `medium`.
+- Los ids de hallazgo van namespaced por feature: `FG-xx/SGATE-nnn` (ej:
+  `FG-05/SGATE-001`). Un `SGATE-001` a secas se repite en cada veredicto y es ambiguo
+  a nivel repo; con el namespace, cualquier commit de fix que lo cite es inequivoco.
 - No reescribas codigo ni archivos del proyecto. Todos los valores legibles van en español.
 
 ## Salida
 
-Escribi `.dev/build/security/{slug}.json` (crea la carpeta si hace falta), con este
-contrato exacto (solo JSON valido, sin cercas):
+Escribi el veredicto en `.dev/build/security/` (crea la carpeta si hace falta). El
+nombre del archivo es exactamente el nombre del archivo del brief sin `.md`: brief
+`FG-05-carrito-compras.md` -> `security/FG-05-carrito-compras.json`. Nada de
+formas cortas (`FG-05.json`): el nombre del veredicto se deriva del brief, no se
+inventa. Usa este contrato exacto (solo JSON valido, sin cercas):
 
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "feature_slug": "string",
   "branch": "string",
   "summary": {
@@ -119,7 +126,7 @@ contrato exacto (solo JSON valido, sin cercas):
   },
   "findings": [
     {
-      "id": "SGATE-001",
+      "id": "FG-05/SGATE-001",
       "severity": "high|medium|low",
       "owasp_id": "A01|A02|A03|A04|A05|A06|A07|A08|A09|A10",
       "category": "authz|authn|injection|xss|secrets|input_validation|data_exposure|config|dependency|integrity|ssrf|logging|other",
@@ -143,10 +150,22 @@ Notas del contrato:
 - `applicable_categories` copia las del baseline; `categories_reviewed` son las que el
   diff efectivamente toco y revisaste.
 - Versionado: si el archivo ya existia (re-review tras correccion), incrementa `version`.
+- `pipeline_version`: la version del plugin que el orquestador te indica al invocarte;
+  estampala tal cual. Si no te la indicaron, escribi `null` — nunca la inventes.
 
-Tu mensaje final al orquestador resume el veredicto: `passed` o no, los hallazgos
-`high`/`medium` en una linea cada uno, el resultado del `dependency_audit`, y si dejaste
-algo en `deferred_to_audit`.
+## Respuesta al orquestador
+
+El veredicto JSON es el entregable; tu respuesta es solo el puntero. Tu mensaje final
+trae unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: la ruta del veredicto (`security/{slug}.json`).
+- `summary`: 3-5 lineas — `passed` o no, los hallazgos `high`/`medium` en una linea
+  cada uno, el resultado del `dependency_audit` y si dejaste algo en
+  `deferred_to_audit`.
+- `blocking_items`: solo si los hay.
+
+No reproduzcas el contenido del veredicto en extenso: vive en el archivo.
 
 ## Barra de calidad
 

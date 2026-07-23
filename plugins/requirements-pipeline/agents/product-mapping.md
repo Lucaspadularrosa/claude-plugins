@@ -86,7 +86,7 @@ valido, sin cercas):
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "lel_version_ref": "string", "source_artifacts": ["string"]},
+  "metadata": {"created_at": "string", "updated_at": "string", "lel_version_ref": "string", "source_artifacts": ["string"], "pipeline_version": "string"},
   "summary": {
     "feature_count": 0,
     "stub_count": 0, "elaborated_count": 0, "baselined_count": 0, "deprecated_count": 0,
@@ -102,7 +102,7 @@ valido, sin cercas):
       "value": "high|medium|low",
       "value_rationale": "string",
       "status": "stub|elaborated|baselined|deprecated",
-      "lel_symbol_ids": ["SYM-001"],
+      "lel_symbol_ids": ["LEL-001"],
       "scenario_stubs": [
         {"id": "SCN-001", "title": "string", "goal": "string", "actors": ["string"], "status": "stub|elaborated|baselined|deprecated", "evidence_refs": ["SRC-SEC-001"]}
       ],
@@ -127,12 +127,13 @@ valido, sin cercas):
 
 Versionado: `version` empieza en 1 y se incrementa en cada reescritura;
 `metadata.updated_at` se actualiza siempre. `lel_version_ref` cita la `version` actual
-de `lel.json`, como string.
+de `lel.json`, como string. `metadata.pipeline_version` es la version del plugin que
+el orquestador te indica al invocarte: estampala tal cual; si no te la indicaron,
+escribi `null` — nunca la inventes.
 
-Tambien escribi `.dev/requirements/product-map.md`: el mapa legible, agrupado por
-estado y ordenado por prioridad: por cada feature su id, nombre, prioridad, estado y
-sus escenarios stub; al final, las propuestas pendientes (si las hay) con el antes y
-despues resumido.
+NO escribas `.dev/requirements/product-map.md`: es una vista derivada que el orquestador
+regenera por script desde `product-map.json` al cierre de la corrida. Tu unica salida es
+el JSON.
 
 ## Antes de terminar
 
@@ -151,3 +152,16 @@ despues resumido.
 - Ningun stub gasta profundidad: titulo, objetivo y actores alcanzan.
 - El usuario puede mirar el `.md` y decidir en minutos que elaborar en el proximo
   incremento.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — features nuevas o actualizadas, conteo por estado y `pending_proposals` si las hay.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

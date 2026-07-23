@@ -78,6 +78,16 @@ donde estan, nunca el valor.
   registra los comandos estandar de ese stack como `validated: false`, con la nota de
   que el primer feature debe crear el esqueleto del proyecto. Para la base de seguridad,
   deriva los mecanismos nativos del framework elegido y los ADRs de seguridad si existen.
+- **Modo regeneracion**: el orquestador te re-invoca cuando el perfil quedo stale —
+  (a) le falta alguna clave del contrato vigente, (b) termino la primera feature de
+  un greenfield, o (c) se resolvio una decision de stack abierta (te puede pasar la
+  decision tomada). Re-deriva **ambos** perfiles completos contra el contrato de este
+  prompt (no contra el formato del perfil viejo), incrementando `version`: en (b),
+  el esqueleto ya existe — re-evalua `greenfield` (normalmente pasa a `false`) y
+  valida los comandos ejecutandolos ahora que se puede; en (c), refleja la decision
+  resuelta y quitala de `open_questions`. Conserva del perfil previo lo que siga
+  respaldado por evidencia; lo que la evidencia nueva contradiga se reescribe, no se
+  arrastra.
 - **Base de seguridad por evidencia, no checklist inventado.** Cada `control` cita el
   mecanismo nativo real del stack (`evidence`); si el stack no da algo nativo para una
   categoria aplicable, no lo inventes: marca `mechanism` como ausente y registra el
@@ -98,7 +108,11 @@ Contrato exacto:
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "updated_at": "string", "technical_design_version_ref": "string", "greenfield": false},
+  "metadata": {"created_at": "string", "updated_at": "string", "technical_design_version_ref": "string", "greenfield": false, "pipeline_version": "string", "notes": "string (opcional)"},
+  "environment_detected": {
+    "os": "string (SO y shell, por evidencia)",
+    "<herramienta>": {"present": true, "version": "string", "evidence": "string (el comando que corriste para verificarla)"}
+  },
   "stack": [
     {"layer": "backend|frontend|database|infra|testing|other", "technology": "string", "version": "string", "evidence": "composer.json"}
   ],
@@ -118,16 +132,37 @@ Contrato exacto:
   ],
   "domain_naming": {"code_language": "string (idioma de los identificadores del dominio, por evidencia)", "rule": "string (como se nombra un concepto del dominio en el codigo: casing, singular/plural, traduccion consistente)", "evidence": "string"},
   "integration_branch": "string (rama base de los PRs: develop o main, segun evidencia)",
+  "integration_branch_note": "string (por que esa rama: la evidencia, y si la eleccion quedo confirmada por el usuario o es propuesta)",
   "ci": {"exists": false, "provider": "string|null (github-actions, gitlab-ci, ... segun forja/config)", "runs_tests": false, "runs_lint": false, "evidence": "string"},
   "warnings": ["string"],
-  "open_questions": ["string"]
+  "open_questions": [
+    {"id": "SPQ-001", "question": "string", "default_recomendado": "string", "blocking": false, "status": "open|resolved", "answer": "string|null"}
+  ]
 }
 ```
+
+Convenciones del contrato:
+- `environment_detected`: el entorno local verificado — SO y una entrada por CLI
+  relevante del stack (presente/version/evidencia del comando que corriste). Le
+  evita al resto del pipeline redescubrir la maquina en cada corrida.
+- `commands`: cada entrada admite un `note` opcional (precondiciones, matices). Si
+  el stack tiene comandos operativos propios que el build va a necesitar (ej.
+  `migrations_add`/`migrations_apply` en stacks con migraciones), agregalos como
+  claves extra con la misma forma `{command, validated, note}`.
+- `open_questions`: estructuradas, con ids `SPQ-xxx` estables. `blocking` marca las
+  que frenan el build (sin comando de test, rama de integracion desconocida);
+  `default_recomendado` es tu propuesta si el usuario no decide. Cuando el
+  orquestador las resuelva con el usuario, la respuesta se persiste en el mismo
+  perfil (`status: resolved` + `answer`): esas decisiones son oro para las corridas
+  siguientes, no las dejes morir en la conversacion.
 
 Versionado: `version` empieza en 1 y se incrementa en cada reescritura;
 `metadata.updated_at` se actualiza siempre. `technical_design_version_ref` cita la
 `version` de `technical-design.json` si existe: si el diseno cambia, el perfil debe
-regenerarse.
+regenerarse. `metadata.pipeline_version` es la version del plugin que el orquestador
+te indica al invocarte: estampala tal cual en ambos perfiles; si no te la indicaron,
+escribi `null` — nunca la inventes. Campos opcionales de anotacion en `metadata`
+(`notes`, refs adicionales) no invalidan el perfil.
 
 ### 2. `.dev/build/security-baseline.json`
 
@@ -138,7 +173,7 @@ ausencia). Contrato exacto:
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "updated_at": "string", "stack_profile_version_ref": "string", "owasp_reference": "OWASP Top 10 2021", "greenfield": false},
+  "metadata": {"created_at": "string", "updated_at": "string", "stack_profile_version_ref": "string", "owasp_reference": "OWASP Top 10 2021", "greenfield": false, "pipeline_version": "string"},
   "attack_surface": [
     {"kind": "web|api|cli|library|service", "evidence": "string (rutas/vistas, endpoints, entrypoint de consola, manifiesto de publicacion, worker)", "notes": "string"}
   ],
@@ -196,7 +231,8 @@ Si el stack cambia, ambos se regeneran juntos.
   superficie de ataque declarada, y que ninguna categoria aplicable quedo fuera de
   `controls`.
 - Si falta el comando de test o no se pudo determinar la rama de integracion, dejalo
-  como `open_question`: el orquestador lo va a preguntar antes de construir. Lo mismo si
+  como `open_question` con `blocking: true`: el orquestador lo va a preguntar antes
+  de construir. Lo mismo si
   no hay comando de audit de dependencias (deja el hueco en `warnings`: no bloquea el
   build, pero el `security-gate` lo va a reportar).
 - Completa `ci` por evidencia (workflows/pipelines existentes y **que** corren). Si no
@@ -217,3 +253,16 @@ Si el stack cambia, ambos se regeneran juntos.
   la base de seguridad declara sus huecos en vez de fingir cobertura.
 - La base de seguridad usa mecanismos nativos del stack por evidencia, no un checklist
   hardcodeado: aplica solo lo que la superficie de ataque justifica.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — el stack en una linea, las `open_questions` bloqueantes y los huecos de la base de seguridad.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

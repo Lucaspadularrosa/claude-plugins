@@ -60,7 +60,7 @@ Escribi `.dev/recovery/behavior-map.json` con este contrato (solo JSON valido):
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "updated_at": "string", "code_inventory_version_ref": "string"},
+  "metadata": {"created_at": "string", "updated_at": "string", "code_inventory_version_ref": "string", "pipeline_version": "string"},
   "summary": {"capability_count": 0, "complete_count": 0, "partial_count": 0, "skeleton_count": 0, "vocabulary_term_count": 0},
   "capabilities": [
     {
@@ -90,7 +90,9 @@ Escribi `.dev/recovery/behavior-map.json` con este contrato (solo JSON valido):
 ```
 
 Versionado: `version` se incrementa en cada reescritura. Ids estables: `CAP-xxx`,
-`RENT-xxx`.
+`RENT-xxx`. `metadata.pipeline_version` es la version del plugin que el orquestador
+te indica al invocarte: estampala tal cual; si no te la indicaron, escribi `null` —
+nunca la inventes.
 
 Tambien escribi `.dev/recovery/behavior-map.md`: por capacidad, su flujo, reglas,
 estado de implementacion y evidencia; al final el vocabulario y las entidades.
@@ -106,3 +108,16 @@ estado de implementacion y evidencia; al final el vocabulario y las entidades.
 - Cada capacidad se puede verificar abriendo los archivos citados.
 - Los estados `partial`/`skeleton`/`dead` estan justificados con la evidencia de que
   falta — son el insumo principal del analisis de huecos.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — capacidades por estado (complete/partial/skeleton/dead) y lo que quedo sin cubrir.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

@@ -66,7 +66,7 @@ Escribi `.dev/recovery/code-inventory.json` (crea la carpeta) con este contrato
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "updated_at": "string", "repo_root": "string"},
+  "metadata": {"created_at": "string", "updated_at": "string", "repo_root": "string", "pipeline_version": "string"},
   "summary": {"primary_language": "string", "frameworks": ["string"], "loc_estimate": "string", "test_presence": "none|sparse|moderate|extensive", "docs_presence": "none|stale|partial|good"},
   "stack": [{"layer": "backend|frontend|database|infra|testing|other", "technology": "string", "version": "string", "evidence": "string"}],
   "layout": [{"path": "string", "purpose": "string", "evidence": "string"}],
@@ -83,6 +83,9 @@ Escribi `.dev/recovery/code-inventory.json` (crea la carpeta) con este contrato
 
 Versionado: `version` se incrementa en cada reescritura. Ids estables: `ENTRY-xxx`,
 `RMOD-xxx` (modulos recuperados); las etapas siguientes los citan.
+`metadata.pipeline_version` es la version del plugin que el orquestador te indica al
+invocarte: estampala tal cual; si no te la indicaron, escribi `null` — nunca la
+inventes.
 
 Tambien escribi `.dev/recovery/code-inventory.md`: el resumen legible (stack, layout,
 modulos, entry points, señales de salud y contradicciones con la doc).
@@ -99,3 +102,16 @@ modulos, entry points, señales de salud y contradicciones con la doc).
 - Con el inventario, un agente que nunca vio el repo sabe donde mirar para cualquier
   pregunta estructural.
 - Ninguna afirmacion sin archivo que la respalde.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — modulos y entry points encontrados, señales de salud y contradicciones clave con la doc.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

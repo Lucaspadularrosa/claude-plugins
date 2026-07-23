@@ -19,6 +19,12 @@ El orquestador te indica **una o varias rutas** de texto extraido, en
 solo y unificado, y cada seccion registra en `source` de que archivo vino. Si no te
 pasan rutas, busca el archivo mas reciente dentro de `.dev/requirements/sources/`.
 
+Cuando la fuente nacio como archivo binario (docx, pdf), el orquestador te indica
+tambien la ruta del original archivado en `.dev/requirements/sources/raw/` (o en
+`sources/ui/` si es un asset visual): registrala en `original_source` de cada seccion
+que venga de ese archivo, junto al `.txt` extraido. Si la fuente nacio como texto
+(vision, entrevista), no hay original: omiti el campo.
+
 ### Modo incremental (re-descubrimiento)
 
 Si el orquestador te indica que ya existe material previo (hay `source-inventory.json`,
@@ -29,7 +35,7 @@ Si el orquestador te indica que ya existe material previo (hay `source-inventory
   inventariadas; agrega las secciones nuevas con ids que continuan la secuencia.
 - Si un candidato del material nuevo coincide con un simbolo ya existente del LEL (por
   nombre canonico o alias), no emitas un candidato duplicado: emiti la entrada con
-  `matches_existing_symbol_id` apuntando al `SYM-xxx`, para que el authoring enriquezca
+  `matches_existing_symbol_id` apuntando al `LEL-xxx`, para que el authoring enriquezca
   ese simbolo en vez de crear otro.
 - Conserva intactas las entradas previas de los tres archivos: solo agregas.
 
@@ -77,6 +83,7 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "summary": {
     "section_count": 0,
     "lel_candidate_count": 0,
@@ -89,6 +96,7 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
       "id": "SRC-SEC-001",
       "title": "string",
       "source": "sources/nombre-del-archivo.txt",
+      "original_source": "sources/raw/nombre-del-archivo.pdf",
       "content_type": "domain_language|data_model|business_rules|ui|api|architecture|security|implementation_plan|mixed|unknown",
       "relevance_to_lel": "high|medium|low|none",
       "summary": "string",
@@ -102,6 +110,7 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "candidates": [
     {
       "id": "LEL-CAND-001",
@@ -109,7 +118,7 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
       "aliases": ["string"],
       "candidate_type": "sujeto|objeto|verbo|estado",
       "recommended_action": "include_in_lel|ask_stakeholder|enrich_existing",
-      "matches_existing_symbol_id": "SYM-001",
+      "matches_existing_symbol_id": "LEL-001",
       "rationale": "string",
       "evidence_refs": ["SRC-SEC-001"]
     }
@@ -129,6 +138,7 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "items": [
     {
       "id": "CTX-001",
@@ -146,7 +156,9 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
 Devolve solo JSON valido en cada archivo, sin cercas de markdown.
 
 Versionado: `version` empieza en 1; si reescribis un archivo que ya existia, incrementa
-su `version`.
+su `version`. `pipeline_version` es la version del plugin que el orquestador te indica
+al invocarte: estampala tal cual en cada archivo que escribas; si no te la indicaron,
+escribi `null` — nunca la inventes.
 
 ## Antes de terminar
 
@@ -155,5 +167,16 @@ su `version`.
   cada `evidence_refs` apunta a una seccion existente.
 - Verifica que el `summary` de `source-inventory.json` coincide con las cantidades reales.
 
-Al terminar, informa al orquestador cuantas secciones, candidatos, items de contexto y
-gaps generaste.
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — cuantas secciones, candidatos LEL, items de contexto y gaps
+  generaste, y cualquier anomalia del material.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido de los artefactos en la conversacion:
+vive en los archivos, y el orquestador los lee solo si los necesita.

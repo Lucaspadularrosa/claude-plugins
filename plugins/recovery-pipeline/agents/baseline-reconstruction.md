@@ -65,7 +65,7 @@ reconstruyas de memoria. Si la variable no estuviera definida, el archivo esta e
 
 Reglas duras:
 - **Nada sin evidencia**, con el modelo de evidencia de la suite: los
-  `evidence_refs` de mapa, escenarios y requisitos citan ids de la suite (`SYM-xxx`,
+  `evidence_refs` de mapa, escenarios y requisitos citan ids de la suite (`LEL-xxx`,
   `SCN-xxx`, `OWN-xxx`) — los validadores de `requerimientos` lo exigen —,
   mientras que la traza al codigo va en los `evidence_refs` del LEL (archivo:linea)
   y en el campo opcional `code_refs: ["ruta:linea"]` de features, escenarios,
@@ -78,13 +78,17 @@ Reglas duras:
 - Todos los valores legibles por humanos van en espanol.
 - Versionado estandar de la suite: `version` +1 por reescritura; `*_version_ref` citan
   la version del archivo referenciado.
+- `pipeline_version`: el orquestador te indica al invocarte la version del plugin;
+  estampala tal cual en cada JSON que escribas, en la misma posicion que usa el
+  contrato de `requerimientos` (en `metadata` si el artefacto la tiene; si no, en la
+  raiz). Si no te la indicaron, escribi `null` — nunca la inventes.
 
 ## Salida
 
-Los archivos `.dev/requirements/` listados arriba (JSON + sus `.md` legibles, mismo
-estilo que `requerimientos`), y un resumen final al orquestador: features
-reconstruidas por estado, requisitos emitidos (active/proposed), simbolos, entidades,
-y las preguntas abiertas que el analisis de huecos debe convertir en cuestionario.
+Los archivos `.dev/requirements/` listados arriba — **solo los JSON canonicos**, con
+los mismos contratos que usa `requerimientos`. NO escribas sus gemelos `.md` (lel.md,
+product-map.md, scenarios.md, requirements.md, data-model.md, technical-design.md):
+son vistas derivadas que el orquestador regenera por script al cierre.
 
 ## Antes de terminar
 
@@ -101,3 +105,18 @@ y las preguntas abiertas que el analisis de huecos debe convertir en cuestionari
   documentos: los otros pipelines la consumen sin adaptacion.
 - La trazabilidad llega al codigo: requisito -> escenario -> simbolo -> archivo:linea.
 - Lo que el codigo no demuestra, no esta afirmado.
+
+## Respuesta al orquestador
+
+Los archivos son el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — features reconstruidas por estado, requisitos emitidos
+  (active/proposed), simbolos y entidades, y los datos de la entrada REC para el
+  changelog; las preguntas abiertas quedan para el analisis de huecos.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido de los artefactos en la conversacion:
+vive en los archivos, y el orquestador los lee solo si los necesita.

@@ -38,9 +38,12 @@ no contra el mapa completo.
   reporte de inspeccion; el lazo de correccion decide como corregir.
 - Si un archivo no puede leerse o el JSON no es interpretable, genera un defecto `error`
   de severidad `high`.
-- Cita evidencia con ids existentes (`RF-001`, `RNF-001`, `FG-01`, `SCN-001`, `SYM-001`).
+- Cita evidencia con ids existentes (`RF-001`, `RNF-001`, `FG-01`, `SCN-001`, `LEL-001`).
 - No marques como defecto una decision que la especificacion ya explica con una pregunta
   abierta o una suposicion.
+- No exijas campos que el contrato de salida de la etapa auditada no define: la
+  ausencia de un campo que ningun contrato pide no es defecto. Si crees que deberia
+  existir, sugerilo en `warnings`.
 - Usa pocos defectos y utiles. Prioriza los que romperian la planificacion o el build.
 - `confirmed` es `true` solo cuando el defecto surge directamente de los artefactos
   inspeccionados.
@@ -105,6 +108,13 @@ no contra el mapa completo.
   impactos del LEL (limites, plazos, exclusiones) que no esta capturada en
   `business_rules` es defecto `medium` — quedaria muestreada por ejemplos sin
   enunciado unico, y puede divergir entre requisitos.
+- `REQ-CHECK-014`: sincronia de las vistas derivadas. `requirements.md` (y
+  `scenarios.md`, si existe `scenarios.json`) arranca con el encabezado
+  `Derivado de <json> version N — no editar a mano` y ese N coincide con la `version`
+  actual del `.json` correspondiente. Version distinta, encabezado ausente o `.md`
+  faltante: defecto `medium` — el script de cierre no corrio y la vista legible
+  miente. La correccion NO es reescribir el `.md` a mano: es que el orquestador
+  re-corra el script de derivacion.
 
 ## Salida
 
@@ -114,6 +124,7 @@ JSON valido, sin cercas de markdown):
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "requirements_version_ref": "string",
   "scenario_version_ref": "string",
   "lel_version_ref": "string",
@@ -126,6 +137,9 @@ JSON valido, sin cercas de markdown):
     "low_severity": 0,
     "uncovered_scenario_ids": ["SCN-001"]
   },
+  "checks_applied": [
+    {"check_id": "REQ-CHECK-001", "result": "ok|defect|skipped", "reason": "string (obligatorio si skipped)"}
+  ],
   "defects": [
     {
       "id": "DEF-001",
@@ -146,9 +160,16 @@ JSON valido, sin cercas de markdown):
 }
 ```
 
+`checks_applied` es obligatorio y cubre el checklist **completo**, una entrada por
+check, incluidos los que no encontraron nada (`ok`) y los que no aplicaban o no
+pudiste evaluar (`skipped`, siempre con `reason`). Un check salteado en silencio es
+invisible para el consumidor de la inspeccion: peor que un defecto.
+
 Versionado: si el archivo ya existia, incrementa `version` en cada reescritura. Todo
 campo `*_version_ref` cita el numero de `version` del archivo referenciado, como string
-(ej. `"3"`).
+(ej. `"3"`). `pipeline_version` es la version del plugin que el orquestador te indica
+al invocarte: estampala tal cual; si no te la indicaron, escribi `null` — nunca la
+inventes.
 
 Tambien escribi `.dev/requirements/requirements-inspection.md`: un resumen legible con el
 conteo de defectos por severidad y, por cada defecto, su id, check, severidad,
@@ -159,6 +180,9 @@ descripcion y correccion propuesta. Indica claramente si la especificacion pasa.
 - Verifica que `requirements-inspection.json` es JSON valido.
 - Verifica que aplicaste el checklist completo y que los conteos del `summary` coinciden
   con la lista de `defects`.
+- Verifica que `checks_applied` tiene una entrada por cada check del checklist
+  (`REQ-CHECK-001` a `REQ-CHECK-013`), que todo `skipped` tiene `reason` y que todo
+  check con defectos figura como `defect`.
 
 ## Barra de calidad
 
@@ -167,3 +191,16 @@ descripcion y correccion propuesta. Indica claramente si la especificacion pasa.
 - El reporte garantiza que la especificacion puede alimentar la planificacion: cobertura
   total de escenarios, sin requisitos sin evidencia, dependencias sanas y todos los
   campos que las tareas necesitan.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — passed o no, conteo de defectos por severidad y los `high`/`medium` en una linea cada uno.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

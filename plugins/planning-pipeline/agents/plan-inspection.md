@@ -29,6 +29,10 @@ Lee:
 - Si un archivo no puede leerse o el JSON no es interpretable, genera un defecto `error`
   de severidad `high`.
 - Cita evidencia con ids del plan (`T-001`, `BATCH-1`, `FG-01`) y de los requisitos.
+- No exijas campos que el contrato de salida de las etapas auditadas
+  (`task-derivation`, `execution-planning`) no define: la ausencia de un campo que
+  ningun contrato pide no es defecto. Si crees que deberia existir, sugerilo en
+  `warnings`.
 - Usa pocos defectos y utiles. Prioriza los que bloquean el build.
 - `confirmed` es `true` solo cuando el defecto surge directamente de los artefactos
   inspeccionados.
@@ -59,7 +63,11 @@ Checks sobre las tareas (`tasks.json`):
   `high` cuyos criterios de aceptacion abarcan varias capacidades independientes es
   candidata a partirse: defecto `low` con la particion propuesta.
 - `PLAN-CHECK-005`: cada tarea pertenece a una feature existente y cada feature mapea a
-  un `feature_group` de los requisitos.
+  un `feature_group` de los requisitos. Excepcion: a lo sumo **una** feature sintetica
+  de bootstrap (`synthetic: true`, id reservado `FG-00`) puede no mapear a ningun
+  `feature_group`; sus tareas deben citar `requirement_ids` reales igual. Una segunda
+  feature sintetica, una sintetica con otro id, o una `FG-00` con tareas sin requisito
+  si son defecto `high`.
 - `PLAN-CHECK-006`: criterios de aceptacion. Los criterios de cada tarea son coherentes
   con los de los requisitos que cubre; una tarea sin ningun criterio de aceptacion es un
   defecto (un agente de build no puede verificarla).
@@ -73,6 +81,13 @@ Checks sobre las tareas (`tasks.json`):
   `high` con correccion propuesta "correr /replanificar" — este defecto no se corrige
   en el lazo de correccion del pipeline. Una entrada presente solo en
   `deferred_changelog_ids` es defecto `low` informativo: no bloquea.
+- `PLAN-CHECK-013` (solo aplica en replanificacion): invariante de replanificacion.
+  Las tareas NO afectadas por el delta coinciden con la version previa de
+  `tasks.json` — el orquestador te provee esa version previa (una ruta o una
+  referencia git); si no te la dio, anota en `warnings` que el check no se pudo
+  verificar, no lo asumas cumplido. Cualquier perdida de campos (p. ej.
+  `acceptance_criteria`) o alteracion en tareas no afectadas es defecto `high`
+  (rebota a `task-derivation`).
 
 Checks sobre el plan de ejecucion (`execution-plan.json`):
 
@@ -102,6 +117,13 @@ Checks sobre el plan de ejecucion (`execution-plan.json`):
 - `PLAN-CHECK-012`: lotes seriales justificados. Para cada lote con una sola feature,
   el `rationale` debe explicar que dependencias hard la aislaron (citando tareas). Si
   no lo hace, defecto `low` (rebota a `execution-planning`).
+- `PLAN-CHECK-014`: sincronia de las vistas derivadas. `tasks.md` y
+  `execution-plan.md` arrancan con el encabezado
+  `Derivado de <json> version N — no editar a mano` y ese N coincide con la `version`
+  actual del `.json` correspondiente. Version distinta, encabezado ausente o `.md`
+  faltante: defecto `medium` — el script de cierre no corrio y la vista legible
+  miente. Este defecto NO rebota a ningun subagente: el orquestador re-corre el script
+  de derivacion.
 
 ## Salida
 
@@ -110,6 +132,7 @@ Escribi `.dev/plan/plan-inspection.json` con este contrato exacto (solo JSON val
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "tasks_version_ref": "string",
   "execution_plan_version_ref": "string",
   "requirements_version_ref": "string",
@@ -119,6 +142,9 @@ Escribi `.dev/plan/plan-inspection.json` con este contrato exacto (solo JSON val
     "high_severity": 0, "medium_severity": 0, "low_severity": 0,
     "uncovered_requirement_ids": ["RF-001"]
   },
+  "checks_applied": [
+    {"check_id": "PLAN-CHECK-001", "result": "ok|defect|skipped", "reason": "string (obligatorio si skipped)"}
+  ],
   "defects": [
     {
       "id": "DEF-001",
@@ -139,6 +165,17 @@ Escribi `.dev/plan/plan-inspection.json` con este contrato exacto (solo JSON val
 }
 ```
 
+Versionado: si el archivo ya existia, incrementa `version` en cada reescritura.
+`pipeline_version` es la version del plugin que el orquestador te indica al invocarte:
+estampala tal cual; si no te la indicaron, escribi `null` — nunca la inventes.
+
+`checks_applied` es obligatorio y cubre el checklist **completo**, una entrada por
+check, incluidos los que no encontraron nada (`ok`) y los que no aplicaban o no
+pudiste evaluar (`skipped`, siempre con `reason`). Un check salteado en silencio es
+invisible para el consumidor de la inspeccion: peor que un defecto. Auto-eximirse de
+un check por assumption no existe: o lo aplicaste, o queda `skipped` con el motivo a
+la vista.
+
 Tambien escribi `.dev/plan/plan-inspection.md`: un resumen legible con el conteo de
 defectos por severidad y, por cada defecto, su id, check, severidad, descripcion y
 correccion propuesta. Indica claramente si el plan pasa.
@@ -148,6 +185,9 @@ correccion propuesta. Indica claramente si el plan pasa.
 - Verifica que `plan-inspection.json` es JSON valido.
 - Verifica que aplicaste el checklist completo y que los conteos del `summary` coinciden
   con la lista de `defects`.
+- Verifica que `checks_applied` tiene una entrada por cada check del checklist
+  (`PLAN-CHECK-001` a `PLAN-CHECK-012`), que todo `skipped` tiene `reason` y que todo
+  check con defectos figura como `defect`.
 
 ## Barra de calidad
 
@@ -156,3 +196,16 @@ correccion propuesta. Indica claramente si el plan pasa.
 - El reporte garantiza que el plan es auditable y ejecutable por agentes: cobertura
   total, sin huerfanos, sin ciclos, tareas que caben en una pasada de agente, contratos
   bien colocados, lotes coherentes con el grafo y al dia con los requisitos.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — passed o no, conteo de defectos por severidad y los `high`/`medium` en una linea cada uno.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

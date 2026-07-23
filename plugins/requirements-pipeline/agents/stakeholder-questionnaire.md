@@ -102,6 +102,7 @@ Escribi `.dev/requirements/stakeholder-questions.json` con este contrato exacto:
 ```json
 {
   "version": 1,
+  "pipeline_version": "string",
   "questionnaire_id": "stakeholder-questionnaire-v1",
   "based_on_artifacts": [".dev/requirements/lel.json", ".dev/requirements/lel-inspection.json"],
   "summary": {
@@ -134,13 +135,17 @@ Escribi `.dev/requirements/stakeholder-questions.json` con este contrato exacto:
       "source_defect_ids": ["DEF-001"],
       "source_open_question_ids": ["Q-001"],
       "source_gap_ids": ["GAP-001"],
-      "related_symbol_ids": ["SYM-001"]
+      "related_symbol_ids": ["LEL-001"]
     }
   ],
   "assumptions": ["string"],
   "warnings": ["string"]
 }
 ```
+
+Versionado: `version` +1 en cada reescritura. `pipeline_version` es la version del
+plugin que el orquestador te indica al invocarte: estampala tal cual; si no te la
+indicaron, escribi `null` — nunca la inventes.
 
 Tambien escribi `.dev/requirements/stakeholder-questions.md`: el cuestionario legible,
 agrupado por seccion y rol, con un espacio de respuesta debajo de cada pregunta para que
@@ -166,3 +171,16 @@ tambien decide.
 - Cada pregunta es trazable a un defecto o a una pregunta abierta del LEL.
 - Las preguntas estan agrupadas por rol y priorizadas.
 - El cuestionario puede entregarse al stakeholder tal cual, sin edicion adicional.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — preguntas por seccion, cuantas son bloqueantes y confirmacion de la seccion de no funcionales.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

@@ -76,7 +76,7 @@ valido):
 ```json
 {
   "version": 1,
-  "metadata": {"created_at": "string", "scope": "string"},
+  "metadata": {"created_at": "string", "scope": "string", "pipeline_version": "string"},
   "summary": {"total": 0, "high": 0, "medium": 0, "low": 0, "tests_run": false, "tests_passed": null},
   "findings": [
     {
@@ -95,7 +95,16 @@ valido):
 }
 ```
 
-Tu mensaje final: el conteo por severidad y los `high` en una linea cada uno.
+`metadata.pipeline_version` es la version del plugin que el orquestador te indica al
+invocarte: estampala tal cual; si no te la indicaron, escribi `null` — nunca la
+inventes.
+
+## Respuesta al orquestador
+
+El archivo de findings es el entregable; tu respuesta es solo el puntero: `status`
+(ok | blocked | error), `artifact_paths` (tu findings JSON), `summary` de 3-5 lineas
+— conteo por severidad y los `high` en una linea cada uno — y `blocking_items` solo
+si los hay. No reproduzcas los hallazgos en extenso: viven en el archivo.
 
 ## Barra de calidad
 

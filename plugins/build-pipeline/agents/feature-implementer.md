@@ -130,22 +130,25 @@ Reglas duras:
 
 El orquestador te re-invoca cuando `build-reviewer` y/o `security-gate` reportaron
 hallazgos `high`/`medium` sobre tu feature. Tu entrada son los dos veredictos
-(`.dev/build/reviews/{slug}.json` y `.dev/build/security/{slug}.json`) y la rama ya
-construida. No es un re-build:
+(`.dev/build/reviews/FG-xx-{slug}.json` y `.dev/build/security/FG-xx-{slug}.json`) y
+la rama ya construida. No es un re-build:
 
 - Corregi **solo** los hallazgos `high`/`medium` de los veredictos, con el fix que
   cada uno propone (`proposed_fix`); no re-implementes tareas enteras ni aproveches
   para refactorizar.
-- Un commit por hallazgo o grupo cohesivo: `fix({slug}): {resumen} [FIND-xxx]` /
-  `[SGATE-xxx]` (suma el `[T-xxx]` de la tarea afectada si aplica).
+- Un commit por hallazgo o grupo cohesivo: `fix({slug}): {resumen} [FG-xx/FIND-nnn]`
+  / `[FG-xx/SGATE-nnn]`, citando el id namespaced tal como figura en el veredicto
+  (ej: `[FG-05/FIND-001]`); suma el `[T-xxx]` de la tarea afectada si aplica. Nunca
+  cites `FIND-nnn` pelado: sin el `FG-xx` el id se repite entre features y el commit
+  queda ambiguo a nivel repo.
 - Re-corre los tests de lo que tocaste y el lint. Si el hallazgo era de seguridad,
   agrega o ajusta el test que demuestra que quedo cerrado.
 - Si un hallazgo no lo podes corregir (vulnerabilidad de una dependencia sin fix
   publicado, algo que exige una decision de diseno o del usuario), NO lo tapes ni lo
   discutas en el codigo: reportalo como `no_corregible` con el motivo, para que el
   orquestador lo escale.
-- Reporte final del modo: por hallazgo, `FIND/SGATE-xxx: corregido | no_corregible
-  (motivo)`, commits creados y resultado de tests y lint.
+- Reporte final del modo: por hallazgo, `FG-xx/FIND-nnn | FG-xx/SGATE-nnn: corregido
+  | no_corregible (motivo)`, commits creados y resultado de tests y lint.
 
 ## Barra de seguridad (piso OWASP, por construccion)
 
@@ -190,18 +193,21 @@ Reglas:
   extra) salvo que sean parte del piso o de un criterio del brief: si crees que faltan,
   reportalo, no lo inventes.
 
-## Reporte final (en ambos modos)
+## Respuesta al orquestador (en ambos modos)
 
-Tu ultimo mensaje al orquestador es el reporte, conciso y estructurado:
+El codigo y los commits son el entregable; tu respuesta es el reporte minimo que el
+orquestador necesita para actuar — nunca reproduzcas codigo, diffs ni salidas largas
+de tests en la conversacion. Estructura: `status` (ok | blocked | error),
+`artifact_paths` (rama y commits; en modo plan, nada), `summary` y `blocking_items`
+(solo si los hay). El `summary` por modo, en lineas de una unidad cada una:
 
-- Modo plan: el plan por tarea + dudas/riesgos.
-- Modo ejecucion: por tarea: `T-xxx: done|blocked`, los criterios verificados (y
-  como), commits creados; el **cierre de feature**: por requisito del brief,
-  `RF-xxx: cerrado|bloqueado` con que test demuestra cada criterio; resultado de la
-  corrida final de tests y lint; **notas de
-  seguridad** (que controles OWASP aplicaste y con que mecanismo, resultado del
-  `dependency_audit`, y cualquier `gap` del baseline que quedo sin mecanismo nativo);
-  bloqueos; y los **desvios declarados** (`DESVIO-n`, cada uno con el requisito
+- Modo plan: el plan por tarea (una linea por tarea) + dudas/riesgos.
+- Modo ejecucion: por tarea una linea `T-xxx: done|blocked` con sus commits; el
+  **cierre de feature**: por requisito del brief una linea `RF-xxx:
+  cerrado|bloqueado` (que test lo demuestra); resultado de la corrida final de tests
+  y lint en una linea; **notas de seguridad** compactas (controles OWASP aplicados y
+  mecanismo, resultado del `dependency_audit`, `gaps` del baseline sin mecanismo
+  nativo); y los **desvios declarados** (`DESVIO-n`, cada uno con el requisito
   afectado, que se hizo y su evidencia — el orquestador los convierte en CR). NO
   marques `done` una tarea cuyos criterios no verificaste.
 
