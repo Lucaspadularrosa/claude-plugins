@@ -294,7 +294,14 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
    `progress.json` (features `in_progress` con su PR en `notes`). Los worktrees de
    las features bloqueadas quedan en pie para el retome: listalos en el resumen para
    que no queden huerfanos invisibles.
-7. Resumen final: por feature, tareas construidas, cierre por requisito, veredicto
+   **Narracion dosificada**: a medida que cada feature cierra (PR abierto o bloqueo),
+   avisale al usuario con **2-3 lineas** — estado, PR y el dato saliente — mas el
+   puntero a sus veredictos (`reviews/{slug}.json`, `security/{slug}.json`). Nada de
+   reproducir hallazgos, cierres por requisito ni reportes completos por feature en
+   el medio del lote: el detalle vive en los artefactos, y la unica vista consolidada
+   es el resumen final del paso 7. El texto de sesion de un lote de N features crece
+   O(N) lineas, no O(N) paginas.
+7. Resumen final (la **unica vista consolidada** del lote): por feature, tareas construidas, cierre por requisito, veredicto
    del review, veredicto de
    seguridad (piso OWASP + audit de dependencias), desvios declarados (con su
    `cr-input-{slug}.md` y la sugerencia de `/requerimientos:cambio`), hallazgos `low`
