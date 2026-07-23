@@ -120,7 +120,11 @@ Si falta el plan, indicale al usuario que primero corra `/planificar`
   chequear si los PRs pendientes ya se mergearon (`gh pr view`) y actualizar. Una
   entrada de lote con `adjustment: true` (tareas de ajuste sobre una feature ya
   `done`) no cambia el `done` de la feature: sus tareas nuevas entran `pending` y se
-  rastrean a nivel tarea.
+  rastrean a nivel tarea. Cada entrada de tarea lleva su `feature_id`. `plan_ref`
+  (tasks_version, applied_changelog_ids) identifica el plan sobre el que construis:
+  no lo actualices vos — lo sincronizan los cierres de `/planificar` y
+  `/replanificar`. Si no coincide con el `tasks.json` actual, el plan cambio por
+  debajo: sugeri `/replanificar` antes de seguir.
 - **Ramas**: `feature/{slug}`, desde la rama de integracion del perfil. Un PR por
   feature, con `gh` si esta disponible (si no, deja la rama lista y las instrucciones).
   El cuerpo del PR cita la feature (`FG-xx`), las tareas (`T-xxx`) y el resultado del

@@ -68,14 +68,20 @@ El estado de ejecucion del plan. Lo inicializas vos al cerrar `/planificar` (tod
 {
   "version": 1,
   "updated_at": "string",
+  "plan_ref": {"tasks_version": "string", "applied_changelog_ids": ["INC-001"]},
   "features": [
     {"feature_id": "FG-01", "status": "pending|in_progress|done", "branch": "string", "notes": "string"}
   ],
   "tasks": [
-    {"task_id": "T-001", "status": "pending|in_progress|done|blocked|cancelled", "notes": "string"}
+    {"task_id": "T-001", "feature_id": "FG-01", "status": "pending|in_progress|done|blocked|cancelled", "notes": "string"}
   ]
 }
 ```
+
+`plan_ref` identifica el plan sobre el que se construye: cita la `version` de
+`tasks.json` (como string) y sus `applied_changelog_ids`. Lo inicializas vos al
+cerrar `/planificar` y lo sincroniza el cierre de `/replanificar` — tiene dueño;
+no queda congelado. Cada entrada de `tasks` lleva el `feature_id` de su feature.
 
 Semantica: feature `done` = mergeada a la rama de integracion. El build marca cada
 tarea `done` cuando el reporte del implementador la da por verificada y `blocked`
@@ -135,7 +141,9 @@ alimentar un pipeline de desarrollo de features.
 
 ### Paso 5 - Cierre
 
-Inicializa `.dev/plan/progress.json` con todas las features y tareas en `pending`. Si
+Inicializa `.dev/plan/progress.json` con todas las features y tareas en `pending`
+(cada tarea con su `feature_id`) y `plan_ref` (tasks_version y
+applied_changelog_ids) sincronizado con el `tasks.json` emitido. Si
 ya existia, no lo pises — salvo que esta corrida haya sido una regeneracion total
 confirmada por el usuario (ver guard de re-ejecucion): ahi re-inicializalo, porque
 los ids viejos ya no significan nada. Informa al usuario los archivos generados en `.dev/plan/` y
@@ -184,9 +192,11 @@ construido.
    valido, `version` incrementada, nada perdido) y BORRA el delta antes de cerrar.
    Checklist de cierre: no quedan archivos `*delta*`, `*patch*` ni `_*` en
    `.dev/plan/` ni `.dev/requirements/`; el layout es cerrado — ningun artefacto
-   fuera de los definidos. Actualiza `progress.json` (tareas nuevas en `pending`,
-   canceladas en
-   `cancelled`), y resume: que se agrego/modifico/cancelo, los lotes del trabajo
+   fuera de los definidos. Actualiza `progress.json` (tareas nuevas en `pending`
+   con su `feature_id`, canceladas en `cancelled`) y sincroniza
+   `progress.json.plan_ref` (tasks_version y applied_changelog_ids) con el
+   `tasks.json` recien emitido. Resume: que se agrego/modifico/cancelo, los lotes
+   del trabajo
    restante, el paralelismo resultante y los `applied_changelog_ids` actualizados.
 
 ## Reglas de orquestacion

@@ -35,6 +35,8 @@ Segui el modo REPLANIFICACION de la skill `planning-pipeline`:
 9. Al final: si algun agente reporto un delta (`*.delta.json`), mergealo al canonico,
    verifica el resultado y borralo antes de cerrar — no pueden quedar archivos
    `*delta*`, `*patch*` ni `_*` en `.dev/plan/` ni `.dev/requirements/`; el layout es
-   cerrado. Despues el resumen de que se agrego/modifico/cancelo, los nuevos lotes
+   cerrado. Sincroniza `progress.json.plan_ref` (tasks_version y
+   applied_changelog_ids) con el `tasks.json` recien emitido. Despues el resumen de
+   que se agrego/modifico/cancelo, los nuevos lotes
    del trabajo restante, el paralelismo resultante y los `applied_changelog_ids`
    actualizados.
