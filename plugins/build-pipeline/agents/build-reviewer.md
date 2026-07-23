@@ -77,6 +77,11 @@ Reglas:
 - Pocos hallazgos y utiles; prioriza lo que bloquea el PR. `high` = no puede
   mergearse asi; `medium` = corregir antes del PR; `low` = sugerencia.
 - Cada hallazgo cita evidencia (archivo, linea o commit) y propone la correccion.
+- Toda tarea del brief queda clasificada en el veredicto: en `tasks_covered` o en
+  `tasks_missing`, nunca fuera de ambas. Una tarea ausente del diff va SIEMPRE a
+  `tasks_missing` y es hallazgo — salvo que el orquestador te haya declarado un
+  split en slices: esas tareas igual van a `tasks_missing`, pero en vez de hallazgo
+  queda un `warning` con el compromiso de review del slice que las cubre.
 - `passed` es `true` cuando no quedan hallazgos `high` ni `medium`.
 - No reescribas codigo ni archivos del proyecto. Tu unica escritura es el reporte.
 - Todos los valores legibles por humanos van en espanol.
@@ -116,7 +121,15 @@ contrato exacto (solo JSON valido, sin cercas):
 ```
 
 Versionado: si el archivo ya existia (re-review tras correccion), incrementa
-`version`.
+`version`. En re-review (`version > 1`) los tests y el lint se **re-ejecutan** igual
+que en la primera pasada: el veredicto es de esta corrida, no del historial ni del
+reporte del orquestador. Si no se pueden correr, `tests_passed` (o `lint_passed`) va
+en `null` con un `warning` que explique por que — nunca `true` por fe.
+
+El contrato de salida manda sobre el formato de cualquier review previo en
+`reviews/`: no imites artefactos existentes. Aunque el JSON anterior tenga otras
+claves o le falten campos, tu veredicto cumple este contrato completo, clave por
+clave — el orquestador rechaza y hace regenerar los veredictos incompletos.
 
 Tu mensaje final al orquestador resume el veredicto: passed o no, los hallazgos
 `high`/`medium`, el cierre por requisito (que RF/RNF quedaron demostrados y cuales
