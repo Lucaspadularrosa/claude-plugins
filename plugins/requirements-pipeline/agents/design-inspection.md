@@ -82,6 +82,13 @@ Diseno tecnico y coherencia:
   modelo de datos.
 - `DB-CHECK-012`: las referencias entre entidades son consistentes con las relaciones
   declaradas; no hay claves foraneas implicitas sin su relacion.
+- `DB-CHECK-013`: sincronia de las vistas derivadas. `data-model.md` y
+  `technical-design.md` arrancan con el encabezado
+  `Derivado de <json> version N — no editar a mano` y ese N coincide con la `version`
+  actual del `.json` correspondiente. Version distinta, encabezado ausente o `.md`
+  faltante: defecto `medium` — el script de cierre no corrio y la vista legible
+  miente. La correccion NO es reescribir el `.md` a mano: es que el orquestador
+  re-corra el script de derivacion.
 
 ## Salida
 

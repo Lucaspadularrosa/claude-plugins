@@ -125,6 +125,8 @@ Invoca `plan-inspection`. Es la compuerta de auditoria del plan.
   - `PLAN-CHECK-007` (desactualizacion) NO se corrige en este lazo: corta e indicale
     al usuario correr `/replanificar`. Si solo señala entradas postergadas a
     proposito (`deferred_changelog_ids`), es informativo y no frena.
+  - `PLAN-CHECK-013` (vistas derivadas fuera de sincronia) tampoco rebota a ningun
+    subagente: corregilo vos re-corriendo el script de derivacion del Paso 5.
   Despues volve a invocar `plan-inspection`. Tope del lazo: **3 pasadas de
   inspeccion**. Si al tercer intento el plan sigue sin pasar, no sigas iterando:
   presenta los defectos remanentes al usuario con las opciones (aceptarlos anotados,
