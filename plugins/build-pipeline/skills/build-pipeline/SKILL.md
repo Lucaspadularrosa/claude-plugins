@@ -148,6 +148,15 @@ Si falta el plan, indicale al usuario que primero corra `/planificar`
   artefacto de la suite; la publicacion HTML (a `docs/manual/`, fuera de `.dev/`)
   es un paso aparte (`/publicar-manual`, plugin `manual-usuario`): si esta
   instalado, sugerilo en el resumen final — no lo corras vos.
+- **Indice de `.dev` (derivado, del orquestador)**: al cierre de cada corrida (modo
+  FEATURE, LOTE o DOCUMENTAR), despues de actualizar `progress.json`, regenera
+  `.dev/README.md` con el script de la suite (vive en el plugin hermano
+  `requirements-pipeline`):
+  `python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/render_index.py" .dev`
+  (si `python3` no existe: `python`, despues `py -3`). Es derivado y determinista
+  (layout, versiones vigentes, estado por FG, INC/CR pendientes): nunca se edita a
+  mano; un conflicto se resuelve regenerando. Si el script no esta (plugin no
+  instalado), saltealo y anotalo en el resumen.
 - **Veredictos sin gemelo .md**: los veredictos de review y de seguridad viven SOLO
   en sus JSON (`reviews/{slug}.json`, `security/{slug}.json`); son la unica fuente de
   verdad. No escribas — ni dejes que un subagente escriba — `review-*.md` ni ningun

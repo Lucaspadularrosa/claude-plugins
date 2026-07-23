@@ -153,6 +153,15 @@ deriva cada `.md` completo desde su `.json` canonico, con el encabezado
 red de seguridad. Nunca los edites a mano ni dejes que un subagente los escriba; si el
 script falla, avisale al usuario y segui (el `.json` es la fuente de verdad).
 
+Regenera tambien el indice `.dev/README.md` con el script del plugin de requisitos
+(vive en el plugin hermano `requirements-pipeline` de la misma suite):
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/render_index.py" .dev
+```
+
+Si ese script no esta (plugin no instalado), saltea el indice y avisalo en el resumen.
+
 Inicializa `.dev/plan/progress.json` con todas las features y tareas en `pending`. Si
 ya existia, no lo pises — salvo que esta corrida haya sido una regeneracion total
 confirmada por el usuario (ver guard de re-ejecucion): ahi re-inicializalo, porque

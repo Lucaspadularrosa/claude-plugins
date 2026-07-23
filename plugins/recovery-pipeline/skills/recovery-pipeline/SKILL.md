@@ -77,6 +77,19 @@ Presenta `owner-questions.md` y espera respuestas explicitas. Nunca las inventes
 
 ### Paso 5 - Cierre
 
+Antes de cerrar, regenera las vistas `.md` derivadas de la linea de base y el indice
+`.dev/README.md` con los scripts de la suite (viven en el plugin hermano
+`requirements-pipeline`):
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/render_baseline_docs.py" .dev/requirements
+python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/render_index.py" .dev
+```
+
+(si `python3` no existe: `python`, despues `py -3`; si los scripts no estan, saltea y
+avisalo en el resumen). Los `.md` gemelos de la linea de base son derivados y nunca se
+editan a mano: `baseline-reconstruction` escribe solo los JSON.
+
 Cierra la entrada `REC-xxx` (`applied`, con versiones de artefactos y features
 reconstruidas). Resumen al usuario:
 

@@ -135,6 +135,14 @@ red de seguridad. Nunca los edites a mano ni dejes que un subagente los escriba;
 conflicto se resuelve regenerando. Si el script falla, avisale al usuario (los `.md`
 quedaron viejos) y segui: el `.json` es la fuente de verdad.
 
+En el mismo cierre, regenera tambien el indice `.dev/README.md` (layout, versiones
+vigentes, estado por FG, INC/CR pendientes — derivado y determinista, nunca editado a
+mano):
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/requirements-pipeline/scripts/render_index.py" .dev
+```
+
 ---
 
 ## Modo DESCUBRIR (`/requerimientos:descubrir [rutas...]`)
@@ -333,4 +341,5 @@ no baselineado (ante la duda, deriva a los modos incrementales).
 Los `.md` de lel, product-map, scenarios, requirements, data-model y technical-design
 son vistas derivadas por script desde su `.json` (ver "Vistas legibles derivadas"):
 nunca se editan a mano. Los `.md` de inspecciones y cuestionario si los escriben sus
-subagentes.
+subagentes. El indice `.dev/README.md` (un nivel arriba) tambien es derivado: lo
+regenera el mismo paso de cierre.

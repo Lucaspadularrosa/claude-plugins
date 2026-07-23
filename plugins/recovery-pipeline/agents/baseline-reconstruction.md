@@ -81,8 +81,10 @@ Reglas duras:
 
 ## Salida
 
-Los archivos `.dev/requirements/` listados arriba (JSON + sus `.md` legibles, mismo
-estilo que `requerimientos`).
+Los archivos `.dev/requirements/` listados arriba — **solo los JSON canonicos**, con
+los mismos contratos que usa `requerimientos`. NO escribas sus gemelos `.md` (lel.md,
+product-map.md, scenarios.md, requirements.md, data-model.md, technical-design.md):
+son vistas derivadas que el orquestador regenera por script al cierre.
 
 ## Antes de terminar
 
