@@ -121,7 +121,10 @@ contrato exacto (solo JSON valido, sin cercas):
 ```
 
 Versionado: si el archivo ya existia (re-review tras correccion), incrementa
-`version`.
+`version`. En re-review (`version > 1`) los tests y el lint se **re-ejecutan** igual
+que en la primera pasada: el veredicto es de esta corrida, no del historial ni del
+reporte del orquestador. Si no se pueden correr, `tests_passed` (o `lint_passed`) va
+en `null` con un `warning` que explique por que — nunca `true` por fe.
 
 El contrato de salida manda sobre el formato de cualquier review previo en
 `reviews/`: no imites artefactos existentes. Aunque el JSON anterior tenga otras
