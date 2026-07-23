@@ -217,3 +217,16 @@ Si el stack cambia, ambos se regeneran juntos.
   la base de seguridad declara sus huecos en vez de fingir cobertura.
 - La base de seguridad usa mecanismos nativos del stack por evidencia, no un checklist
   hardcodeado: aplica solo lo que la superficie de ataque justifica.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — el stack en una linea, las `open_questions` bloqueantes y los huecos de la base de seguridad.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

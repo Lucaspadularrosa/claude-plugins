@@ -268,3 +268,16 @@ el JSON.
 - Cada requisito tiene prioridad, esfuerzo estimado y criterios de aceptacion Gherkin.
 - Las dependencias permiten ordenar los requisitos para planificar tareas y sprints.
 - La especificacion cierra la linea de base de requisitos.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — requisitos emitidos por feature, version resultante y `proposed_baseline_changes` si los hay.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

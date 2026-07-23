@@ -130,3 +130,16 @@ el JSON.
 - Cada Escenario describe una situacion concreta y verificable del dominio.
 - Titulos, actores, recursos y episodios usan vocabulario del LEL y son trazables.
 - Los episodios cubren el flujo principal; las excepciones cubren los desvios relevantes.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — escenarios elaborados y nuevos, version resultante y los escenarios nuevos que el orquestador debe sumar al mapa.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

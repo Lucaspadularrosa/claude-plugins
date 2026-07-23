@@ -155,5 +155,16 @@ su `version`.
   cada `evidence_refs` apunta a una seccion existente.
 - Verifica que el `summary` de `source-inventory.json` coincide con las cantidades reales.
 
-Al terminar, informa al orquestador cuantas secciones, candidatos, items de contexto y
-gaps generaste.
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — cuantas secciones, candidatos LEL, items de contexto y gaps
+  generaste, y cualquier anomalia del material.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido de los artefactos en la conversacion:
+vive en los archivos, y el orquestador los lee solo si los necesita.

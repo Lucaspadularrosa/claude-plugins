@@ -115,12 +115,19 @@ Reglas:
   orquestador.
 - No commitees: el commit lo hace el orquestador.
 
-## Salida
+## Respuesta al orquestador
 
-Tu mensaje final al orquestador: la ruta de la guia (o "sin superficie de usuario"
-con el motivo), el `titulo` y `resumen` del frontmatter (para el indice), que
-secciones tiene, y avisos si los hubo (comportamiento que no pudiste confirmar en el
-codigo, material sospechoso).
+La guia es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error (o "sin superficie de usuario", con el motivo).
+- `artifact_paths`: la ruta de la guia en `.dev/manual/`.
+- `summary`: 3-5 lineas — el `titulo` y `resumen` del frontmatter (para el indice),
+  que secciones tiene, y avisos si los hubo (comportamiento no confirmado en el
+  codigo, material sospechoso).
+- `blocking_items`: solo si los hay.
+
+No reproduzcas el contenido de la guia en la conversacion: vive en el archivo.
 
 ## Barra de calidad
 

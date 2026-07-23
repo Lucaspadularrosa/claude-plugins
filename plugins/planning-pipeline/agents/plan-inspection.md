@@ -163,3 +163,16 @@ correccion propuesta. Indica claramente si el plan pasa.
 - El reporte garantiza que el plan es auditable y ejecutable por agentes: cobertura
   total, sin huerfanos, sin ciclos, tareas que caben en una pasada de agente, contratos
   bien colocados, lotes coherentes con el grafo y al dia con los requisitos.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — passed o no, conteo de defectos por severidad y los `high`/`medium` en una linea cada uno.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

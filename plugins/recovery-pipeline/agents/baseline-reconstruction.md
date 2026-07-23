@@ -82,9 +82,7 @@ Reglas duras:
 ## Salida
 
 Los archivos `.dev/requirements/` listados arriba (JSON + sus `.md` legibles, mismo
-estilo que `requerimientos`), y un resumen final al orquestador: features
-reconstruidas por estado, requisitos emitidos (active/proposed), simbolos, entidades,
-y las preguntas abiertas que el analisis de huecos debe convertir en cuestionario.
+estilo que `requerimientos`).
 
 ## Antes de terminar
 
@@ -101,3 +99,18 @@ y las preguntas abiertas que el analisis de huecos debe convertir en cuestionari
   documentos: los otros pipelines la consumen sin adaptacion.
 - La trazabilidad llega al codigo: requisito -> escenario -> simbolo -> archivo:linea.
 - Lo que el codigo no demuestra, no esta afirmado.
+
+## Respuesta al orquestador
+
+Los archivos son el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — features reconstruidas por estado, requisitos emitidos
+  (active/proposed), simbolos y entidades, y los datos de la entrada REC para el
+  changelog; las preguntas abiertas quedan para el analisis de huecos.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido de los artefactos en la conversacion:
+vive en los archivos, y el orquestador los lee solo si los necesita.

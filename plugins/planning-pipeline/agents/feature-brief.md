@@ -137,3 +137,16 @@ Cada brief tiene estas secciones:
 - Todo el contenido del brief traza al plan, los requisitos y el diseno.
 - Cada brief deja claro con quien corre en paralelo y que tiene que estar mergeado antes
   de arrancar.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — briefs escritos (uno por feature del alcance) y cualquier hueco que hayas detectado.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

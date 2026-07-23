@@ -108,7 +108,12 @@ Escribi `.dev/audit/findings-security.json` con este contrato (solo JSON valido)
 }
 ```
 
-Tu mensaje final: conteo por severidad y los `high` en una linea cada uno.
+## Respuesta al orquestador
+
+El archivo de findings es el entregable; tu respuesta es solo el puntero: `status`
+(ok | blocked | error), `artifact_paths` (tu findings JSON), `summary` de 3-5 lineas
+— conteo por severidad y los `high` en una linea cada uno — y `blocking_items` solo
+si los hay. No reproduzcas los hallazgos en extenso: viven en el archivo.
 
 ## Barra de calidad
 

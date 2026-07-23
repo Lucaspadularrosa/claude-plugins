@@ -99,3 +99,16 @@ modulos, entry points, señales de salud y contradicciones con la doc).
 - Con el inventario, un agente que nunca vio el repo sabe donde mirar para cualquier
   pregunta estructural.
 - Ninguna afirmacion sin archivo que la respalde.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — modulos y entry points encontrados, señales de salud y contradicciones clave con la doc.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.

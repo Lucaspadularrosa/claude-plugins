@@ -190,18 +190,21 @@ Reglas:
   extra) salvo que sean parte del piso o de un criterio del brief: si crees que faltan,
   reportalo, no lo inventes.
 
-## Reporte final (en ambos modos)
+## Respuesta al orquestador (en ambos modos)
 
-Tu ultimo mensaje al orquestador es el reporte, conciso y estructurado:
+El codigo y los commits son el entregable; tu respuesta es el reporte minimo que el
+orquestador necesita para actuar — nunca reproduzcas codigo, diffs ni salidas largas
+de tests en la conversacion. Estructura: `status` (ok | blocked | error),
+`artifact_paths` (rama y commits; en modo plan, nada), `summary` y `blocking_items`
+(solo si los hay). El `summary` por modo, en lineas de una unidad cada una:
 
-- Modo plan: el plan por tarea + dudas/riesgos.
-- Modo ejecucion: por tarea: `T-xxx: done|blocked`, los criterios verificados (y
-  como), commits creados; el **cierre de feature**: por requisito del brief,
-  `RF-xxx: cerrado|bloqueado` con que test demuestra cada criterio; resultado de la
-  corrida final de tests y lint; **notas de
-  seguridad** (que controles OWASP aplicaste y con que mecanismo, resultado del
-  `dependency_audit`, y cualquier `gap` del baseline que quedo sin mecanismo nativo);
-  bloqueos; y los **desvios declarados** (`DESVIO-n`, cada uno con el requisito
+- Modo plan: el plan por tarea (una linea por tarea) + dudas/riesgos.
+- Modo ejecucion: por tarea una linea `T-xxx: done|blocked` con sus commits; el
+  **cierre de feature**: por requisito del brief una linea `RF-xxx:
+  cerrado|bloqueado` (que test lo demuestra); resultado de la corrida final de tests
+  y lint en una linea; **notas de seguridad** compactas (controles OWASP aplicados y
+  mecanismo, resultado del `dependency_audit`, `gaps` del baseline sin mecanismo
+  nativo); y los **desvios declarados** (`DESVIO-n`, cada uno con el requisito
   afectado, que se hizo y su evidencia — el orquestador los convierte en CR). NO
   marques `done` una tarea cuyos criterios no verificaste.
 

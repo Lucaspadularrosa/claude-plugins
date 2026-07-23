@@ -239,3 +239,16 @@ de la corrida. Tu unica salida son los dos JSON.
 - Cada decision tecnica responde a un requisito y documenta sus alternativas.
 - Nada inventado: todo traza a requisitos, contexto de soporte o el LEL.
 - Los dos artefactos cierran la linea de base y habilitan la planificacion y el build.
+
+## Respuesta al orquestador
+
+El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
+unicamente:
+
+- `status`: ok | blocked | error.
+- `artifact_paths`: rutas de los archivos que escribiste.
+- `summary`: 3-5 lineas — entidades, modulos, contratos, pantallas y ADRs tocados, versiones resultantes y preguntas bloqueantes.
+- `blocking_items`: solo si los hay (que falta y quien lo destraba).
+
+No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
+vive en el archivo, y el orquestador lo lee solo si lo necesita.
