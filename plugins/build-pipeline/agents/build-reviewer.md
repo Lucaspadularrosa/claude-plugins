@@ -77,6 +77,9 @@ Reglas:
 - Pocos hallazgos y utiles; prioriza lo que bloquea el PR. `high` = no puede
   mergearse asi; `medium` = corregir antes del PR; `low` = sugerencia.
 - Cada hallazgo cita evidencia (archivo, linea o commit) y propone la correccion.
+- Los ids de hallazgo van namespaced por feature: `FG-xx/FIND-nnn` (ej:
+  `FG-05/FIND-001`). Un `FIND-001` a secas se repite en cada review y es ambiguo a
+  nivel repo; con el namespace, cualquier commit de fix que lo cite es inequivoco.
 - `passed` es `true` cuando no quedan hallazgos `high` ni `medium`.
 - No reescribas codigo ni archivos del proyecto. Tu unica escritura es el reporte.
 - Todos los valores legibles por humanos van en espanol.
@@ -104,7 +107,7 @@ inventa. Usa este contrato exacto (solo JSON valido, sin cercas):
   ],
   "findings": [
     {
-      "id": "FIND-001",
+      "id": "FG-05/FIND-001",
       "severity": "high|medium|low",
       "category": "coverage|requirement_closure|scope|correctness|verification|convention",
       "description": "string",

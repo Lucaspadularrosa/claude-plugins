@@ -99,6 +99,9 @@ nativo) quedaron manejados o reportados, no ignorados.
   el diff), no lo fuerces como hallazgo: registralo en `deferred_to_audit` con la
   pregunta que lo resolveria.
 - `passed` es `true` cuando no quedan hallazgos `high` ni `medium`.
+- Los ids de hallazgo van namespaced por feature: `FG-xx/SGATE-nnn` (ej:
+  `FG-05/SGATE-001`). Un `SGATE-001` a secas se repite en cada veredicto y es ambiguo
+  a nivel repo; con el namespace, cualquier commit de fix que lo cite es inequivoco.
 - No reescribas codigo ni archivos del proyecto. Todos los valores legibles van en español.
 
 ## Salida
@@ -122,7 +125,7 @@ inventa. Usa este contrato exacto (solo JSON valido, sin cercas):
   },
   "findings": [
     {
-      "id": "SGATE-001",
+      "id": "FG-05/SGATE-001",
       "severity": "high|medium|low",
       "owasp_id": "A01|A02|A03|A04|A05|A06|A07|A08|A09|A10",
       "category": "authz|authn|injection|xss|secrets|input_validation|data_exposure|config|dependency|integrity|ssrf|logging|other",
