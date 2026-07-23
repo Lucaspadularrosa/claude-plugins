@@ -240,7 +240,10 @@ modifica algo existente).
    `status: deprecated`, **nunca se borra**.
 5. Corre `requirements-inspection` (y `design-inspection` si el diseno cambio), con sus
    lazos de correccion (mismo tope de 3 pasadas que el incremento).
-6. Cierra la entrada `CR-xxx` con los verdicts (incluyendo `confirmed_by_user`) y las
+6. Cierra: si algun agente reporto un delta (`*.delta.json`), mergealo vos al
+   canonico, verifica el resultado y BORRA el delta — mismo checklist de layout
+   cerrado que el cierre de incremento. Despues cierra la entrada `CR-xxx` con los
+   verdicts (incluyendo `confirmed_by_user`) y las
    versiones. Si el cambio afecta features ya planificadas o construidas, decilo
    explicito en el resumen: el pipeline de planificacion lo va a levantar del changelog.
 
