@@ -176,7 +176,13 @@ construido.
 7. Corre `plan-inspection` con su lazo de correccion, igual que en el Paso 3.
 8. Invoca `feature-brief` indicandole **solo las features afectadas**: regenera esos
    briefs citando que entrada del changelog los cambio.
-9. Cierre: actualiza `progress.json` (tareas nuevas en `pending`, canceladas en
+9. Cierre: si algun agente reporto un delta (`*.delta.json`, su fallback oficial
+   cuando ni Edit alcanzo), mergealo vos al canonico, verifica el resultado (JSON
+   valido, `version` incrementada, nada perdido) y BORRA el delta antes de cerrar.
+   Checklist de cierre: no quedan archivos `*delta*`, `*patch*` ni `_*` en
+   `.dev/plan/` ni `.dev/requirements/`; el layout es cerrado — ningun artefacto
+   fuera de los definidos. Actualiza `progress.json` (tareas nuevas en `pending`,
+   canceladas en
    `cancelled`), y resume: que se agrego/modifico/cancelo, los lotes del trabajo
    restante, el paralelismo resultante y los `applied_changelog_ids` actualizados.
 

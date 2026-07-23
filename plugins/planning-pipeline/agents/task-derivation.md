@@ -39,6 +39,12 @@ de lo anterior lee `.dev/plan/tasks.json` (el plan previo) y `.dev/plan/progress
   quirurgicamente con Edit (agrega o modifica solo las tareas de las features
   afectadas, mas `summary`, `version` y `metadata`); nunca lo reescribas completo con
   Write. Write completo es solo para la derivacion inicial o para archivos chicos.
+- Si aun con Edit no podes completar la actualizacion, el fallback oficial es escribir
+  `tasks.delta.json` en la misma carpeta (mismo nombre del canonico con sufijo
+  `.delta.json`), con el formato
+  `{"base_version": ..., "adds": {...}, "updates": {...}, "removes": [...]}`, y
+  reportarlo explicitamente al orquestador como delta pendiente de merge. Ningun otro
+  formato ni archivo de trabajo: el orquestador lo mergea al canonico y lo borra.
 - Requisito **nuevo** -> tareas nuevas con ids que continuan la secuencia (`T-090`...).
 - Requisito **modificado**:
   - sus tareas `pending` (segun progress) -> reescribilas para reflejar la version

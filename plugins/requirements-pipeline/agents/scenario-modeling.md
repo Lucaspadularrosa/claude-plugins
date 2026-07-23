@@ -34,6 +34,12 @@ Cuando el orquestador te indica las features de un incremento:
   quirurgicamente con Edit (agrega o completa solo los escenarios del incremento, mas
   `summary`, `version` y `metadata`); nunca lo reescribas completo con Write. Write
   completo es solo para la creacion inicial o para archivos chicos.
+- Si aun con Edit no podes completar la actualizacion, el fallback oficial es escribir
+  `scenarios.delta.json` en la misma carpeta (mismo nombre del canonico con sufijo
+  `.delta.json`), con el formato
+  `{"base_version": ..., "adds": {...}, "updates": {...}, "removes": [...]}`, y
+  reportarlo explicitamente al orquestador como delta pendiente de merge. Ningun otro
+  formato ni archivo de trabajo: el orquestador lo mergea al canonico y lo borra.
 - Si al elaborar descubris que una feature necesita un escenario que no estaba en el
   mapa, crealo con un id que continue la secuencia global y **reportalo en `warnings`**
   ("escenario nuevo no mapeado: SCN-014, feature FG-03") para que el orquestador lo

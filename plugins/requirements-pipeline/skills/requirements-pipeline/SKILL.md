@@ -196,7 +196,13 @@ que quedo afuera y por que. El usuario decide; vos no elaboras nada sin su elecc
      solo con lo que estas features necesitan, preservando ids y decisiones previas)
      y despues `design-inspection`, con su lazo de correccion (mismo tope de 3
      pasadas).
-7. Cierra: marca las features y escenarios del incremento como `baselined` en
+7. Cierra: si algun agente reporto un delta (`*.delta.json`, su fallback oficial
+   cuando ni Edit alcanzo), mergealo vos al canonico, verifica el resultado (JSON
+   valido, `version` incrementada, nada perdido) y BORRA el delta antes de cerrar.
+   Checklist de cierre: no quedan archivos `*delta*`, `*patch*` ni `_*` en
+   `.dev/requirements/` ni `.dev/plan/`; el layout es cerrado — ningun artefacto
+   fuera de los definidos. Despues marca las features y escenarios del incremento
+   como `baselined` en
    `product-map.json`, cierra la entrada `INC-xxx` (`applied`, con verdicts y
    versiones). Informa el resumen y sugeri el paso siguiente: `/planificar` (primera
    vez) o re-planificar (si ya hay plan, el pipeline de planificacion detecta los

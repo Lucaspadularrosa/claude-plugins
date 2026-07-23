@@ -44,6 +44,12 @@ Cuando el orquestador te indica que el diseno ya existe y este es un incremento:
   del incremento, mas `summary`, `version` y `metadata`); nunca los reescribas
   completos con Write. Write completo es solo para la creacion inicial o para
   archivos chicos.
+- Si aun con Edit no podes completar la actualizacion, el fallback oficial es escribir
+  `data-model.delta.json` o `technical-design.delta.json` en la misma carpeta (mismo
+  nombre del canonico con sufijo `.delta.json`), con el formato
+  `{"base_version": ..., "adds": {...}, "updates": {...}, "removes": [...]}`, y
+  reportarlo explicitamente al orquestador como delta pendiente de merge. Ningun otro
+  formato ni archivo de trabajo: el orquestador lo mergea al canonico y lo borra.
 - No redisenes ni elimines nada de incrementos anteriores. Si lo nuevo exige cambiar
   algo existente (un campo en una entidad ya disenada, un contrato de API ya
   publicado), NO lo apliques: registra la propuesta como pregunta abierta con el

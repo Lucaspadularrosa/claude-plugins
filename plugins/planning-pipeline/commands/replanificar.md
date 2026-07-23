@@ -30,5 +30,9 @@ Segui el modo REPLANIFICACION de la skill `planning-pipeline`:
 7. Corre `plan-inspection` y su lazo de correccion (tope: 3 pasadas; si no pasa,
    mostrame los defectos remanentes y decido yo).
 8. Corre `feature-brief` solo para las features afectadas, marcando que cambio.
-9. Al final: resumen de que se agrego/modifico/cancelo, los nuevos lotes del trabajo
-   restante, el paralelismo resultante y los `applied_changelog_ids` actualizados.
+9. Al final: si algun agente reporto un delta (`*.delta.json`), mergealo al canonico,
+   verifica el resultado y borralo antes de cerrar — no pueden quedar archivos
+   `*delta*`, `*patch*` ni `_*` en `.dev/plan/` ni `.dev/requirements/`; el layout es
+   cerrado. Despues el resumen de que se agrego/modifico/cancelo, los nuevos lotes
+   del trabajo restante, el paralelismo resultante y los `applied_changelog_ids`
+   actualizados.

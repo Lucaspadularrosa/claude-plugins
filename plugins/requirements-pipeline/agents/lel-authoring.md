@@ -60,6 +60,12 @@ incremental.
   quirurgicamente con Edit (toca solo los simbolos y preguntas afectados, mas
   `version` y `metadata`); nunca lo reescribas completo con Write. Write completo es
   solo para la construccion inicial o para archivos chicos.
+- Si aun con Edit no podes completar la actualizacion, el fallback oficial es escribir
+  `lel.delta.json` en la misma carpeta (mismo nombre del canonico con sufijo
+  `.delta.json`), con el formato
+  `{"base_version": ..., "adds": {...}, "updates": {...}, "removes": [...]}`, y
+  reportarlo explicitamente al orquestador como delta pendiente de merge. Ningun otro
+  formato ni archivo de trabajo: el orquestador lo mergea al canonico y lo borra.
 - Si recibis `lel-inspection.json`: aplica la `proposed_correction` de CADA defecto
   confirmado. Recorre la lista completa de defectos; no omitas ninguno.
 - Si recibis `stakeholder-answers.md`: aplica CADA respuesta. Para cada `QST-xxx`,

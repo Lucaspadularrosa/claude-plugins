@@ -40,6 +40,12 @@ Cuando el orquestador te indica las features de un incremento:
   quirurgicamente con Edit (agrega o modifica solo las entradas del incremento, mas
   `summary`, `version` y `metadata`); nunca lo reescribas completo con Write. Write
   completo es solo para la creacion inicial o para archivos chicos.
+- Si aun con Edit no podes completar la actualizacion, el fallback oficial es escribir
+  `requirements.delta.json` en la misma carpeta (mismo nombre del canonico con sufijo
+  `.delta.json`), con el formato
+  `{"base_version": ..., "adds": {...}, "updates": {...}, "removes": [...]}`, y
+  reportarlo explicitamente al orquestador como delta pendiente de merge. Ningun otro
+  formato ni archivo de trabajo: el orquestador lo mergea al canonico y lo borra.
 - Si la elaboracion implica **modificar o deprecar un requisito ya baselineado** de un
   incremento anterior (lo contradice, lo extiende, lo vuelve obsoleto), **NO lo
   apliques**: registra la propuesta en `proposed_baseline_changes` (ver el contrato)
