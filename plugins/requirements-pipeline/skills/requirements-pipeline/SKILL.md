@@ -116,6 +116,16 @@ nunca sigas en silencio con una fuente a medias.
 La vision sin documento y las respuestas de entrevistas se guardan tambien en
 `sources/` (`vision-001.txt`, `entrevista-001.txt`): toda fuente queda archivada.
 
+Ubicacion canonica de las fuentes crudas: el original binario (docx, pdf) se archiva
+en `.dev/requirements/sources/raw/` y los assets visuales (mockups HTML/CSS,
+wireframes, logos, capturas) en `.dev/requirements/sources/ui/`; el `.txt` extraido
+queda en `sources/`. Al invocar `requirements-intake`, pasale junto a cada `.txt` la
+ruta de su original en `raw/` (o `ui/`), para que el inventario registre ambas.
+No crees carpetas hermanas confundibles con `.dev/requirements/` (paso en un proyecto
+real: una `.dev/requerimientos/` de 5.6 MB conviviendo con `.dev/requirements/`, sin
+dueño): todo lo del pipeline vive adentro de `.dev/requirements/`, y las fuentes
+crudas solo en `sources/raw/` y `sources/ui/`.
+
 ---
 
 ## Modo DESCUBRIR (`/requerimientos:descubrir [rutas...]`)
@@ -191,7 +201,8 @@ que quedo afuera y por que. El usuario decide; vos no elaboras nada sin su elecc
 6. Diseño tecnico, SIEMPRE — tambien si el incremento no tiene pantallas: el modelo
    de datos y el diseño son precondicion de `/planificar`.
    - Solo si alguna feature del incremento tiene pantallas: pregunta antes al usuario
-     si hay mockups de UI (HTML, CSS, wireframes, capturas) para ellas.
+     si hay mockups de UI (HTML, CSS, wireframes, capturas) para ellas; si los hay,
+     archivalos en `.dev/requirements/sources/ui/`.
    - Invoca `technical-design` en modo incremental (extiende modelo de datos y diseno
      solo con lo que estas features necesitan, preservando ids y decisiones previas)
      y despues `design-inspection`, con su lazo de correccion (mismo tope de 3
@@ -280,7 +291,9 @@ no baselineado (ante la duda, deriva a los modos incrementales).
 
 ```
 .dev/requirements/
-  sources/                      toda fuente archivada (documentos, vision, entrevistas, CRs)
+  sources/                      toda fuente archivada (texto extraido, vision, entrevistas, CRs)
+    raw/                        originales binarios (docx, pdf) tal como llegaron
+    ui/                         assets visuales (mockups, wireframes, logos, capturas)
   source-inventory.json         inventario de secciones (acumulativo)
   lel-candidates.json           candidatos a simbolos del LEL
   supporting-context.json       contexto de soporte

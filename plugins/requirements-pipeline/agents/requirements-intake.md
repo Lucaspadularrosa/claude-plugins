@@ -19,6 +19,12 @@ El orquestador te indica **una o varias rutas** de texto extraido, en
 solo y unificado, y cada seccion registra en `source` de que archivo vino. Si no te
 pasan rutas, busca el archivo mas reciente dentro de `.dev/requirements/sources/`.
 
+Cuando la fuente nacio como archivo binario (docx, pdf), el orquestador te indica
+tambien la ruta del original archivado en `.dev/requirements/sources/raw/` (o en
+`sources/ui/` si es un asset visual): registrala en `original_source` de cada seccion
+que venga de ese archivo, junto al `.txt` extraido. Si la fuente nacio como texto
+(vision, entrevista), no hay original: omiti el campo.
+
 ### Modo incremental (re-descubrimiento)
 
 Si el orquestador te indica que ya existe material previo (hay `source-inventory.json`,
@@ -89,6 +95,7 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
       "id": "SRC-SEC-001",
       "title": "string",
       "source": "sources/nombre-del-archivo.txt",
+      "original_source": "sources/raw/nombre-del-archivo.pdf",
       "content_type": "domain_language|data_model|business_rules|ui|api|architecture|security|implementation_plan|mixed|unknown",
       "relevance_to_lel": "high|medium|low|none",
       "summary": "string",
