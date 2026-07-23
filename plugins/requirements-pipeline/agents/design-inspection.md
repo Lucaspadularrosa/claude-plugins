@@ -29,6 +29,9 @@ Lee:
   de severidad `high`.
 - Cita evidencia con ids del diseno (`ENT-001`, `REL-001`, `MOD-001`, `API-001`,
   `SCR-001`, `ADR-001`).
+- No exijas campos que el contrato de salida de la etapa auditada no define: la
+  ausencia de un campo que ningun contrato pide no es defecto. Si crees que deberia
+  existir, sugerilo en `warnings`.
 - Usa pocos defectos y utiles. Prioriza los que bloquean la construccion del sistema.
 - `confirmed` es `true` solo cuando el defecto surge directamente de los artefactos
   inspeccionados; `false` para sospechas que requieren confirmacion humana.
@@ -47,8 +50,9 @@ Antes de aplicar el checklist, determina el paradigma de base de datos a partir 
 - `none` si no hay base de datos, `unknown` si el stack no la define.
 
 Las verificaciones de formas normales (`DB-CHECK-002/003/004`) **solo aplican cuando
-`database_paradigm` es `relational`**. Si no lo es, saltealas, dejalo dicho en `warnings`
-y marca `summary.normal_form_checked` en `false`.
+`database_paradigm` es `relational`**. Si no lo es, saltealas, dejalo dicho en `warnings`,
+registralas como `skipped` (con el paradigma como `reason`) en `checks_applied` y marca
+`summary.normal_form_checked` en `false`.
 
 ## Checklist obligatorio
 
@@ -103,6 +107,9 @@ valido, sin cercas de markdown):
     "low_severity": 0,
     "normal_form_checked": false
   },
+  "checks_applied": [
+    {"check_id": "DB-CHECK-001", "result": "ok|defect|skipped", "reason": "string (obligatorio si skipped)"}
+  ],
   "defects": [
     {
       "id": "DEF-001",
@@ -123,6 +130,12 @@ valido, sin cercas de markdown):
 }
 ```
 
+`checks_applied` es obligatorio y cubre el checklist **completo**, una entrada por
+check, incluidos los que no encontraron nada (`ok`) y los que no aplicaban o no
+pudiste evaluar (`skipped`, siempre con `reason`; tipico: las formas normales fuera
+del paradigma relacional). Un check salteado en silencio es invisible para el
+consumidor de la inspeccion: peor que un defecto.
+
 Versionado: si el archivo ya existia, incrementa `version` en cada reescritura. Los
 campos `*_version_ref` citan el numero de `version` actual del archivo referenciado,
 como string (ej. `"3"`).
@@ -138,6 +151,9 @@ el diseno pasa.
 - Verifica que `database_paradigm` se determino del stack y que las verificaciones de
   formas normales se aplicaron solo si es `relational`.
 - Verifica que los conteos del `summary` coinciden con la lista de `defects`.
+- Verifica que `checks_applied` tiene una entrada por cada check del checklist
+  (`DB-CHECK-001` a `DB-CHECK-012`), que todo `skipped` tiene `reason` y que todo
+  check con defectos figura como `defect`.
 
 ## Barra de calidad
 

@@ -26,6 +26,9 @@ Lee `.dev/requirements/lel.json`.
 - Cita evidencia con ids del LEL (`SYM-001`, `NOT-001`, `IMP-001`, `Q-001`).
 - No marques como defecto una decision metodologica que el LEL ya explica con una pregunta
   abierta o una suposicion.
+- No exijas campos que el contrato de salida de la etapa auditada no define: la
+  ausencia de un campo que ningun contrato pide no es defecto. Si crees que deberia
+  existir, sugerilo en `warnings`.
 - Usa pocos defectos y utiles. Prioriza los que bloquean escenarios y requisitos.
 - `confirmed` es `true` solo cuando el defecto surge directamente del LEL inspeccionado;
   `false` para sospechas o items que requieren stakeholder.
@@ -74,6 +77,9 @@ Escribi `.dev/requirements/lel-inspection.json` con este contrato exacto (solo J
     "low_severity": 0,
     "blocking_questions": 0
   },
+  "checks_applied": [
+    {"check_id": "LEL-CHECK-001", "result": "ok|defect|skipped", "reason": "string (obligatorio si skipped)"}
+  ],
   "defects": [
     {
       "id": "DEF-001",
@@ -95,6 +101,11 @@ Escribi `.dev/requirements/lel-inspection.json` con este contrato exacto (solo J
 }
 ```
 
+`checks_applied` es obligatorio y cubre el checklist **completo**, una entrada por
+check, incluidos los que no encontraron nada (`ok`) y los que no aplicaban o no
+pudiste evaluar (`skipped`, siempre con `reason`). Un check salteado en silencio es
+invisible para el consumidor de la inspeccion: peor que un defecto.
+
 Versionado: si el archivo ya existia, incrementa `version` en cada reescritura.
 `lel_version_ref` cita el numero de `version` actual de `lel.json`, como string
 (ej. `"3"`).
@@ -108,6 +119,9 @@ correccion propuesta y pregunta al stakeholder si la hubiera.
 - Verifica que `lel-inspection.json` es JSON valido.
 - Verifica que cada defecto cita evidencia con ids del LEL existentes.
 - Verifica que los conteos del `summary` coinciden con la lista de `defects`.
+- Verifica que `checks_applied` tiene una entrada por cada check del checklist
+  (`LEL-CHECK-001` a `LEL-CHECK-014`), que todo `skipped` tiene `reason` y que todo
+  check con defectos figura como `defect`.
 
 ## Barra de calidad
 

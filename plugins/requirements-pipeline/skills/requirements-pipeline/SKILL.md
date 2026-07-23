@@ -62,12 +62,15 @@ La historia de la linea de base. Una entrada por corrida:
       "id": "DSC-001 | INC-001 | CR-001 | REC-001",
       "kind": "discovery|increment|change_request|recovery",
       "date": "YYYY-MM-DD",
-      "status": "in_progress|applied|rejected",
+      "status": "in_progress|proposed|deferred|applied|rejected",
       "sources": ["sources/vision.txt"],
       "feature_ids": ["FG-01"],
+      "supersedes": ["CR-001"],
       "verdicts": [
-        {"kind": "new|modified|deprecated|already_covered", "target_kind": "requirement|scenario|feature|symbol|entity", "target_id": "RF-007", "covered_by": "RF-012", "confirmed_by_user": true, "resolution": "applied|rejected"}
+        {"kind": "new|modified|deprecated|revoked|rejected|already_covered", "target_kind": "requirement|scenario|feature|symbol|entity|design|supporting_context", "target_id": "RF-007", "covered_by": "RF-012", "confirmed_by_user": true, "resolution": "applied|rejected", "note": "string"}
       ],
+      "follow_ups": [{"id": "DEF-001", "severity": "low|deferred", "note": "string"}],
+      "ignored_inputs": [{"path": "string", "reason": "string", "note": "string"}],
       "artifact_versions": {"lel.json": {"before": "2", "after": "3"}},
       "notes": "string"
     }
@@ -79,11 +82,23 @@ Ids consecutivos por tipo: `DSC-001` descubrimientos, `INC-001` incrementos, `CR
 cambios, `REC-001` recuperaciones (las escribe `recovery-pipeline` cuando reconstruye
 la linea de base desde codigo existente). Registra la entrada con
 `status: in_progress` al arrancar la corrida y cerrala (`applied` o `rejected`) al
-terminar, con las versiones antes/despues de cada artefacto tocado. En los
+terminar, con las versiones antes/despues de cada artefacto tocado. Los estados
+`proposed` y `deferred` son solo para CRs cuya direccion quedo registrada pero cuya
+elaboracion sobre los artefactos esta pendiente (`deferred` cuando espera insumos
+externos; ver el modo CAMBIO): no son un cierre, la entrada se retoma. En los
 `verdicts`, `resolution` registra si ese cambio confirmado quedo `applied` o
-`rejected` (el rechazo tambien se conserva); `target_kind: feature` cubre tanto las
-features del mapa como los `feature_group` de la especificacion (son el mismo
-objeto). El changelog es lo
+`rejected` (el rechazo tambien se conserva); `kind: revoked` es para decisiones que
+quedan sin efecto (tipicamente de diseno, reemplazadas por otras) y `kind: rejected`
+para pedidos que el usuario rechazo en la pausa; `target_kind: feature` cubre tanto
+las features del mapa como los `feature_group` de la especificacion (son el mismo
+objeto), `target_kind: design` cubre ADRs, modulos y demas ids del diseno tecnico, y
+`target_kind: supporting_context` los items `SUP-xxx` de contexto de soporte (no son
+requisitos: no los registres como tales). Los campos opcionales: `supersedes` lista
+entradas previas que esta deja sin efecto; `follow_ups`, defectos menores o diferidos
+que quedan pendientes al cierre; `ignored_inputs`, fuentes que no se pudieron
+procesar y por que. Campos descriptivos adicionales de anotacion (notas de cierre,
+decisiones del stakeholder, estado de preguntas) no invalidan una entrada, pero los
+enums de arriba son cerrados: no inventes estados ni kinds nuevos. El changelog es lo
 que le permite al pipeline de planificacion saber **que** cambio, no solo que algo
 cambio.
 
@@ -132,7 +147,12 @@ el vocabulario; nunca modifica lo baselineado (eso queda como propuesta).
 3. Invoca `lel-authoring` (modo actualizacion si ya hay LEL) y luego `lel-inspection`.
 4. Invoca `stakeholder-questionnaire` en **modo elicitacion**: ademas de los defectos
    del LEL, genera preguntas para completar el dominio. Cuanto menos material, mas
-   preguntas (sin documento: entrevista completa).
+   preguntas (sin documento: entrevista completa). **Validacion de salida**: el
+   cuestionario debe contener al menos una pregunta `source_kind: "nfr_checklist"`
+   con su `default_assumption` — la seccion de No Funcionales no es opcional. Si no
+   la tiene, la salida es invalida: re-invoca al agente señalando el faltante antes
+   de presentar nada al usuario (sin esos defaults, las metricas de los RNF despues
+   se inventan).
 5. **PAUSA OBLIGATORIA**: presenta `stakeholder-questions.md` al usuario y espera.
    - Si responde: guarda las respuestas en `.dev/requirements/stakeholder-answers.md`
      (una respuesta por `QST-xxx`) y archiva una copia en `sources/`
@@ -228,6 +248,14 @@ modifica algo existente).
    `lel-authoring` (update) + `lel-inspection` sobre la fuente del CR.
 3. **PAUSA DE CONFIRMACION**: presenta los veredictos con antes/despues. Nada
    `modified` ni `deprecated` se aplica sin OK explicito del usuario.
+   **CR diferido**: si el usuario confirma la direccion pero difiere la elaboracion
+   (faltan insumos externos: un DDL, la respuesta de un tercero), no fuerces los
+   pasos 4-6. Guarda el documento de direccion como `sources/cr/CR-xxx-<slug>.md`
+   (veredictos confirmados, alcance, decisiones tomadas y preguntas abiertas), deja
+   la entrada del changelog en `status: deferred` con las **condiciones de
+   reanudacion** en `notes` y `artifact_versions` vacio (nada baselineado se toco),
+   y cerra la corrida ahi. Al retomar, cuando lleguen los insumos, continua desde el
+   paso 4 sobre la misma entrada `CR-xxx` — no abras un CR nuevo.
 4. Aplica los confirmados re-invocando los agentes que correspondan en modo
    actualizacion (`scenario-modeling`, `requirements-specification`,
    `technical-design`), siempre preservando ids; lo deprecado cambia a
@@ -264,7 +292,10 @@ no baselineado (ante la duda, deriva a los modos incrementales).
 - **Nada baselineado cambia sin confirmacion del usuario.** Lo nuevo fluye directo.
 - Versionado: toda reescritura de un artefacto incrementa su `version`; los
   `*_version_ref` citan la `version` del archivo referenciado; el changelog registra
-  antes/despues por corrida.
+  antes/despues por corrida. **La `version` de cada artefacto solo crece**: si un
+  artefacto aparece en disco con una `version` menor a la ultima registrada en el
+  changelog, el contador se perdio en una reescritura — frena e informa al usuario,
+  no lo "corrijas" en silencio ni sigas encima del retroceso.
 - Si un subagente falla o produce un archivo vacio, detene el pipeline e informa, no
   continues con datos incompletos. Despues de cada etapa valida que la salida sea JSON
   valido y que los ids referenciados existan.

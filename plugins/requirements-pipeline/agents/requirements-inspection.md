@@ -41,6 +41,9 @@ no contra el mapa completo.
 - Cita evidencia con ids existentes (`RF-001`, `RNF-001`, `FG-01`, `SCN-001`, `SYM-001`).
 - No marques como defecto una decision que la especificacion ya explica con una pregunta
   abierta o una suposicion.
+- No exijas campos que el contrato de salida de la etapa auditada no define: la
+  ausencia de un campo que ningun contrato pide no es defecto. Si crees que deberia
+  existir, sugerilo en `warnings`.
 - Usa pocos defectos y utiles. Prioriza los que romperian la planificacion o el build.
 - `confirmed` es `true` solo cuando el defecto surge directamente de los artefactos
   inspeccionados.
@@ -126,6 +129,9 @@ JSON valido, sin cercas de markdown):
     "low_severity": 0,
     "uncovered_scenario_ids": ["SCN-001"]
   },
+  "checks_applied": [
+    {"check_id": "REQ-CHECK-001", "result": "ok|defect|skipped", "reason": "string (obligatorio si skipped)"}
+  ],
   "defects": [
     {
       "id": "DEF-001",
@@ -146,6 +152,11 @@ JSON valido, sin cercas de markdown):
 }
 ```
 
+`checks_applied` es obligatorio y cubre el checklist **completo**, una entrada por
+check, incluidos los que no encontraron nada (`ok`) y los que no aplicaban o no
+pudiste evaluar (`skipped`, siempre con `reason`). Un check salteado en silencio es
+invisible para el consumidor de la inspeccion: peor que un defecto.
+
 Versionado: si el archivo ya existia, incrementa `version` en cada reescritura. Todo
 campo `*_version_ref` cita el numero de `version` del archivo referenciado, como string
 (ej. `"3"`).
@@ -159,6 +170,9 @@ descripcion y correccion propuesta. Indica claramente si la especificacion pasa.
 - Verifica que `requirements-inspection.json` es JSON valido.
 - Verifica que aplicaste el checklist completo y que los conteos del `summary` coinciden
   con la lista de `defects`.
+- Verifica que `checks_applied` tiene una entrada por cada check del checklist
+  (`REQ-CHECK-001` a `REQ-CHECK-013`), que todo `skipped` tiene `reason` y que todo
+  check con defectos figura como `defect`.
 
 ## Barra de calidad
 
