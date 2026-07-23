@@ -112,9 +112,9 @@ Versionado: `version` empieza en 1 y se incrementa en cada reescritura del archi
 `version` actual de `lel.json`, como string (ej. `"3"`). Las etapas posteriores citan
 la `version` de este archivo en sus `scenario_version_ref`.
 
-Tambien escribi `.dev/requirements/scenarios.md`: un resumen legible con, por cada
-Escenario, su id, titulo, objetivo, contexto, actores, recursos, episodios numerados y
-excepciones.
+NO escribas `.dev/requirements/scenarios.md`: es una vista derivada que el orquestador
+regenera por script desde `scenarios.json` al cierre de la corrida. Tu unica salida es
+el JSON.
 
 ## Antes de terminar
 

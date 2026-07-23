@@ -215,12 +215,11 @@ string (ej. `"3"`): `requirements_version_ref` el de `requirements.json`,
 El pipeline de planificacion usa estas referencias para detectar cuando el plan quedo
 desactualizado respecto del diseno.
 
-### 3 y 4. Versiones legibles
+### Versiones legibles: no las escribas
 
-Escribi tambien `.dev/requirements/data-model.md` y `.dev/requirements/technical-design.md`:
-resumenes legibles. El primero con cada entidad, sus campos (nombre, tipo, obligatorio) y
-sus relaciones. El segundo con el stack, los modulos, los contratos de API, las pantallas
-y las decisiones (ADRs) con su contexto y consecuencias.
+NO escribas `.dev/requirements/data-model.md` ni `.dev/requirements/technical-design.md`:
+son vistas derivadas que el orquestador regenera por script desde los `.json` al cierre
+de la corrida. Tu unica salida son los dos JSON.
 
 ## Antes de terminar
 

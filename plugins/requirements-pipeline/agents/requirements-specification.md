@@ -244,11 +244,9 @@ consumidores las ignoran si no las usan): `"origin": "recovered"` por requisito 
 `"code_refs": ["ruta/archivo.ext:123"]` opcional en cualquier item — la traza al
 codigo.
 
-Tambien escribi `.dev/requirements/requirements.md`: la especificacion legible con un
-resumen, las **reglas de negocio** (id, enunciado y que criterios las hacen cumplir),
-las features y, por cada requisito, su id, enunciado, feature, prioridad,
-esfuerzo estimado, dependencias, criterios de aceptacion (Given/When/Then) y trazabilidad
-a Escenarios y LEL.
+NO escribas `.dev/requirements/requirements.md`: es una vista derivada que el orquestador
+regenera por script desde `requirements.json` al cierre de la corrida. Tu unica salida es
+el JSON.
 
 ## Antes de terminar
 

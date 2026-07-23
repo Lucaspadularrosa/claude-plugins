@@ -222,8 +222,8 @@ momento de planificar (vacia si no hay changelog); en replanificacion se le suma
 entradas del delta absorbido. `deferred_changelog_ids` lista las entradas aplicadas
 que el usuario decidio postergar en una replanificacion parcial (vacia si no hay).
 
-Tambien escribi `.dev/plan/tasks.md`: un resumen legible con, por cada feature, sus tareas
-(id, titulo, prioridad, complejidad, dependencias y requisitos que cubre).
+NO escribas `.dev/plan/tasks.md`: es una vista derivada que el orquestador regenera por
+script desde `tasks.json` al cierre de la corrida. Tu unica salida es el JSON.
 
 ## Antes de terminar
 

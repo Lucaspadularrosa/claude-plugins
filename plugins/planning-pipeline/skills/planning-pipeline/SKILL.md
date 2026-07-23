@@ -42,10 +42,13 @@ pedi el OK antes.
 
 | Orden | Subagente | Lee | Escribe |
 |---|---|---|---|
-| 1 | `task-derivation` | requisitos + diseno (+ changelog y plan previo en replanificacion) | `.dev/plan/tasks.json` (+ `.md`) |
-| 2 | `execution-planning` | `tasks.json` (+ `progress.json` y plan previo en replanificacion) | `.dev/plan/execution-plan.json` (+ `.md`) |
+| 1 | `task-derivation` | requisitos + diseno (+ changelog y plan previo en replanificacion) | `.dev/plan/tasks.json` |
+| 2 | `execution-planning` | `tasks.json` (+ `progress.json` y plan previo en replanificacion) | `.dev/plan/execution-plan.json` |
 | 3 | `plan-inspection` | `tasks.json`, `execution-plan.json`, requisitos, changelog | `.dev/plan/plan-inspection.json` (+ `.md`) |
 | 4 | `feature-brief` | plan + execution-plan + requisitos + diseno | `.dev/features/{feature}.md` |
+
+`tasks.md` y `execution-plan.md` NO los escribe ningun subagente: son vistas derivadas
+que regeneras vos por script en el cierre (ver Paso 5).
 
 ## Artefactos de control
 
@@ -135,6 +138,19 @@ alimentar un pipeline de desarrollo de features.
 
 ### Paso 5 - Cierre
 
+Regenera las vistas legibles derivadas (`tasks.md`, `execution-plan.md`) con el script
+determinista:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/planning-pipeline/scripts/render_plan_docs.py" .dev/plan
+```
+
+Si `python3` no existe (tipico en Windows), proba `python` y despues `py -3`. El script
+deriva cada `.md` completo desde su `.json` canonico, con el encabezado
+`Derivado de <json> version N — no editar a mano` que `plan-inspection` verifica como
+red de seguridad. Nunca los edites a mano ni dejes que un subagente los escriba; si el
+script falla, avisale al usuario y segui (el `.json` es la fuente de verdad).
+
 Inicializa `.dev/plan/progress.json` con todas las features y tareas en `pending`. Si
 ya existia, no lo pises — salvo que esta corrida haya sido una regeneracion total
 confirmada por el usuario (ver guard de re-ejecucion): ahi re-inicializalo, porque
@@ -176,7 +192,8 @@ construido.
 7. Corre `plan-inspection` con su lazo de correccion, igual que en el Paso 3.
 8. Invoca `feature-brief` indicandole **solo las features afectadas**: regenera esos
    briefs citando que entrada del changelog los cambio.
-9. Cierre: actualiza `progress.json` (tareas nuevas en `pending`, canceladas en
+9. Cierre: regenera las vistas `.md` derivadas (mismo script del Paso 5), actualiza
+   `progress.json` (tareas nuevas en `pending`, canceladas en
    `cancelled`), y resume: que se agrego/modifico/cancelo, los lotes del trabajo
    restante, el paralelismo resultante y los `applied_changelog_ids` actualizados.
 
@@ -207,3 +224,6 @@ construido.
 .dev/features/
   {feature}.md                      un brief por feature para el pipeline de build
 ```
+
+`tasks.md` y `execution-plan.md` son vistas derivadas por script desde su `.json`
+(Paso 5): nunca se editan a mano. El `.md` de la inspeccion si lo escribe su subagente.

@@ -194,16 +194,10 @@ Si la causa son multiples aristas, listalas todas y sugeri extraer las productor
 contratos. El objetivo es que el lazo de correccion pueda actuar sin reconstruir el
 rastro a mano.
 
-Tambien escribi `.dev/plan/execution-plan.md`: arranca con un encabezado ejecutivo con
-las metricas clave:
-- "Maximo paralelismo: N agentes simultaneos (lote BATCH-X)".
-- "Critical path: N turnos".
-- "Lotes realmente seriales: N de M".
-
-Despues, la ronda de contratos (si existe) y, por cada lote, sus features con sus
-tareas en orden de ejecucion, que espera cada una (`waits_for`) y una linea de
-rationale. Al final, una seccion "Sugerencias de extraccion de contratos" con los
-warnings accionables en formato legible.
+NO escribas `.dev/plan/execution-plan.md`: es una vista derivada que el orquestador
+regenera por script desde `execution-plan.json` al cierre de la corrida (incluye el
+encabezado ejecutivo de metricas y los warnings accionables en formato legible). Tu
+unica salida es el JSON.
 
 ## Antes de terminar
 

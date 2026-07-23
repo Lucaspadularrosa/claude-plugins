@@ -116,6 +116,25 @@ nunca sigas en silencio con una fuente a medias.
 La vision sin documento y las respuestas de entrevistas se guardan tambien en
 `sources/` (`vision-001.txt`, `entrevista-001.txt`): toda fuente queda archivada.
 
+## Vistas legibles derivadas (.md)
+
+Los `.md` gemelos de los artefactos del metodo (`lel.md`, `product-map.md`,
+`scenarios.md`, `requirements.md`, `data-model.md`, `technical-design.md`) son
+**vistas derivadas**: los subagentes NO los escriben (regenerarlos por LLM es caro y
+diverge). En el paso de cierre de cada modo, antes de cerrar la entrada del changelog,
+regeneralos con el script determinista:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/requirements-pipeline/scripts/render_baseline_docs.py" .dev/requirements
+```
+
+(mismos fallbacks que la extraccion: `python`, despues `py -3`). El script deriva cada
+`.md` completo desde su `.json` canonico, con el encabezado
+`Derivado de <json> version N — no editar a mano` que las inspecciones verifican como
+red de seguridad. Nunca los edites a mano ni dejes que un subagente los escriba; un
+conflicto se resuelve regenerando. Si el script falla, avisale al usuario (los `.md`
+quedaron viejos) y segui: el `.json` es la fuente de verdad.
+
 ---
 
 ## Modo DESCUBRIR (`/requerimientos:descubrir [rutas...]`)
@@ -147,7 +166,8 @@ el vocabulario; nunca modifica lo baselineado (eso queda como propuesta).
    nuevos; solapamientos con lo baselineado como `pending_proposals`).
 7. Si hay `pending_proposals`, mostraselas al usuario: las acepta (quedan para resolver
    en un `/requerimientos:cambio` o en el proximo incremento) o las rechaza.
-8. Cierra la entrada `DSC-xxx` (versiones de artefactos, features descubiertas).
+8. Regenera las vistas `.md` derivadas (script de cierre) y cierra la entrada
+   `DSC-xxx` (versiones de artefactos, features descubiertas).
    Mostrale al usuario el mapa (`product-map.md`) y sugerile el proximo paso:
    `/requerimientos:incremento <features prioritarias>`.
 
@@ -197,7 +217,8 @@ que quedo afuera y por que. El usuario decide; vos no elaboras nada sin su elecc
      y despues `design-inspection`, con su lazo de correccion (mismo tope de 3
      pasadas).
 7. Cierra: marca las features y escenarios del incremento como `baselined` en
-   `product-map.json`, cierra la entrada `INC-xxx` (`applied`, con verdicts y
+   `product-map.json`, regenera las vistas `.md` derivadas (script de cierre) y cierra
+   la entrada `INC-xxx` (`applied`, con verdicts y
    versiones). Informa el resumen y sugeri el paso siguiente: `/planificar` (primera
    vez) o re-planificar (si ya hay plan, el pipeline de planificacion detecta los
    incrementos no absorbidos via changelog).
@@ -234,7 +255,8 @@ modifica algo existente).
    `status: deprecated`, **nunca se borra**.
 5. Corre `requirements-inspection` (y `design-inspection` si el diseno cambio), con sus
    lazos de correccion (mismo tope de 3 pasadas que el incremento).
-6. Cierra la entrada `CR-xxx` con los verdicts (incluyendo `confirmed_by_user`) y las
+6. Regenera las vistas `.md` derivadas (script de cierre) y cierra la entrada `CR-xxx`
+   con los verdicts (incluyendo `confirmed_by_user`) y las
    versiones. Si el cambio afecta features ya planificadas o construidas, decilo
    explicito en el resumen: el pipeline de planificacion lo va a levantar del changelog.
 
@@ -297,3 +319,8 @@ no baselineado (ante la duda, deriva a los modos incrementales).
   technical-design.json / .md   arquitectura, API, pantallas, ADRs (acumulativo)
   design-inspection.json / .md  inspeccion del diseno
 ```
+
+Los `.md` de lel, product-map, scenarios, requirements, data-model y technical-design
+son vistas derivadas por script desde su `.json` (ver "Vistas legibles derivadas"):
+nunca se editan a mano. Los `.md` de inspecciones y cuestionario si los escriben sus
+subagentes.
