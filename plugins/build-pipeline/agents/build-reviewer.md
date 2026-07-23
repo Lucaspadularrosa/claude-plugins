@@ -20,7 +20,7 @@ El orquestador te indica la feature (slug), la rama y la ruta de trabajo. Lee:
 
 - El diff completo: `git diff {rama_integracion}...{rama}` (la rama de integracion
   esta en `stack-profile.json`).
-- `.dev/features/{slug}.md` — el brief con tareas y criterios.
+- `.dev/features/FG-xx-{slug}.md` — el brief con tareas y criterios.
 - `.dev/build/stack-profile.json` y `CLAUDE.md` — convenciones y comandos.
 - El reporte del implementador, si el orquestador te lo pasa.
 
@@ -67,7 +67,7 @@ nunca el valor.
    la cadena LEL -> codigo.
 
 La **seguridad** no la revisas vos: la cubre el `security-gate` (piso OWASP) en un
-veredicto propio (`.dev/build/security/{slug}.json`), y el audit de dependencias lo corre
+veredicto propio (`.dev/build/security/FG-xx-{slug}.json`), y el audit de dependencias lo corre
 el. No la re-audites ni corras `dependency_audit`: evitas solape y doble reporte. Si de
 paso ves algo de seguridad flagrante, dejalo como `warning` para el orquestador, no como
 hallazgo tuyo.
@@ -83,8 +83,11 @@ Reglas:
 
 ## Salida
 
-Escribi `.dev/build/reviews/{slug}.json` (crea la carpeta si hace falta), con este
-contrato exacto (solo JSON valido, sin cercas):
+Escribi el veredicto en `.dev/build/reviews/` (crea la carpeta si hace falta). El
+nombre del archivo es exactamente el nombre del archivo del brief sin `.md`: brief
+`FG-05-gestion-dependencias.md` -> `reviews/FG-05-gestion-dependencias.json`. Nada de
+formas cortas (`FG-05.json`): el nombre del veredicto se deriva del brief, no se
+inventa. Usa este contrato exacto (solo JSON valido, sin cercas):
 
 ```json
 {

@@ -30,7 +30,7 @@ El orquestador te indica la feature (slug), la rama y la ruta de trabajo. Lee:
   en `stack-profile.json`). Revisas **lo que la feature cambio**, no todo el repo.
 - `.dev/build/security-baseline.json` — tu vara: superficie de ataque, categorias OWASP
   aplicables, el mecanismo nativo de cada control, y el comando `dependency_audit`.
-- `.dev/features/{slug}.md` — el brief: su seccion de Seguridad (categorias aplicables,
+- `.dev/features/FG-xx-{slug}.md` — el brief: su seccion de Seguridad (categorias aplicables,
   requisitos/criterios de seguridad puntuales) y los contratos de API con `auth_required`.
 - `.dev/build/stack-profile.json` y `CLAUDE.md` — convenciones y comandos.
 - El reporte del implementador, si el orquestador te lo pasa (sus notas de seguridad).
@@ -103,8 +103,11 @@ nativo) quedaron manejados o reportados, no ignorados.
 
 ## Salida
 
-Escribi `.dev/build/security/{slug}.json` (crea la carpeta si hace falta), con este
-contrato exacto (solo JSON valido, sin cercas):
+Escribi el veredicto en `.dev/build/security/` (crea la carpeta si hace falta). El
+nombre del archivo es exactamente el nombre del archivo del brief sin `.md`: brief
+`FG-05-gestion-dependencias.md` -> `security/FG-05-gestion-dependencias.json`. Nada de
+formas cortas (`FG-05.json`): el nombre del veredicto se deriva del brief, no se
+inventa. Usa este contrato exacto (solo JSON valido, sin cercas):
 
 ```json
 {

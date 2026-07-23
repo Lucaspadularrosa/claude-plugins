@@ -50,12 +50,15 @@ build lo tome como vigente.
 ## Reglas
 
 - Tu output son los briefs por feature. No generes codigo ni reescribas el plan.
-- Emiti un archivo por cada feature (`feature_group`) que tenga tareas:
-  `.dev/features/{slug}.md`, donde `{slug}` es el nombre de la feature en kebab-case
-  (minusculas, sin acentos, palabras unidas por guiones). El slug de una feature es
-  **estable**: en replanificacion usa el del brief ya existente de esa `FG-xx` aunque
-  el nombre haya cambiado (actualiza el titulo adentro; no generes un segundo archivo
-  para la misma feature).
+- Emiti un archivo por cada feature (`feature_group`) que tenga tareas, con este
+  patron EXACTO: `.dev/features/FG-xx-{slug}.md`, donde `FG-xx` es el id de la
+  feature con `FG` en MAYUSCULA y `{slug}` es el nombre de la feature en kebab-case
+  (minusculas, sin acentos, palabras unidas por guiones). Ejemplo:
+  `FG-05-gestion-dependencias.md`. Nada de variantes (`fg-05-...`, `FG-05.md` sin
+  slug): los agentes de build derivan de este nombre el del veredicto. El nombre del
+  archivo de una feature es **estable**: en replanificacion usa el del brief ya
+  existente de esa `FG-xx` aunque el nombre de la feature haya cambiado (actualiza el
+  titulo adentro; no generes un segundo archivo para la misma feature).
 - El brief debe ser autosuficiente: el agente que lo lea debe poder construir la feature
   sin abrir los otros artefactos. Incluye lo necesario, pero no copies todo el plan.
 - Toda afirmacion del brief debe ser trazable: cita ids de requisitos, tareas, modulos y
@@ -63,7 +66,7 @@ build lo tome como vigente.
 - Si una feature depende de tareas de otra feature, decilo explicito en el brief.
 - Todos los valores legibles por humanos van en espanol.
 
-## Estructura de cada `.dev/features/{slug}.md`
+## Estructura de cada `.dev/features/FG-xx-{slug}.md`
 
 Cada brief tiene estas secciones:
 
@@ -119,6 +122,9 @@ Cada brief tiene estas secciones:
 
 - Verifica que escribiste un archivo por cada feature con tareas del alcance de esta
   corrida (todas en la planificacion inicial; solo las indicadas en replanificacion).
+- Verifica que el nombre de cada archivo cumple el patron exacto `FG-xx-{slug}.md`
+  (`FG` en mayuscula, slug en kebab-case minuscula; ej:
+  `FG-05-gestion-dependencias.md`), sin variantes de casing ni archivos sin slug.
 - Verifica que cada brief cita ids reales de requisitos, tareas, modulos y entidades.
 - Verifica que ninguna tarea de una feature quedo fuera de su brief.
 - Verifica que TODO criterio de aceptacion de los requisitos de la feature quedo
