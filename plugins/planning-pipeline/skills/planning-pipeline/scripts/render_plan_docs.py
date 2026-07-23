@@ -16,12 +16,19 @@ Cada .md arranca con el encabezado de sincronia que verifican las inspecciones:
 
 Solo stdlib, Python 3.8+. No modifica los .json.
 
+tasks.md ademas cruza el plan con el product-map de la linea de base: las features
+FG-xx del mapa que no tienen tareas en el plan (stubs sin baselinear, deprecadas) se
+listan con su motivo, para explicar los huecos de numeracion.
+
 Uso:
   python render_plan_docs.py [carpeta] [--salida DIR] [--solo NOMBRE ...]
+                             [--requirements DIR]
 
-  carpeta   por defecto .dev/plan (donde viven los .json canonicos)
-  --salida  carpeta de salida (por defecto la misma carpeta)
-  --solo    renderizar solo estos artefactos (tasks, execution-plan)
+  carpeta         por defecto .dev/plan (donde viven los .json canonicos)
+  --salida        carpeta de salida (por defecto la misma carpeta)
+  --solo          renderizar solo estos artefactos (tasks, execution-plan)
+  --requirements  carpeta de la linea de base con product-map.json
+                  (default: .dev/requirements; si falta, tasks.md sale sin el cruce)
 
 Salida: una linea por .md generado y avisos por .json ausente o ilegible.
 Exit 1 solo si un .json presente no se pudo parsear o hubo error de IO.
@@ -96,8 +103,28 @@ def _dep(dep):
 
 # ------------------------------------------------------------------ tasks.md
 
+_MOTIVO_FUERA_DEL_PLAN = {
+    "stub": "Sin requisitos baselineados (stub del mapa): hueco de numeracion intencional; se planifica cuando se elabore y baselinee.",
+    "elaborated": "Elaborada pero aun no baselineada: fuera del alcance de este plan.",
+    "proposed": "Propuesta pendiente de confirmacion: todavia no es parte de la linea de base.",
+    "deprecated": "Deprecada en el mapa: no se construye.",
+    "baselined": "Baselineada sin tareas en el plan: plan desactualizado o pendiente de replanificar (revisar).",
+}
 
-def render_tasks(data):
+
+def load_product_map(requirements_dir):
+    """product-map.json si existe y parsea; None si no (tasks.md sale sin el cruce)."""
+    path = Path(requirements_dir) / "product-map.json"
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (ValueError, OSError) as exc:
+        print("aviso: %s ilegible (%s) — tasks.md sale sin el cruce con el mapa" % (path, exc))
+        return None
+
+
+def render_tasks(data, product_map=None):
     out = header("Tareas del plan", data, "tasks.json")
     features = data.get("features", []) or []
     tasks = data.get("tasks", []) or []
@@ -149,6 +176,24 @@ def render_tasks(data):
                         cell(t.get("status", "pending")),
                     )
                 )
+            out.append("")
+    if product_map:
+        plan_ids = {f.get("id") for f in features}
+        outside = [f for f in (product_map.get("features") or []) if f.get("id") not in plan_ids]
+        if outside:
+            out.append("## Features del mapa fuera del plan")
+            out.append("")
+            out.append(
+                "Estas features existen en `product-map.json` (version %s) pero no tienen tareas en este plan: explican los huecos en la numeracion FG-xx."
+                % product_map.get("version", "?")
+            )
+            out.append("")
+            out.append("| FG | Feature | Estado en el mapa | Motivo |")
+            out.append("|---|---|---|---|")
+            for f in sorted(outside, key=lambda f: str(f.get("id"))):
+                status = f.get("status", "?")
+                motivo = _MOTIVO_FUERA_DEL_PLAN.get(status, "Sin tareas en el plan actual.")
+                out.append("| %s | %s | %s | %s |" % (cell(f.get("id")), cell(f.get("name")), cell(status), cell(motivo)))
             out.append("")
     orphans = [t for t in tasks if t.get("feature_group") not in {f.get("id") for f in features}]
     if orphans:
@@ -244,6 +289,7 @@ def main(argv):
     ap.add_argument("carpeta", nargs="?", default=".dev/plan", help="carpeta con los .json canonicos (default: .dev/plan)")
     ap.add_argument("--salida", default=None, help="carpeta de salida (default: la misma carpeta)")
     ap.add_argument("--solo", nargs="+", choices=sorted(RENDERERS), default=None, help="renderizar solo estos artefactos")
+    ap.add_argument("--requirements", default=".dev/requirements", help="carpeta de la linea de base con product-map.json (default: .dev/requirements)")
     args = ap.parse_args(argv)
 
     src = Path(args.carpeta)
@@ -268,7 +314,10 @@ def main(argv):
             print("ERROR: %s ilegible: %s" % (json_path, exc))
             failed += 1
             continue
-        lines = renderer(data)
+        if name == "tasks":
+            lines = renderer(data, load_product_map(args.requirements))
+        else:
+            lines = renderer(data)
         while lines and lines[-1] == "":
             lines.pop()
         dest = out_dir / md_name

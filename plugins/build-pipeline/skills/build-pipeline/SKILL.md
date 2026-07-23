@@ -148,6 +148,20 @@ Si falta el plan, indicale al usuario que primero corra `/planificar`
   artefacto de la suite; la publicacion HTML (a `docs/manual/`, fuera de `.dev/`)
   es un paso aparte (`/publicar-manual`, plugin `manual-usuario`): si esta
   instalado, sugerilo en el resumen final — no lo corras vos.
+- **Veredictos sin gemelo .md**: los veredictos de review y de seguridad viven SOLO
+  en sus JSON (`reviews/{slug}.json`, `security/{slug}.json`); son la unica fuente de
+  verdad. No escribas — ni dejes que un subagente escriba — `review-*.md` ni ningun
+  otro artefacto de review fuera de ese layout: lo que el usuario necesita saber va
+  en el resumen de la conversacion, no en un gemelo que despues diverge.
+- **Deuda tecnica canonica (`.dev/build/tech-debt.md`)**: los hallazgos `low` de
+  review o gate que NO se corrigen en la ronda no se pierden en la conversacion — los
+  acumulas vos (orquestador) en `.dev/build/tech-debt.md`. Formato por entrada:
+  `TD-nnn — <titulo>`, con cuatro lineas: **que es**, **riesgo** si no se paga,
+  **resolucion sugerida** y **review de origen** (`reviews/{slug}.json` + `FIND-xxx`
+  o `SGATE-xxx`). Antes de agregar, deduplica contra los TD existentes: si ya hay uno
+  del mismo tema/archivo, actualiza esa entrada y sumale el nuevo review de origen,
+  no dupliques. Los `TD-nnn` son consecutivos y no se reciclan; una deuda saldada se
+  marca resuelta (con su commit), no se borra.
 - **Desvios del brief -> CR**: si un implementador declaro desvios (`DESVIO-n`) en su
   reporte, no los dejes morir en el resumen: genera `.dev/build/cr-input-{slug}.md`
   con cada desvio completo (feature `FG-xx`, requisito afectado `RF-xxx/AC-xxx`, que
@@ -203,8 +217,9 @@ Construye una feature, con aprobacion del plan de implementacion antes de codear
    veredicto del review, **veredicto de seguridad**
    (piso OWASP: passed, hallazgos, resultado del audit de dependencias), los
    **desvios declarados** (con su `cr-input-{slug}.md` y la sugerencia de
-   `/requerimientos:cambio`), la **guia de usuario** (ruta, o por que no se genero)
-   y link del PR. La
+   `/requerimientos:cambio`), los hallazgos `low` no corregidos (anotados en
+   `tech-debt.md`, ver convenciones), la **guia de usuario** (ruta, o por que no se
+   genero) y link del PR. La
    feature queda `in_progress` hasta que el PR mergee (anota el PR en `notes`); si el
    usuario lo mergea en la sesion, marcala `done`.
 
@@ -273,7 +288,8 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
 7. Resumen final: por feature, tareas construidas, cierre por requisito, veredicto
    del review, veredicto de
    seguridad (piso OWASP + audit de dependencias), desvios declarados (con su
-   `cr-input-{slug}.md` y la sugerencia de `/requerimientos:cambio`), guia de usuario
+   `cr-input-{slug}.md` y la sugerencia de `/requerimientos:cambio`), hallazgos `low`
+   no corregidos (anotados en `tech-debt.md`), guia de usuario
    (ruta, o por que no) y PR; bloqueos con su worktree y
    como retomarlos (resolver el motivo y re-correr `/construir-lote`: las toma como
    retome) y `deferred_to_audit`
@@ -339,11 +355,15 @@ fallo en su momento). No toca codigo: solo produce guias.
 .dev/build/
   stack-profile.json          perfil de stack del proyecto (por evidencia)
   security-baseline.json      base de seguridad del stack (superficie, OWASP, tooling)
-  reviews/{slug}.json         veredicto de review por feature
-  security/{slug}.json        veredicto de seguridad (piso OWASP) por feature
+  reviews/{slug}.json         veredicto de review por feature (unica fuente de verdad, sin gemelo .md)
+  security/{slug}.json        veredicto de seguridad (piso OWASP) por feature (idem, sin gemelo .md)
+  tech-debt.md                deuda tecnica acumulada: TD-nnn por hallazgo low no corregido
   cr-input-{slug}.md          desvios del brief declarados, listos para /requerimientos:cambio
 .dev/plan/progress.json       actualizado en cada transicion
 .dev/manual/{slug}.md        guia de usuario final por feature (Markdown, viaja en su PR)
 .dev/manual/README.md        indice del manual — derivado, lo regenera el orquestador
 ramas feature/{slug}          una por feature, PR contra la rama de integracion
 ```
+
+Este layout de `.dev/build/` es cerrado: ningun otro artefacto (en particular ningun
+`review-*.md`) se escribe ahi.
