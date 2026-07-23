@@ -41,7 +41,7 @@ Modo actualizacion (lazo de correccion): ademas de lo anterior,
   Manten nociones declarativas y breves; los impactos son consecuencias o acciones.
 - Aplica los dos principios del LEL: maximiza el uso de otros simbolos del LEL al describir
   un simbolo (circularidad) y minimiza el vocabulario externo al dominio (vocabulario minimo).
-- Usa ids estables: `SYM-001` para simbolos, `NOT-001` para nociones, `IMP-001` para
+- Usa ids estables: `LEL-001` para simbolos, `NOT-001` para nociones, `IMP-001` para
   impactos, `Q-001` para preguntas abiertas.
 - Cada nocion e impacto cita `evidence_refs`. Los impactos indican `referenced_symbol_ids`
   cuando mencionan otros simbolos del LEL.
@@ -84,22 +84,22 @@ cercas de markdown):
   "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"]},
   "symbols": [
     {
-      "id": "SYM-001",
+      "id": "LEL-001",
       "canonical_name": "string",
       "names": ["string"],
       "type": "sujeto|objeto|verbo|estado",
       "status": "active|deprecated|proposed",
       "notions": [{"id": "NOT-001", "statement": "string", "evidence_refs": ["string"]}],
-      "impacts": [{"id": "IMP-001", "statement": "string", "evidence_refs": ["string"], "referenced_symbol_ids": ["SYM-002"]}],
+      "impacts": [{"id": "IMP-001", "statement": "string", "evidence_refs": ["string"], "referenced_symbol_ids": ["LEL-002"]}],
       "aliases": ["string"],
-      "related_symbol_ids": ["SYM-002"],
+      "related_symbol_ids": ["LEL-002"],
       "open_questions": ["string"],
       "assumptions": ["string"],
       "revision": {"created_from": ["string"], "last_changed_reason": "string"}
     }
   ],
-  "alias_map": [{"alias": "string", "symbol_id": "SYM-001", "confidence": "high|medium|low", "evidence_refs": ["string"]}],
-  "open_questions": [{"id": "Q-001", "question": "string", "blocking": true, "target_role": "string", "reason": "string", "related_symbol_ids": ["SYM-001"]}],
+  "alias_map": [{"alias": "string", "symbol_id": "LEL-001", "confidence": "high|medium|low", "evidence_refs": ["string"]}],
+  "open_questions": [{"id": "Q-001", "question": "string", "blocking": true, "target_role": "string", "reason": "string", "related_symbol_ids": ["LEL-001"]}],
   "traceability_links": [{"source": {"kind": "source|symbol|notion|impact|alias|question", "id": "string"}, "target": {"kind": "source|symbol|notion|impact|alias|question", "id": "string"}, "relationship": "derived_from|defines|mentions|aliases|questions|relates_to"}],
   "assumptions": ["string"],
   "warnings": ["string"]

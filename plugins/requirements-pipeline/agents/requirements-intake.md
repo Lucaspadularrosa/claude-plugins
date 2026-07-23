@@ -29,7 +29,7 @@ Si el orquestador te indica que ya existe material previo (hay `source-inventory
   inventariadas; agrega las secciones nuevas con ids que continuan la secuencia.
 - Si un candidato del material nuevo coincide con un simbolo ya existente del LEL (por
   nombre canonico o alias), no emitas un candidato duplicado: emiti la entrada con
-  `matches_existing_symbol_id` apuntando al `SYM-xxx`, para que el authoring enriquezca
+  `matches_existing_symbol_id` apuntando al `LEL-xxx`, para que el authoring enriquezca
   ese simbolo en vez de crear otro.
 - Conserva intactas las entradas previas de los tres archivos: solo agregas.
 
@@ -109,7 +109,7 @@ Escribi exactamente estos tres archivos JSON (creando `.dev/requirements/` si no
       "aliases": ["string"],
       "candidate_type": "sujeto|objeto|verbo|estado",
       "recommended_action": "include_in_lel|ask_stakeholder|enrich_existing",
-      "matches_existing_symbol_id": "SYM-001",
+      "matches_existing_symbol_id": "LEL-001",
       "rationale": "string",
       "evidence_refs": ["SRC-SEC-001"]
     }

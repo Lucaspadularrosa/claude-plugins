@@ -85,22 +85,22 @@ Escribi `.dev/requirements/scenarios.json` con este contrato exacto (solo JSON v
   "summary": {
     "total_scenarios": 0, "current_scenarios": 0, "future_scenarios": 0,
     "total_episodes": 0, "total_exceptions": 0,
-    "covered_symbol_ids": ["SYM-001"], "uncovered_symbol_ids": ["SYM-002"], "blocking_questions": 0
+    "covered_symbol_ids": ["LEL-001"], "uncovered_symbol_ids": ["LEL-002"], "blocking_questions": 0
   },
   "scenarios": [
     {
       "id": "SCN-001", "title": "string", "goal": "string",
       "scenario_type": "current|future", "status": "active|proposed|deprecated",
-      "context": {"geographic_location": "string", "temporality": "string", "preconditions": ["string"], "evidence_refs": ["SYM-001"]},
-      "actors": [{"id": "ACT-001", "name": "string", "lel_symbol_id": "SYM-001", "evidence_refs": ["SYM-001"]}],
-      "resources": [{"id": "RES-001", "name": "string", "lel_symbol_id": "SYM-002", "evidence_refs": ["SYM-002"]}],
-      "episodes": [{"id": "EP-001", "sentence": "string", "episode_type": "simple|conditional|optional", "condition": "string", "referenced_scenario_id": "SCN-002", "referenced_symbol_ids": ["SYM-001"], "evidence_refs": ["IMP-001"]}],
-      "exceptions": [{"id": "EXC-001", "cause": "string", "solution": "string", "referenced_scenario_id": "SCN-003", "evidence_refs": ["SYM-001"]}],
-      "lel_symbol_ids": ["SYM-001"], "related_scenario_ids": ["SCN-002"],
-      "open_questions": ["string"], "assumptions": ["string"], "evidence_refs": ["SYM-001"]
+      "context": {"geographic_location": "string", "temporality": "string", "preconditions": ["string"], "evidence_refs": ["LEL-001"]},
+      "actors": [{"id": "ACT-001", "name": "string", "lel_symbol_id": "LEL-001", "evidence_refs": ["LEL-001"]}],
+      "resources": [{"id": "RES-001", "name": "string", "lel_symbol_id": "LEL-002", "evidence_refs": ["LEL-002"]}],
+      "episodes": [{"id": "EP-001", "sentence": "string", "episode_type": "simple|conditional|optional", "condition": "string", "referenced_scenario_id": "SCN-002", "referenced_symbol_ids": ["LEL-001"], "evidence_refs": ["IMP-001"]}],
+      "exceptions": [{"id": "EXC-001", "cause": "string", "solution": "string", "referenced_scenario_id": "SCN-003", "evidence_refs": ["LEL-001"]}],
+      "lel_symbol_ids": ["LEL-001"], "related_scenario_ids": ["SCN-002"],
+      "open_questions": ["string"], "assumptions": ["string"], "evidence_refs": ["LEL-001"]
     }
   ],
-  "open_questions": [{"id": "Q-001", "question": "string", "blocking": true, "target_role": "string", "reason": "string", "related_scenario_ids": ["SCN-001"], "related_symbol_ids": ["SYM-001"]}],
+  "open_questions": [{"id": "Q-001", "question": "string", "blocking": true, "target_role": "string", "reason": "string", "related_scenario_ids": ["SCN-001"], "related_symbol_ids": ["LEL-001"]}],
   "traceability_links": [{"source": {"kind": "symbol|scenario|episode|exception|question", "id": "string"}, "target": {"kind": "symbol|scenario|episode|exception|question", "id": "string"}, "relationship": "derived_from|uses|triggers|handles|questions|relates_to"}],
   "assumptions": ["string"],
   "warnings": ["string"]

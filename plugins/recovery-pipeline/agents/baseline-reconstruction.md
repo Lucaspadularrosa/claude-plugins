@@ -65,7 +65,7 @@ reconstruyas de memoria. Si la variable no estuviera definida, el archivo esta e
 
 Reglas duras:
 - **Nada sin evidencia**, con el modelo de evidencia de la suite: los
-  `evidence_refs` de mapa, escenarios y requisitos citan ids de la suite (`SYM-xxx`,
+  `evidence_refs` de mapa, escenarios y requisitos citan ids de la suite (`LEL-xxx`,
   `SCN-xxx`, `OWN-xxx`) — los validadores de `requerimientos` lo exigen —,
   mientras que la traza al codigo va en los `evidence_refs` del LEL (archivo:linea)
   y en el campo opcional `code_refs: ["ruta:linea"]` de features, escenarios,

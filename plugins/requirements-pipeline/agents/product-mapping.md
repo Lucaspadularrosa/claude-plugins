@@ -102,7 +102,7 @@ valido, sin cercas):
       "value": "high|medium|low",
       "value_rationale": "string",
       "status": "stub|elaborated|baselined|deprecated",
-      "lel_symbol_ids": ["SYM-001"],
+      "lel_symbol_ids": ["LEL-001"],
       "scenario_stubs": [
         {"id": "SCN-001", "title": "string", "goal": "string", "actors": ["string"], "status": "stub|elaborated|baselined|deprecated", "evidence_refs": ["SRC-SEC-001"]}
       ],
