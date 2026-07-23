@@ -120,9 +120,11 @@ en esta sesion. Con ella:
     o una eleccion de tecnologia que el perfil daba por indefinida, quedo decidida en
     la sesion o en el diseno).
   Chequea los tres disparadores al asegurar el perfil en cada corrida, no solo la
-  primera vez. Si el perfil tiene `open_questions` (no hay
-  comando de test, no se sabe la rama de integracion), resolvelas con el usuario antes
-  de construir: sin verificacion no hay build. Si la base de seguridad quedo con huecos
+  primera vez. Si el perfil tiene `open_questions` con
+  `blocking: true` (no hay comando de test, no se sabe la rama de integracion),
+  resolvelas con el usuario antes de construir — sin verificacion no hay build — y
+  persisti cada respuesta en el perfil (`status: resolved` + `answer`), no solo en
+  la conversacion. Si la base de seguridad quedo con huecos
   (ej.: sin comando de audit de dependencias), no bloquea el build, pero avisale al
   usuario: el `security-gate` lo va a reportar.
 - **CI del proyecto (checks independientes)**: los checks del PR verifican el codigo
@@ -168,8 +170,10 @@ en esta sesion. Con ella:
   reporte del implementador para que absorba los desvios). Si emitio guia,
   commiteala en la rama (`docs: guia de usuario {slug}`) para que viaje en el mismo
   PR. Es **best-effort**: si el agente falla o reporta que la feature no tiene
-  superficie de usuario, el PR sale igual y lo anotas en el resumen — la guia nunca
-  bloquea ni entra al lazo de correccion.
+  superficie de usuario, el PR sale igual, lo anotas en el resumen **y persistis el
+  motivo en `progress.json`** (`SIN GUIA: <motivo>` en las `notes` de la feature) —
+  el faltante debe sobrevivir a la perdida de la sesion, no solo al scroll. La guia
+  nunca bloquea ni entra al lazo de correccion.
 - **Indice del manual (derivado, del orquestador)**: `.dev/manual/README.md` no lo
   toca ningun agente de feature — lo regeneras VOS, siempre desde cero, leyendo el
   frontmatter (`feature`, `fg`, `titulo`, `resumen`) de cada guia presente en
@@ -207,6 +211,16 @@ en esta sesion. Con ella:
   del mismo tema/archivo, actualiza esa entrada y sumale el nuevo review de origen,
   no dupliques. Los `TD-nnn` son consecutivos y no se reciclan; una deuda saldada se
   marca resuelta (con su commit), no se borra.
+- **Trabajo fuera de plan (`[ADHOC]`)**: si el usuario pide construir algo que no
+  tiene brief, decilo explicitamente y sugerile `/replanificar` (si el plan puede
+  absorberlo) o registrarlo como incremento/CR de requisitos. Si igual decide
+  construirlo ya, no lo hagas invisible: los commits llevan el marcador `[ADHOC]`
+  en lugar de `[T-xxx]` y el trabajo queda anotado en el resumen — construir fuera
+  de plan es aceptable, hacerlo en silencio no. Ademas, en todo **retome** (lote o
+  feature), revisa el log de la rama de integracion desde la ultima corrida (el
+  merge mas reciente que registre `progress.json`): si aparecieron commits sin
+  `[T-xxx]` ni `[ADHOC]`, avisale al usuario antes de seguir — hay trabajo que el
+  pipeline no capturo y puede pisarse o duplicarse.
 - **Desvios del brief -> CR**: si un implementador declaro desvios (`DESVIO-n`) en su
   reporte, no los dejes morir en el resumen: genera `.dev/build/cr-input-{slug}.md`
   con cada desvio completo (feature `FG-xx`, requisito afectado `RF-xxx/AC-xxx`, que
@@ -345,7 +359,9 @@ en los PRs). Pensado para una sesion que ejecuta el plan de corrido.
 6. Por cada feature que paso (review y gate en verde): invoca su `user-docs-writer`
    sobre su worktree y commitea la guia si emitio pagina (best-effort, ver
    convenciones; podes lanzar los de varias features en paralelo — cada uno escribe
-   solo su `.dev/manual/{slug}.md`, no se pisan). Despues, **compuerta dura
+   solo su `.dev/manual/{slug}.md`, no se pisan). Si una feature quedo sin guia,
+   anota `SIN GUIA: <motivo>` en sus `notes` de `progress.json`, no solo en el
+   resumen de sesion. Despues, **compuerta dura
    pre-PR**: verifica con `ls`/`Read` que `.dev/build/reviews/{slug}.json` y
    `.dev/build/security/{slug}.json` existen, ambos con `passed: true` — si falta
    cualquiera, esa feature no abre PR: queda bloqueada con el motivo en `notes` y lo

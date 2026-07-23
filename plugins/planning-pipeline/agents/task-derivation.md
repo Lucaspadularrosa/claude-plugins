@@ -77,6 +77,12 @@ de lo anterior lee `.dev/plan/tasks.json` (el plan previo) y `.dev/plan/progress
 - Cada tarea deriva de evidencia y cita `requirement_ids` (al menos uno). No hay tareas
   huerfanas: una tarea sin requisito no existe.
 - Toda feature es un `feature_group` de los requisitos; conserva su id (`FG-01`).
+  Unica excepcion: **a lo sumo una** feature sintetica de bootstrap, con id reservado
+  `FG-00` y `"synthetic": true` en su entrada de `features[]`, para el esqueleto
+  inicial de un greenfield (solucion, esquema base, wiring transversal) que ninguna
+  feature de requisitos puede cargar sola. No tiene homologo en `requirements.json`,
+  pero sus tareas citan `requirement_ids` reales igual que cualquier otra: el
+  bootstrap existe para habilitar requisitos concretos, no porque si.
 - Cada requisito `active` debe quedar cubierto por al menos una tarea.
 
 ### Granularidad: feature -> tareas (dimensionado para agentes IA)
@@ -105,6 +111,13 @@ La unica pregunta de granularidad es: **¿la tarea entra en una pasada de agente
     rompe la cohesion.
   - `xl`: se parte si o si en varias tareas; ademas registra una pregunta abierta
     senalando que el requisito quedo poco descompuesto.
+
+Ejemplo negativo canonico (calibra contra este): una tarea de bootstrap que junta
+"crear la solucion completa + el esquema inicial de 12 entidades con su migracion +
+el pipeline de autenticacion + la capa de cache" NO entra en una pasada, aunque se
+marque `high`. Se parte en tres tareas verticales: (1) esqueleto de la solucion y
+DI, (2) migracion inicial del esquema, (3) pipeline de autenticacion — y el cache
+entra con su primer consumidor. Si dudas entre `high` y "no entra", partila.
 
 ### Otros campos de la tarea
 
@@ -195,7 +208,7 @@ Escribi `.dev/plan/tasks.json` con este contrato exacto (solo JSON valido, sin c
     "complexity_breakdown": {"low": 0, "medium": 0, "high": 0}
   },
   "features": [
-    {"id": "FG-01", "name": "string", "description": "string", "requirement_ids": ["RF-001"], "task_ids": ["T-001"]}
+    {"id": "FG-01", "name": "string", "description": "string", "requirement_ids": ["RF-001"], "task_ids": ["T-001"], "synthetic": false}
   ],
   "tasks": [
     {
@@ -248,6 +261,8 @@ script desde `tasks.json` al cierre de la corrida. Tu unica salida es el JSON.
 - Verifica que cada tarea cita al menos un `requirement_ids` existente y pertenece a una
   feature existente. Excepcion: las tareas `type: "contract"` deben citar
   `requirement_ids` de **al menos dos features distintas** (la costura que unen).
+- Verifica que hay a lo sumo una feature `synthetic: true`, que si existe su id es
+  `FG-00`, y que sus tareas citan `requirement_ids` reales.
 - Verifica que cada requisito `active` esta cubierto por al menos una tarea, y que
   `covered_requirement_ids` / `uncovered_requirement_ids` reflejan la realidad.
 - Verifica que cada `depends_on[*].task_id` apunta a una tarea existente, que cada

@@ -57,6 +57,12 @@ y recalcula los lotes **solo del trabajo restante**:
   original ya se mergeo: armales un lote propio que preceda a sus consumidores, con
   `rationale` "ronda de contratos de la replanificacion", en vez de tocar
   `contract_round`.
+- **Ajustes triviales (`groupable`)**: una entrada de feature cuyo contenido total es
+  a lo sumo **una** tarea de ajuste `low` se marca `"groupable": true`, con la
+  sugerencia en su `rationale` de construirla compartiendo rama/agente con otra
+  feature del mismo lote — lanzar un agente, una rama y un PR propios por un enganche
+  de una linea no paga su overhead. Las entradas `groupable` no suman a
+  `max_parallel_degree`: la metrica reporta el paralelismo **util**, no el nominal.
 - Registra en `metadata.replanned: true` y conserva `tasks_version_ref` apuntando a la
   version nueva de `tasks.json`.
 
@@ -149,6 +155,7 @@ cercas):
         {
           "feature_id": "FG-01",
           "adjustment": false,
+          "groupable": false,
           "task_ids": ["T-002", "T-003"],
           "task_order": ["T-002", "T-003"],
           "waits_for": [
@@ -164,9 +171,15 @@ cercas):
 }
 ```
 
+Versionado: `version` empieza en 1 y se incrementa en **cada** reescritura del
+archivo (replanificacion incluida); `metadata.updated_at` se actualiza siempre.
+`tasks_version_ref` cita el numero de `version` actual de `tasks.json`, como string
+(ej. `"10"`) — un plan que atraveso N replanificaciones no puede seguir en v1.
+
 Convenciones del contrato:
-- `max_parallel_degree`: el maximo de features en un mismo lote. Es la metrica
-  principal: cuantos agentes en paralelo aprovecha el plan.
+- `max_parallel_degree`: el maximo de features en un mismo lote, **sin contar las
+  entradas `groupable`**. Es la metrica principal: cuantos agentes en paralelo
+  aprovecha el plan de verdad (paralelismo util, no nominal).
 - `critical_path_length`: cantidad de lotes en secuencia, contando la ronda de
   contratos si existe. Es la cantidad de "turnos" que lleva ejecutar el plan con
   agentes suficientes.
@@ -178,6 +191,9 @@ Convenciones del contrato:
 - `adjustment`: solo en replanificacion; `true` marca que la entrada re-emite una
   feature completada con **solo** sus tareas de ajuste pendientes (la feature sigue
   ademas en `completed_feature_ids`). Omitilo o dejalo `false` en el resto.
+- `groupable`: solo en replanificacion; `true` marca un ajuste trivial (≤1 tarea
+  `low`) que conviene construir compartiendo rama/agente con otra feature del lote
+  en vez de en paralelo con rama propia. Omitilo o dejalo `false` en el resto.
 - `warnings`: para paralelismo bajo y sus causas concretas (ver abajo).
 - `metadata.pipeline_version`: la version del plugin que el orquestador te indica al
   invocarte; estampala tal cual. Si no te la indicaron, escribi `null` — nunca la
