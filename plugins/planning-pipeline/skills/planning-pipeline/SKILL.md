@@ -115,8 +115,8 @@ Invoca `plan-inspection`. Es la compuerta de auditoria del plan.
   corresponda en modo correccion, indicandole que lea `.dev/plan/plan-inspection.json`
   y aplique las correcciones propuestas:
   - `task-derivation` para defectos de cobertura, tareas huerfanas, dependencias,
-    granularidad/complejidad, criterios de aceptacion o extraccion de contratos:
-    checks 001, 002, 003, 004, 005, 006, 011.
+    granularidad/complejidad, criterios de aceptacion, extraccion de contratos o
+    el invariante de replanificacion: checks 001, 002, 003, 004, 005, 006, 011, 013.
   - `execution-planning` para defectos de completitud, orden, metricas o lotes
     seriales sin justificar: checks 008, 009, 010, 012.
   - `PLAN-CHECK-007` (desactualizacion) NO se corrige en este lazo: corta e indicale
@@ -174,6 +174,9 @@ construido.
    trabajo restante (features `done` fuera del grafo, `in_progress` conservan su
    lote, lo nuevo se inserta por niveles).
 7. Corre `plan-inspection` con su lazo de correccion, igual que en el Paso 3.
+   Indicale que es replanificacion y pasale la version previa de `tasks.json`
+   (una referencia git o una ruta) para el invariante de replanificacion
+   (PLAN-CHECK-013: las tareas no afectadas por el delta no pueden haber cambiado).
 8. Invoca `feature-brief` indicandole **solo las features afectadas**: regenera esos
    briefs citando que entrada del changelog los cambio.
 9. Cierre: si algun agente reporto un delta (`*.delta.json`, su fallback oficial
