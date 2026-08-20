@@ -46,12 +46,38 @@ credenciales que encuentres: señala donde estan, nunca el valor.
   framework), registralo como pregunta abierta.
 - Cobertura guiada por entry points: cada `ENTRY-xxx` del inventario debe quedar
   cubierto por al menos una capacidad o marcado como no rastreable.
-- **Apps grandes**: el orquestador te puede acotar a un modulo o a una tanda de entry
-  points. En ese caso tu salida es acumulativa (lee el behavior-map previo, conserva
-  ids y agrega); los `ENTRY-xxx` fuera de tu tanda no cuentan como no cubiertos, pero
-  el conjunto de tandas debe cerrar la cobertura, y lo que ninguna tanda cubra queda
-  en `open_questions`.
 - Todos los valores legibles por humanos van en espanol.
+
+## Modos de invocacion
+
+El orquestador te invoca de una de estas formas; si no te indica ninguna, es la
+pasada unica.
+
+- **Pasada unica** (default, apps chicas y medianas): cubris todos los entry points
+  del inventario y escribis el behavior-map canonico.
+- **Tanda acumulativa** (secuencial): el orquestador te acota a un modulo o tanda de
+  entry points. Tu salida es acumulativa (lee el behavior-map previo, conserva ids y
+  agrega); los `ENTRY-xxx` fuera de tu tanda no cuentan como no cubiertos, pero el
+  conjunto de tandas debe cerrar la cobertura, y lo que ninguna tanda cubra queda en
+  `open_questions`.
+- **Tanda paralela** (apps grandes): el orquestador te indica el numero de tanda, tus
+  entry points y tus **rangos de ids** (p. ej. `CAP-100..199`, `RENT-100..199`),
+  porque hay otras tandas corriendo a la vez. En este modo:
+  - Escribis SOLO tu parcial `.dev/recovery/behavior-parts/tanda-NN.json` (mismo
+    contrato que el behavior-map; el `summary` cuenta solo tu contenido). NO escribas
+    `behavior-map.json` ni ningun `.md`: los consolida el agente de merge.
+  - Usa unicamente ids dentro de tus rangos. No leas el behavior-map global ni los
+    parciales de otras tandas.
+  - Podes leer cualquier codigo del repo: si el flujo de tu entry point cruza a otro
+    modulo, seguilo igual (leer no colisiona; la particion es solo de escritura).
+  - Registra el vocabulario y las entidades que TU tanda observa aunque sospeches que
+    otra tanda los vera tambien: deduplicar es trabajo del merge, no tuyo.
+- **Modo correccion** (post spot-check): el orquestador te pasa capacidades cuya
+  evidencia fue refutada o resulto imprecisa, con el detalle del verificador. Re-lee
+  el codigo y corregi SOLO esas entradas (flujo, reglas, estado o evidencia, lo que
+  corresponda), conservando sus ids; no toques el resto del mapa. Si el verificador
+  tiene razon y la capacidad no es lo que afirmaste, corregila aunque baje de estado
+  (`complete` -> `partial`): el mapa honesto vale mas que el mapa lindo.
 
 ## Salida
 
@@ -97,11 +123,17 @@ nunca la inventes.
 Tambien escribi `.dev/recovery/behavior-map.md`: por capacidad, su flujo, reglas,
 estado de implementacion y evidencia; al final el vocabulario y las entidades.
 
+En **tanda paralela** la ruta de salida cambia: escribis solo tu
+`.dev/recovery/behavior-parts/tanda-NN.json` (crea la carpeta) con este mismo
+contrato, y ningun `.md`.
+
 ## Antes de terminar
 
 - Verifica que el JSON es valido, que cada capacidad cita evidencia y que todo
-  `ENTRY-xxx` del inventario quedo cubierto o justificado.
+  `ENTRY-xxx` del inventario (o de tu tanda, si estas acotado) quedo cubierto o
+  justificado.
 - Verifica que los conteos del summary coinciden.
+- En tanda paralela: verifica que ningun id se salio de tus rangos asignados.
 
 ## Barra de calidad
 
