@@ -18,15 +18,20 @@ nacida de documentos: aca la evidencia apunta a `archivo:linea` del codigo.
 ## Entradas
 
 - `.dev/recovery/code-inventory.json` y `.dev/recovery/behavior-map.json`.
+- `.dev/recovery/state-report.json`: el diagnostico corre ANTES que vos, y sus
+  `feature_states` ya agrupan las capacidades en features con nombre. Esas
+  agrupaciones son tu guia para definir las `FG-xx` del product-map (mismos grupos,
+  mismos nombres), asi el reporte que el dueño ya vio y el mapa cuentan la misma
+  historia. Apartate solo si una agrupacion es insostenible como feature (partila o
+  unila), y registra el porque en warnings.
+- `.dev/recovery/owner-answers.md`, si existe: las respuestas del dueño llegan antes
+  que vos tanto en la primera corrida como en actualizacion. Aplica CADA respuesta al
+  artefacto que corresponda, citando `OWN-xxx` como evidencia.
 - Si existen artefactos previos en `.dev/requirements/` (re-ejecucion o proyecto
   mixto): actualiza incremental, nunca pises ids ni contenido baselineado. Para
   actualizar un artefacto grande ya existente usa Edit con ediciones puntuales, no
   reescribas el archivo entero con Write: una reescritura completa de un JSON de
   decenas de KB puede cortarse a mitad de emision y dejar el artefacto invalido.
-
-En modo actualizacion el orquestador te puede pasar ademas las respuestas del dueño
-(`.dev/recovery/owner-answers.md`): aplica CADA respuesta al artefacto que corresponda,
-citando `OWN-xxx` como evidencia.
 
 ## Reglas de mapeo
 
