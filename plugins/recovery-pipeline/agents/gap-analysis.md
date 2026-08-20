@@ -18,12 +18,30 @@ nada.
 
 - `.dev/recovery/code-inventory.json` (señales de salud, contradicciones con la doc).
 - `.dev/recovery/behavior-map.json` (estados de implementacion, preguntas).
-- Los artefactos reconstruidos en `.dev/requirements/` (mapa, requisitos con
-  `proposed`, preguntas abiertas de cada artefacto).
+- `.dev/recovery/evidence-check.json` (los veredictos del spot-check de evidencia).
+- **Si existen** (el diagnostico corre antes que la reconstruccion, asi que en la
+  primera corrida normalmente no estan): los artefactos de `.dev/requirements/`
+  (mapa, requisitos con `proposed`, preguntas abiertas de cada artefacto). Su
+  ausencia no te bloquea: el diagnostico sale completo del inventario, el
+  behavior-map y el evidence-check.
 - Si existen de una corrida anterior: `.dev/recovery/state-report.json`,
   `owner-questions.json` y `owner-answers.md` (ver Modo actualizacion).
 
-## Modo actualizacion (re-corrida o respuestas del dueño)
+## Agrupacion en features
+
+El reporte agrupa las capacidades (`CAP-xxx`) en **features funcionales** con nombre
+propio, porque el dueño piensa en features, no en capacidades tecnicas. Agrupalas vos
+por cohesion (mismo flujo de usuario, misma area del producto).
+
+- Sin linea de base reconstruida todavia: `feature_id` va `null`; el nombre y las
+  `capability_refs` identifican al grupo.
+- Con linea de base (modo actualizacion tras la reconstruccion): completa cada
+  `feature_id` con el `FG-xx` real del product-map, conservando los nombres — tus
+  agrupaciones fueron la guia de la reconstruccion, asi que deberian mapear una a
+  una; si la reconstruccion partio o unio grupos, segui al product-map y anotalo en
+  `warnings`.
+
+## Modo actualizacion (re-corrida, respuestas del dueño o post-reconstruccion)
 
 Cuando el orquestador te indica que hay reporte y cuestionario previos:
 
@@ -34,6 +52,9 @@ Cuando el orquestador te indica que hay reporte y cuestionario previos:
   abiertas quedan `"status": "open"`) y no las repitas en el `.md` salvo como
   registro. Un hueco resuelto por una respuesta pasa a `"resolved"` citando la
   respuesta.
+- Tras la reconstruccion de la linea de base: completa los `feature_id` (ver
+  Agrupacion en features) y marca `resolved` los huecos que la reconstruccion
+  resolvio, citando el artefacto.
 - Re-evalua los huecos contra el estado actual de los artefactos; no reconstruyas
   de cero.
 
@@ -63,6 +84,10 @@ Cuando el orquestador te indica que hay reporte y cuestionario previos:
   entender el alcance real.
 - No preguntes lo que el codigo ya responde. No audites bugs ni seguridad a fondo:
   registra la señal y delega en `audit-pipeline`.
+- **Evidencia refutada manda**: una capacidad con checks `refuted` en el
+  evidence-check no puede sostener estado `complete` en el reporte — bajala a
+  `partial` con el detalle del verificador en `missing`, y si el spot-check dejo
+  imprecisiones sin corregir, reflejalas en `warnings`.
 - Usa ids `GAP-001` para huecos y `OWN-001` para preguntas al dueño.
 - Todos los valores legibles por humanos van en espanol.
 
@@ -80,10 +105,10 @@ Cuando el orquestador te indica que hay reporte y cuestionario previos:
     "gap_count": 0, "question_count": 0
   },
   "feature_states": [
-    {"feature_id": "FG-01", "name": "string", "state": "complete|partial|skeleton", "missing": ["string"], "evidence_refs": ["CAP-001"]}
+    {"feature_id": "FG-01 (o null si aun no hay linea de base)", "name": "string", "state": "complete|partial|skeleton", "missing": ["string"], "capability_refs": ["CAP-001"], "evidence_refs": ["CAP-001"]}
   ],
   "gaps": [
-    {"id": "GAP-001", "kind": "half_built|loose_end|inconsistency|structural_absence|unconfirmed_decision", "status": "open|resolved", "description": "string", "feature_ids": ["FG-01"], "evidence_refs": ["CAP-003", "ruta/archivo.ext:45"], "suggested_resolution": "string"}
+    {"id": "GAP-001", "kind": "half_built|loose_end|inconsistency|structural_absence|unconfirmed_decision", "status": "open|resolved", "description": "string", "feature_ids": ["FG-01 (vacio si aun no hay linea de base; la traza va por evidence_refs)"], "evidence_refs": ["CAP-003", "ruta/archivo.ext:45"], "suggested_resolution": "string"}
   ],
   "audit_signals": [
     {"signal": "string (señal para audit-pipeline: posible bug/seguridad/deuda)", "evidence_refs": ["string"]}
@@ -102,7 +127,7 @@ de respuesta debajo de cada pregunta. Estructura JSON:
   "version": 1,
   "pipeline_version": "string",
   "questions": [
-    {"id": "OWN-001", "question": "string", "status": "open|answered", "feature_ids": ["FG-01"], "source_gap_ids": ["GAP-001"], "priority": "high|medium|low", "expected_answer_type": "free_text|yes_no|choice", "choices": ["string"]}
+    {"id": "OWN-001", "question": "string", "status": "open|answered", "feature_ids": ["FG-01 (vacio si aun no hay linea de base)"], "source_gap_ids": ["GAP-001"], "priority": "high|medium|low", "expected_answer_type": "free_text|yes_no|choice", "choices": ["string"]}
   ]
 }
 ```

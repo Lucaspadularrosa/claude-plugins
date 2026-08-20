@@ -71,7 +71,7 @@ deprecia) y **nada baselineado se modifica sin tu confirmación**.
 | `/replanificar` | planning | Actualiza el plan cuando los requisitos cambiaron, sin tocar lo construido. |
 | `/construir <feature>` | build | Construye una feature en su rama, con tu aprobación del plan de implementación. Cualquier stack. |
 | `/construir-lote [BATCH-n]` | build | Construye un lote completo en paralelo (un agente por feature, en worktrees), sin pausas. |
-| `/comprender [ruta]` | recovery | Comprende una app existente: qué hace, en qué estado está, qué falta. Reconstruye la línea de base con evidencia al código. |
+| `/comprender [ruta]` | recovery | Comprende una app existente: qué hace, en qué estado está, qué falta — con reporte compartible en HTML. Opt-in: reconstruye la línea de base con evidencia al código. |
 | `/auditar [alcance]` | audit | Bugs, seguridad y mejoras, con verificación adversarial de cada hallazgo. Funciona en cualquier repo. |
 
 Todos funcionan también en lenguaje natural ("genera los requisitos a partir de estos
@@ -172,15 +172,18 @@ modos incrementales sin fricción.
 ```
 
 El pipeline de comprensión lee el código (solo lectura, no toca nada): inventaría el
-stack y la estructura, extrae qué hace la app con evidencia `archivo:línea`,
-**reconstruye la línea de base de requisitos** en `.dev/requirements/` (lo que el
-código demuestra completo queda baselineado; lo que está a medias queda en stub con lo
-que falta documentado), y te entrega dos cosas: el **reporte de estado honesto** (qué
-está completo, a medias o muerto) y el **cuestionario del dueño** — preguntas sin
-tecnicismos sobre lo que el código decidió y nadie validó. Respondelas y la
-reconstrucción se afina.
+stack y la estructura, extrae qué hace la app con evidencia `archivo:línea` (en
+tandas paralelas si la app es grande) y verifica una muestra de esa evidencia con un
+spot-check adversarial. Con eso te entrega el diagnóstico: el **reporte de estado
+honesto** (qué está completo, a medias o muerto), también en un **HTML compartible**
+para mandárselo a un socio o stakeholder, y el **cuestionario del dueño** — preguntas
+sin tecnicismos sobre lo que el código decidió y nadie validó. Las respondés en el
+momento o circulás el cuestionario y las respuestas vuelven después.
 
-A partir de ahí la app está adentro de la suite:
+Si querés seguir (es opt-in), **reconstruye la línea de base de requisitos** en
+`.dev/requirements/` (lo que el código demuestra completo queda baselineado; lo que
+está a medias queda en stub con lo que falta documentado), y a partir de ahí la app
+está adentro de la suite:
 
 ```
 /auditar                                  bugs, seguridad y mejoras, verificados
@@ -282,7 +285,7 @@ autosuficientes: respetá el orden de lotes de `execution-plan.md` y mantené
 | La base de seguridad del stack (superficie, OWASP, tooling) | `.dev/build/security-baseline.json` |
 | El veredicto de review de una feature construida | `.dev/build/reviews/{feature}.json` |
 | El veredicto de seguridad (piso OWASP) de una feature | `.dev/build/security/{feature}.json` |
-| El estado real de una app comprendida | `.dev/recovery/state-report.md` |
+| El estado real de una app comprendida | `.dev/recovery/state-report.md` (compartible: `state-report.html`) |
 | Qué hace la app, con evidencia al código | `.dev/recovery/behavior-map.md` |
 | Las preguntas pendientes del dueño | `.dev/recovery/owner-questions.md` |
 | Los hallazgos de auditoría confirmados | `.dev/audit/audit-report.md` |
