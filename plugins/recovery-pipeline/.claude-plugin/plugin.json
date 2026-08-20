@@ -1,8 +1,8 @@
 {
   "name": "recovery-pipeline",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "displayName": "Recovery Pipeline (comprension de apps existentes)",
-  "description": "Comprende una aplicacion ya desarrollada, aunque no tenga documentacion (vibe-coding): inventaria el codigo, extrae que hace con evidencia archivo:linea, reconstruye la linea de base de requisitos en formato .dev/requirements/ (compatible con toda la suite), reporta el estado real (completo / a medias / muerto) y arma el cuestionario de decisiones para el dueño.",
+  "description": "Comprende una aplicacion ya desarrollada, aunque no tenga documentacion (vibe-coding): inventaria el codigo, extrae que hace con evidencia archivo:linea (en tandas paralelas si la app es grande), verifica la evidencia con un spot-check adversarial, reporta el estado real (completo / a medias / muerto) con un HTML compartible y arma el cuestionario de decisiones para el dueño. Opt-in: reconstruye la linea de base de requisitos en formato .dev/requirements/ (compatible con toda la suite).",
   "keywords": [
     "comprension",
     "reverse-engineering",
