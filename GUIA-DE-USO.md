@@ -73,6 +73,7 @@ deprecia) y **nada baselineado se modifica sin tu confirmación**.
 | `/construir-lote [BATCH-n]` | build | Construye un lote completo en paralelo (un agente por feature, en worktrees), sin pausas. |
 | `/comprender [ruta]` | recovery | Comprende una app existente: qué hace, en qué estado está, qué falta — con reporte compartible en HTML. Opt-in: reconstruye la línea de base con evidencia al código. |
 | `/auditar [alcance]` | audit | Bugs, seguridad y mejoras, con verificación adversarial de cada hallazgo. Funciona en cualquier repo. |
+| `/metricas [solo-datos]` | metrics | Cosecha las métricas de proceso de la suite (script, cero tokens) y opcionalmente las analiza para saber qué mejorar de los pipelines. |
 
 Todos funcionan también en lenguaje natural ("genera los requisitos a partir de estos
 documentos", "los requisitos cambiaron, actualiza el plan").
@@ -289,6 +290,7 @@ autosuficientes: respetá el orden de lotes de `execution-plan.md` y mantené
 | Qué hace la app, con evidencia al código | `.dev/recovery/behavior-map.md` |
 | Las preguntas pendientes del dueño | `.dev/recovery/owner-questions.md` |
 | Los hallazgos de auditoría confirmados | `.dev/audit/audit-report.md` |
+| Las métricas de proceso de la suite | `.dev/metrics/metrics.html` (diagnóstico en `analysis.md`) |
 
 La trazabilidad funciona en ambas direcciones: desde una tarea podés volver hasta la
 sección del documento que la originó (tarea → requisito → escenario → símbolo del LEL

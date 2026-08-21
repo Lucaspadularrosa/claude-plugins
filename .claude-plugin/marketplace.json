@@ -73,6 +73,17 @@
       },
       "source": "./plugins/requirements-pipeline",
       "category": "development"
+    },
+    {
+      "name": "metrics-pipeline",
+      "description": "Metricas de proceso de la suite con telemetria cero: un script determinista cosecha a demanda los artefactos que los pipelines ya dejaron (cero tokens, retroactivo, sin instrumentar ningun flujo) y un agente analista opcional diagnostica que mejorar en los pipelines. Export a un JSONL central para comparar versiones del plugin entre proyectos.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Lucas Micheli",
+        "email": "lucas.t.micheli@gmail.com"
+      },
+      "source": "./plugins/metrics-pipeline",
+      "category": "development"
     }
   ]
 }
