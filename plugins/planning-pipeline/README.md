@@ -27,18 +27,42 @@ planning-pipeline/
     plugin.json
   agents/
     task-derivation.md       deriva tareas verticales dimensionadas para agentes
-    execution-planning.md    ronda de contratos + lotes paralelos de features
-    plan-inspection.md       audita el plan (cobertura, ciclos, granularidad, paralelismo)
-    feature-brief.md         emite un documento por feature (con lote y orden de tareas)
+    execution-planning.md    lotes en replanificacion (inicial: script determinista)
+    plan-inspection.md       inspeccion de juicio (lo mecanico lo valida un script)
+    feature-brief.md         emite el brief de una feature; N corren en paralelo
   skills/
     planning-pipeline/
       SKILL.md               orquestacion del pipeline
+      scripts/
+        compute_execution_plan.py   lotes paralelos por grafo (cero tokens)
+        validate_plan.py            checks mecanicos + linter de briefs (cero tokens)
+        slice_brief_context.py      tajada de contexto por feature para los briefs
+        render_plan_docs.py         vistas .md derivadas de los .json
   commands/
     planificar.md            slash command de entrada
     replanificar.md          actualiza el plan cuando los requisitos cambian
   PIPELINE.md
   README.md
 ```
+
+### Etapas deterministas por script (v2.5)
+
+Desde la 2.5.0, lo que es teoria de grafos pura no gasta tokens ni tiempo de modelo:
+
+- **`compute_execution_plan.py`** arma la ronda de contratos, los lotes por niveles
+  topologicos, `task_order`, metricas y warnings accionables directo de `tasks.json`.
+  Fail-fast: ante un contrato roto corta con error explicito que rebota a
+  `task-derivation` (nunca adivina). El subagente `execution-planning` queda para la
+  replanificacion, que si requiere juicio.
+- **`validate_plan.py`** corre los PLAN-CHECK mecanicos (cobertura, huerfanos,
+  ciclos, staleness, completitud y orden de lotes, metricas, sincronia de vistas,
+  consistencia del summary) y con `--briefs` el linter de briefs. `plan-inspection`
+  recibe esos checks pre-verificados y solo aplica juicio.
+- **`slice_brief_context.py`** pre-corta una tajada de contexto por feature para que
+  los `feature-brief` corran **en paralelo** (uno por feature) leyendo cada uno un
+  archivo chico en vez de la linea de base completa.
+
+Los tres tienen `--self-test` (corren en el CI del repo) y toleran BOM de Windows.
 
 ## Instalacion
 
@@ -120,15 +144,16 @@ Las claves del paralelismo:
 - `task-derivation` extrae **tareas-contrato** cuando una feature depende de otra: el
   consumidor pasa a depender de la firma (`kind: "contract"`) en vez del codigo completo
   (`kind: "hard"`). Solo las dependencias `hard` bloquean paralelismo.
-- `execution-planning` emite `.dev/plan/execution-plan.json` con la ronda de contratos
-  y los lotes. `max_parallel_degree` dice cuantos agentes simultaneos aprovecha el
-  plan; `critical_path_length` cuantos turnos lleva ejecutarlo.
+- El script `compute_execution_plan.py` emite `.dev/plan/execution-plan.json` con la
+  ronda de contratos y los lotes (en replanificacion lo hace el subagente
+  `execution-planning`). `max_parallel_degree` dice cuantos agentes simultaneos
+  aprovecha el plan; `critical_path_length` cuantos turnos lleva ejecutarlo.
 - Cada `feature-brief` declara en que lote cae, con quien corre en paralelo y que tiene
   que estar mergeado antes de arrancar.
 
-Si el plan termina con paralelismo bajo, `execution-planning` emite warnings
+Si el plan termina con paralelismo bajo, el execution-plan trae warnings
 **accionables** (que tarea concreta extraer como contrato para subir una feature de
-lote) y `plan-inspection` rebota a `task-derivation` para extraer mas contratos o
+lote) y la validacion rebota a `task-derivation` para extraer mas contratos o
 partir features densamente acopladas.
 
 ## Replanificacion: cuando los requisitos cambian a mitad del build
