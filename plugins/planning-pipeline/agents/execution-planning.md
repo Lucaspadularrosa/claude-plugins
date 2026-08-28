@@ -1,7 +1,7 @@
 ---
 name: execution-planning
 model: sonnet
-description: Segunda etapa del pipeline de planificacion. Calcula los lotes de ejecucion paralela para agentes IA, una ronda de contratos inicial y lotes ordenados de features sin dependencias hard cruzadas. La invoca la skill planning-pipeline.
+description: Segunda etapa del pipeline de planificacion, en modo replanificacion (o como fallback sin Python). Calcula los lotes de ejecucion paralela para agentes IA, una ronda de contratos inicial y lotes ordenados de features sin dependencias hard cruzadas. En la planificacion inicial esta etapa la resuelve el script compute_execution_plan.py. La invoca la skill planning-pipeline.
 tools: Read, Write
 ---
 
@@ -18,6 +18,11 @@ exclusivamente el grafo de dependencias.
 La salida le dice al orquestador del build: "merge primero estos contratos; despues
 lanza N agentes con estas features a la vez; cuando ese lote mergee, lanza el
 siguiente".
+
+**Cuando corres**: en la planificacion inicial este calculo lo hace el script
+determinista `compute_execution_plan.py` (mismo contrato de salida); a vos te
+invocan para la **replanificacion** (conservar lotes en curso y resolver conflictos
+requiere juicio) o como fallback cuando no hay Python disponible.
 
 ## Entradas
 

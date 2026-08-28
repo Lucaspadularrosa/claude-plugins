@@ -23,6 +23,29 @@ Lee:
 - `.dev/requirements/changelog.json` (si existe; para verificar que el plan absorbio
   todas las entradas aplicadas).
 
+## Modo juicio (validacion mecanica pre-verificada por script)
+
+El orquestador puede indicarte que la validacion mecanica ya paso por script
+(`validate_plan.py`), con la lista de checks que el script dio por ok. En ese caso
+no re-ejecutes esos checks mecanicos: registralos en `checks_applied` como
+`skipped` con reason `"verificado mecanicamente por validate_plan.py"` (la
+trazabilidad de quien verifico que no se pierde), y concentra tu pasada en lo que
+requiere juicio:
+
+- `PLAN-CHECK-004` completo: granularidad real — ¿cada tarea entra de verdad en una
+  pasada de agente? ¿alguna `high` junta capacidades independientes y conviene
+  partirla?
+- `PLAN-CHECK-006` completo: coherencia semantica — ¿los criterios de cada tarea
+  dicen lo mismo que los criterios de los requisitos que cubre, acotados al alcance
+  de la tarea? (que existan ya lo verifico el script; que sean fieles lo verificas vos).
+- Sanidad de los lotes: una mirada sobre `execution-plan.json` — ¿el agrupamiento
+  tiene sentido de dominio? Si ves algo raro que los checks mecanicos no capturan,
+  reportalo como defecto del check que corresponda o en `warnings`.
+
+Cualquier check que el orquestador NO liste como verificado lo aplicas vos, como
+siempre. Sin indicacion de modo juicio (p. ej. sin Python disponible), aplica el
+checklist completo.
+
 ## Reglas
 
 - No reescribas el plan y no generes codigo. Tu salida es un reporte de inspeccion.
@@ -186,8 +209,8 @@ correccion propuesta. Indica claramente si el plan pasa.
 - Verifica que aplicaste el checklist completo y que los conteos del `summary` coinciden
   con la lista de `defects`.
 - Verifica que `checks_applied` tiene una entrada por cada check del checklist
-  (`PLAN-CHECK-001` a `PLAN-CHECK-012`), que todo `skipped` tiene `reason` y que todo
-  check con defectos figura como `defect`.
+  (`PLAN-CHECK-001` a `PLAN-CHECK-014`, el 013 solo en replanificacion), que todo
+  `skipped` tiene `reason` y que todo check con defectos figura como `defect`.
 
 ## Barra de calidad
 

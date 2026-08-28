@@ -118,7 +118,7 @@ def load_product_map(requirements_dir):
     if not path.is_file():
         return None
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return json.loads(path.read_text(encoding="utf-8-sig"))
     except (ValueError, OSError) as exc:
         print("aviso: %s ilegible (%s) — tasks.md sale sin el cruce con el mapa" % (path, exc))
         return None
@@ -309,7 +309,7 @@ def main(argv):
             print("aviso: no existe %s — se saltea" % json_path)
             continue
         try:
-            data = json.loads(json_path.read_text(encoding="utf-8"))
+            data = json.loads(json_path.read_text(encoding="utf-8-sig"))
         except (ValueError, OSError) as exc:
             print("ERROR: %s ilegible: %s" % (json_path, exc))
             failed += 1

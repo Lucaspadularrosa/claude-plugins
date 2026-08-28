@@ -27,15 +27,19 @@ Segui el modo REPLANIFICACION de la skill `planning-pipeline`:
 6. Corre `execution-planning` en modo replanificacion: recalcula los lotes solo del
    trabajo restante (lo `done` queda fuera del grafo, lo `in_progress` conserva su
    lote).
-7. Corre `plan-inspection` y su lazo de correccion (tope: 3 pasadas; si no pasa,
+7. Corre la validacion mecanica por script (`validate_plan.py --previa <tasks previo>
+   --afectadas <FG-xx...>`, que activa el invariante PLAN-CHECK-013) hasta verde, y
+   despues `plan-inspection` en modo juicio con su lazo (tope: 3 pasadas; si no pasa,
    mostrame los defectos remanentes y decido yo). Indicale que es replanificacion y
-   pasale la version previa de `tasks.json` (referencia git o ruta) para el
-   invariante de replanificacion (PLAN-CHECK-013).
-8. Corre `feature-brief` solo para las features afectadas, marcando que cambio.
+   pasale la version previa de `tasks.json` (referencia git o ruta).
+8. Regenera los briefs solo de las features afectadas, con el mecanismo del Paso 4 de
+   la skill: tajadas (`slice_brief_context.py --features ...`), un `feature-brief`
+   por feature en paralelo marcando que cambio, y el linter
+   (`validate_plan.py --briefs`).
 9. Al final: si algun agente reporto un delta (`*.delta.json`), mergealo al canonico,
    verifica el resultado y borralo antes de cerrar — no pueden quedar archivos
-   `*delta*`, `*patch*` ni `_*` en `.dev/plan/` ni `.dev/requirements/`; el layout es
-   cerrado. Sincroniza `progress.json.plan_ref` (tasks_version y
+   `*delta*`, `*patch*` ni `_*` en `.dev/plan/` ni `.dev/requirements/`, ni la
+   carpeta temporal `.dev/plan/.brief-context/`; el layout es cerrado. Sincroniza `progress.json.plan_ref` (tasks_version y
    applied_changelog_ids) con el `tasks.json` recien emitido. Despues el resumen de
    que se agrego/modifico/cancelo, los nuevos lotes
    del trabajo restante, el paralelismo resultante y los `applied_changelog_ids`

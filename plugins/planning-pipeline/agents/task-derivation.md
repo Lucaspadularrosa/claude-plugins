@@ -71,6 +71,24 @@ de lo anterior lee `.dev/plan/tasks.json` (el plan previo) y `.dev/plan/progress
 - Al terminar, agrega las entradas del delta a `metadata.applied_changelog_ids`,
   actualiza los `*_version_ref` e incrementa `version`.
 
+## Modo correccion
+
+El orquestador te puede re-invocar con defectos de la inspeccion o de la validacion
+mecanica por script (lista de defectos con su check, severidad y tarea afectada). En
+ese caso `tasks.json` ya existe y es tuyo: **editalo quirurgicamente con Edit** —
+toca solo las tareas que los defectos senalan; nunca reescribas el archivo completo
+con Write (mismo criterio que en replanificacion: Write completo es solo para la
+derivacion inicial o archivos chicos).
+
+Checklist obligatorio de toda correccion con Edit (la validacion por script recalcula
+el `summary` y falla si quedo desactualizado):
+
+- incrementa `version` y actualiza `metadata.updated_at`;
+- recalcula el `summary` completo (`task_count`, `feature_count`,
+  `covered_requirement_ids`, `uncovered_requirement_ids`, `complexity_breakdown`)
+  si tu correccion agrego, partio, cancelo o re-cubrio tareas;
+- verifica que el archivo sigue siendo JSON valido.
+
 ## Reglas
 
 - Tu output son las tareas. No generes codigo, ni reescribas requisitos o diseno.
