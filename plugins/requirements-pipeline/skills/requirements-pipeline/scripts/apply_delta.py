@@ -100,8 +100,32 @@ def collect_max_ids(obj, maxes, widths):
     walk_strings(obj, see)
 
 
-def renumber(delta, maxes, widths):
-    """Asigna numeros globales a los ids provisionales del delta, en orden (tag, n)."""
+def collect_provisionals(obj, found):
+    """Junta los ids provisionales PREFIJO-tag#n que aparecen en cualquier string del arbol."""
+    def see(s):
+        for m in PROVISIONAL.finditer(s):
+            found.add((m.group(1), m.group(2), int(m.group(3))))
+        return s
+    walk_strings(obj, see)
+
+
+def build_mapping(found, maxes, widths):
+    """Asigna numeros globales a los provisionales, en orden (prefijo, tag, n), sobre los maximos dados."""
+    mapping = {}
+    for prefix, tag, n in sorted(found, key=lambda t: (t[0], t[1], t[2])):
+        maxes[prefix] = maxes.get(prefix, 0) + 1
+        width = widths.get(prefix) or DEFAULT_WIDTH.get(prefix, 3)
+        mapping["%s-%s#%d" % (prefix, tag, n)] = "%s-%0*d" % (prefix, width, maxes[prefix])
+    return mapping
+
+
+def renumber(delta, maxes, widths, mapping=None):
+    """Reescribe los ids provisionales del delta. Con `mapping` usa la tabla global ya calculada
+    (una sola secuencia para todos los canonicos de la corrida: las referencias cruzadas entre
+    deltas de distintos archivos reciben el mismo numero que su definicion)."""
+    if mapping is not None:
+        return walk_strings(delta, lambda s: PROVISIONAL.sub(lambda m: mapping.get(m.group(0), m.group(0)), s)), \
+            {k: v for k, v in mapping.items() if k in json.dumps(delta, ensure_ascii=False)}
     found = set()
 
     def see(s):
@@ -272,14 +296,23 @@ def apply(folder, only=None, dry_run=False, quiet=False):
             print("sin deltas en %s" % folder)
         return 0, {}
     report = {}
+    # Pasada global: los maximos se toman de TODOS los canonicos de la carpeta (un SCN stub que
+    # vive en product-map.json tambien reserva su numero) y la tabla de renumeracion es unica
+    # para toda la corrida (una referencia cruzada entre deltas de archivos distintos recibe el
+    # mismo numero que su definicion).
+    maxes, widths = {}, {}
+    for cj in sorted(folder.glob("*.json")):
+        if cj.name.endswith(".delta.json"):
+            continue
+        cdoc = load_optional(cj)
+        if isinstance(cdoc, dict):
+            collect_max_ids(cdoc, maxes, widths)
+    loaded = {}
+    found = set()
     for name, paths in sorted(groups.items()):
         canonical = folder / ("%s.json" % name)
         doc = load_optional(canonical)
-        created = doc is None
-        if created:
-            doc = json.loads(json.dumps(SKELETON.get(name, {"version": 0})))
-        current = int(doc.get("version") or 0)
-        deltas = []
+        current = int((doc or {}).get("version") or 0)
         for p in paths:
             try:
                 d = json.loads(p.read_text(encoding="utf-8-sig"))
@@ -291,16 +324,23 @@ def apply(folder, only=None, dry_run=False, quiet=False):
                 print("ERROR: %s tiene base_version %s pero %s esta en version %s — nada mergeado para %s"
                       % (p.name, base, canonical.name, current, name))
                 return 1, report
-            deltas.append((p, d))
-        maxes, widths = {}, {}
-        collect_max_ids(doc, maxes, widths)
+            collect_provisionals(d, found)
+            loaded.setdefault(name, []).append((p, d))
+    global_mapping = build_mapping(found, maxes, widths)
+    for name, paths in sorted(groups.items()):
+        canonical = folder / ("%s.json" % name)
+        doc = load_optional(canonical)
+        created = doc is None
+        if created:
+            doc = json.loads(json.dumps(SKELETON.get(name, {"version": 0})))
+        current = int(doc.get("version") or 0)
+        deltas = loaded[name]
         mapping_all = {}
         try:
             for p, d in deltas:
-                d, mapping = renumber(d, maxes, widths)
+                d, mapping = renumber(d, maxes, widths, global_mapping)
                 mapping_all.update(mapping)
                 doc = merge_one(doc, d)
-                collect_max_ids(d, maxes, widths)
         except DeltaError as exc:
             print("ERROR en %s: %s — nada mergeado para %s" % (name, exc, name))
             return 1, report
@@ -373,6 +413,31 @@ def self_test():
         check(doc["version"] == 4, "version sube una sola vez con dos deltas")
         check(doc["summary"]["total_scenarios"] == 4 and doc["summary"]["total_exceptions"] == 1, "summary recalculado")
         check(not list(tmp.glob("*.delta.json")), "deltas borrados")
+
+        # bug #2 (SIGEC-bench): el maximo se toma de TODOS los canonicos, no solo del destino
+        tmp2 = Path(tempfile.mkdtemp(prefix="apply-delta-"))
+        (tmp2 / "product-map.json").write_text(json.dumps({"version": 1, "features": [
+            {"id": "FG-01", "scenario_stubs": [{"id": "SCN-005"}]}]}), encoding="utf-8")
+        (tmp2 / "scenarios.json").write_text(json.dumps({"version": 1, "summary": {}, "scenarios": [{"id": "SCN-001", "episodes": [], "exceptions": []}]}), encoding="utf-8")
+        (tmp2 / "scenarios.FG-01.delta.json").write_text(json.dumps({"base_version": 1, "adds": {"scenarios": [
+            {"id": "SCN-FG01#1", "scenario_type": "future", "status": "active", "episodes": [], "exceptions": []}]}}), encoding="utf-8")
+        code2, rep2 = apply(tmp2, quiet=True)
+        new_ids = list(rep2.get("scenarios", {}).get("renumbered", {}).values())
+        check(code2 == 0 and new_ids == ["SCN-006"], "provisional no colisiona con stub SCN-005 de product-map (%s)" % new_ids)
+        shutil.rmtree(tmp2, ignore_errors=True)
+
+        # bug #1 (SIGEC-bench): referencia cruzada entre deltas de distintos canonicos
+        tmp3 = Path(tempfile.mkdtemp(prefix="apply-delta-"))
+        (tmp3 / "source-inventory.json").write_text(json.dumps({"version": 1, "summary": {}, "sections": [{"id": "SRC-SEC-001"}, {"id": "SRC-SEC-002"}]}), encoding="utf-8")
+        (tmp3 / "supporting-context.json").write_text(json.dumps({"version": 1, "items": []}), encoding="utf-8")
+        (tmp3 / "source-inventory.minuta.delta.json").write_text(json.dumps({"base_version": 1, "adds": {"sections": [
+            {"id": "SRC-SEC-minuta#1"}, {"id": "SRC-SEC-minuta#2"}]}}), encoding="utf-8")
+        (tmp3 / "supporting-context.minuta.delta.json").write_text(json.dumps({"base_version": 1, "adds": {"items": [
+            {"id": "CTX-minuta#1", "source_section_id": "SRC-SEC-minuta#2"}]}}), encoding="utf-8")
+        code3, rep3 = apply(tmp3, quiet=True)
+        ctx = json.loads((tmp3 / "supporting-context.json").read_text(encoding="utf-8"))["items"][0]
+        check(code3 == 0 and ctx["source_section_id"] == "SRC-SEC-004", "referencia cruzada renumerada con la secuencia del archivo que la define (%s)" % ctx.get("source_section_id"))
+        shutil.rmtree(tmp3, ignore_errors=True)
 
         (tmp / "requirements.delta.json").write_text(json.dumps({"base_version": 7, "adds": {}}), encoding="utf-8")
         code, _ = apply(tmp, quiet=True)

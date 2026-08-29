@@ -10,7 +10,9 @@ siempre contra `{raiz}`, con `--cwd <worktree>` cuando ejecutan comandos).
    PR anotado: eso es un **retome**, se reanudan desde sus commits `[T-xxx]`). Si la
    **ronda de contratos** esta pendiente, ejecutala primero: un `feature-implementer`
    con esas tareas (criterios en `tasks.json`; no hay brief) en `contracts/{ronda}`;
-   `verify.py`; `build-reviewer` **y** `security-gate` en la misma tanda; merge a la
+   `verify.py`; `build-reviewer` **y** `security-gate` en la misma tanda (la ronda no
+   tiene FG: sus veredictos, desvios y hallazgos usan el namespace `FG-00` y el nombre
+   `contracts-{ronda}`); merge a la
    rama de integracion (el unico merge directo del pipeline — si el repo exige PR,
    abrilo, avisa que bloquea y espera). `progress_update.py` con sus tareas `done`.
 2. **Perfil de stack** (convenciones). **Greenfield sin esqueleto**: construi UNA

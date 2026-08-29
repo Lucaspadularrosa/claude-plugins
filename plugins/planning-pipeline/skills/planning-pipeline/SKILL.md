@@ -109,6 +109,12 @@ summary. Si falla (parcial faltante, referencia irresoluble, feature_group
 incoherente), re-invoca **solo** el `task-derivation` de la feature que el error
 nombra, con el texto del error, y volve a mergear. No edites parciales a mano.
 
+**Tandas y limites de sesion**: si una Task de 1b termina sin reporte (error 429,
+limite de la sesion, timeout), su parcial no existe y `merge_tasks.py` lo va a
+nombrar: relanza **solo** esas features, de a 2 por tanda, hasta que todos los
+parciales esten. Nunca des por derivada una feature cuyo reporte se perdio, y no
+subas de 5 subagentes opus simultaneos en una misma tanda.
+
 ### Paso 2 - Plan de ejecucion y vistas (scripts, en una sola tanda)
 
 ```bash

@@ -8,7 +8,8 @@ Dos usos:
      python validate_verdict.py <veredicto.json> [--tipo review|gate]
    El tipo se infiere del directorio padre (`reviews/` -> review, `security/` -> gate)
    si no se indica. Verifica claves obligatorias, tipos, ids namespaced
-   (`FG-xx/FIND-nnn` / `FG-xx/SGATE-nnn`), que `summary` cuente lo que `findings`
+   (`FG-xx/FIND-nnn` / `FG-xx/SGATE-nnn`; la ronda de contratos usa el namespace
+   `FG-00`), que `summary` cuente lo que `findings`
    contiene y que `passed` sea coherente (true solo sin high/medium).
 
 2. Compuerta pre-PR de una feature:
