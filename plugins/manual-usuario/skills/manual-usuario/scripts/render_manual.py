@@ -19,20 +19,31 @@ blockquotes, cercas de codigo, hr, y en linea: **negrita**, *cursiva*, `codigo`,
 Solo stdlib, Python 3.8+. No modifica los .md.
 
 Uso:
-  python render_manual.py [carpeta-md] [--salida DIR] [--titulo "Nombre"] [--acento "#0a7d55"]
+  python render_manual.py [carpeta-md] [--salida DIR] [--titulo "Nombre" | --titulo-auto]
+                          [--acento "#0a7d55"] [--cobertura [.dev/plan/progress.json]]
+                          [--solo-cobertura] [--verbose]
   python render_manual.py --self-test
 
-  carpeta-md  por defecto .dev/manual (donde escribe el build-pipeline)
-  --salida    por defecto docs/manual (la publicacion, fuera de .dev)
-  index.html  sale de README.md (el indice derivado del build) si existe;
-              si no, se sintetiza desde el frontmatter de las guias.
+  carpeta-md      por defecto .dev/manual (donde escribe el build-pipeline)
+  --salida        por defecto docs/manual (la publicacion, fuera de .dev)
+  --titulo-auto   deriva el titulo de .dev/requirements/product-map.json
+                  (project.name) o, si no existe, del nombre de la carpeta del repo
+  --cobertura     cruza las guias (frontmatter `fg`/`feature`) contra las features de
+                  progress.json e imprime: features done sin guia, guias de features
+                  no done, features pendientes, y `cobertura: completa|parcial`
+  --solo-cobertura  imprime la cobertura y sale sin renderizar (exit 0 completa,
+                  exit 2 parcial): el orquestador decide sin leer ningun archivo
+  --verbose       lista cada pagina generada (por defecto solo el conteo)
+  index.html      sale de README.md (el indice derivado del build) si existe;
+                  si no, se sintetiza desde el frontmatter de las guias.
 
-Salida: paginas generadas y avisos (recursos externos neutralizados). Exit 1 solo
-ante errores de IO o self-test fallido.
+Salida: conteo de paginas, cobertura y avisos (recursos externos neutralizados).
+Exit 1 solo ante errores de IO o self-test fallido.
 """
 
 import argparse
 import html
+import json
 import os
 import re
 import sys
@@ -308,17 +319,96 @@ _PAGE = """<!doctype html>
 
 
 def build_page(titulo, producto, cuerpo, css, is_index, lang="es"):
-    nav = "" if is_index else '<a href="index.html">&larr; Índice del manual</a>'
+    nav = "" if is_index else '<a href="index.html">&larr; Indice del manual</a>'
     return _PAGE % {
         "titulo": html.escape(titulo), "producto": html.escape(producto),
         "css": css, "nav": nav, "cuerpo": cuerpo, "lang": lang,
     }
 
 
+# ----------------------------------------------------------- cobertura/titulo
+
+
+def guide_metas(src):
+    """Frontmatter (fg, feature, titulo, resumen) de cada guia, sin el README."""
+    metas = []
+    for page in sorted(p for p in Path(src).glob("*.md") if p.name.lower() != "readme.md"):
+        meta, _ = parse_frontmatter(page.read_text(encoding="utf-8"))
+        meta["_archivo"] = page.name
+        metas.append(meta)
+    return metas
+
+
+def coverage(src, progress_path):
+    """Cruce determinista guias <-> progress.json. Devuelve dict o None si no hay plan."""
+    prog = Path(progress_path)
+    if not prog.is_file():
+        return None
+    try:
+        data = json.loads(prog.read_text(encoding="utf-8"))
+    except ValueError:
+        return {"error": "progress.json ilegible"}
+    feats = data.get("features") or []
+    if isinstance(feats, dict):
+        feats = [dict(v, feature_id=k) for k, v in feats.items()]
+    by_id = {}
+    for f in feats:
+        if isinstance(f, dict) and f.get("feature_id"):
+            by_id[str(f["feature_id"])] = str(f.get("status", "pending"))
+    guides = {}
+    for m in guide_metas(src):
+        key = m.get("fg") or m.get("feature") or m["_archivo"]
+        guides[str(key)] = m["_archivo"]
+    done = sorted(k for k, st in by_id.items() if st == "done")
+    return {
+        "features_plan": len(by_id),
+        "features_done": len(done),
+        "guias": len(guides),
+        "done_sin_guia": [k for k in done if k not in guides],
+        "guias_no_done": sorted(g for g in guides if g in by_id and by_id[g] != "done"),
+        "guias_fuera_del_plan": sorted(g for g in guides if g not in by_id),
+        "pendientes": sorted(k for k, st in by_id.items() if st != "done"),
+    }
+
+
+def print_coverage(cov):
+    if cov is None:
+        print("cobertura: sin progress.json (proyecto fuera de la suite): chequeo salteado")
+        return 0
+    if "error" in cov:
+        print("cobertura: %s" % cov["error"])
+        return 1
+    completa = not (cov["done_sin_guia"] or cov["guias_no_done"] or cov["pendientes"])
+    print("cobertura: %s (plan %d features, %d done, %d guias)" % (
+        "completa" if completa else "parcial", cov["features_plan"],
+        cov["features_done"], cov["guias"]))
+    for label, key, hint in (
+            ("done sin guia", "done_sin_guia", "sugerir /documentar"),
+            ("guias de features no done", "guias_no_done", "trabajo sin mergear"),
+            ("guias fuera del plan", "guias_fuera_del_plan", ""),
+            ("features pendientes", "pendientes", "")):
+        if cov[key]:
+            print("  %s: %s%s" % (label, ", ".join(cov[key]), (" (%s)" % hint) if hint else ""))
+    return 0 if completa else 2
+
+
+def auto_title(root):
+    """project.name del product-map, o el nombre de la carpeta del repo."""
+    pm = Path(root) / ".dev" / "requirements" / "product-map.json"
+    if pm.is_file():
+        try:
+            name = (json.loads(pm.read_text(encoding="utf-8")).get("project") or {}).get("name")
+            if name:
+                return str(name)
+        except ValueError:
+            pass
+    return Path(root).resolve().name
+
+
 # --------------------------------------------------------------------- main
 
 
-def render_site(src_dir, out_dir, producto, acento):
+def render_site(src_dir, out_dir, producto, acento, verbose=False):
     src = Path(src_dir)
     if not src.is_dir():
         print("No existe la carpeta de guias: %s" % src)
@@ -347,7 +437,8 @@ def render_site(src_dir, out_dir, producto, acento):
         dest = out / (page.stem + ".html")
         dest.write_text(build_page(titulo, producto, cuerpo, css, is_index=False),
                         encoding="utf-8")
-        print("pagina: %s" % dest)
+        if verbose:
+            print("pagina: %s" % dest)
 
     if readme is not None:
         _, body = parse_frontmatter(readme.read_text(encoding="utf-8"))
@@ -397,6 +488,31 @@ def self_test():
         ('href="https://' not in out and "<img" not in out, "externos neutralizados"),
         (len([a for a in avisos if "externo" in a or "externa" in a]) == 2, "avisos de externos"),
     ]
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        man = root / ".dev" / "manual"
+        plan = root / ".dev" / "plan"
+        req = root / ".dev" / "requirements"
+        for d in (man, plan, req):
+            d.mkdir(parents=True)
+        (man / "alta.md").write_text("---\nfeature: alta\nfg: FG-01\ntitulo: Alta\n---\n# Alta\n")
+        (man / "baja.md").write_text("---\nfeature: baja\nfg: FG-03\ntitulo: Baja\n---\n# Baja\n")
+        (man / "README.md").write_text("# indice\n")
+        (plan / "progress.json").write_text(json.dumps({"features": [
+            {"feature_id": "FG-01", "status": "done"},
+            {"feature_id": "FG-02", "status": "done"},
+            {"feature_id": "FG-03", "status": "in_progress"}]}))
+        (req / "product-map.json").write_text(json.dumps({"project": {"name": "Club Sur"}}))
+        cov = coverage(man, plan / "progress.json")
+        checks += [
+            (cov["done_sin_guia"] == ["FG-02"], "cobertura: done sin guia"),
+            (cov["guias_no_done"] == ["FG-03"], "cobertura: guia de feature no done"),
+            (cov["pendientes"] == ["FG-03"], "cobertura: pendientes"),
+            (coverage(man, plan / "nada.json") is None, "cobertura: sin progress"),
+            (auto_title(root) == "Club Sur", "titulo-auto desde product-map"),
+            (auto_title(root / ".dev") == ".dev", "titulo-auto fallback repo"),
+        ]
     ok = True
     for passed, name in checks:
         print("%s %s" % ("ok " if passed else "FALLO", name))
@@ -413,11 +529,28 @@ def main(argv):
                     help="carpeta de salida (default: docs/manual)")
     ap.add_argument("--titulo", default="Manual de usuario", help="nombre del producto")
     ap.add_argument("--acento", default="#0a7d55", help="color de acento CSS")
+    ap.add_argument("--titulo-auto", action="store_true",
+                    help="titulo desde product-map.json (project.name) o el nombre del repo")
+    ap.add_argument("--cobertura", nargs="?", const=".dev/plan/progress.json", default=None,
+                    metavar="PROGRESS", help="cruza guias contra progress.json e imprime la cobertura")
+    ap.add_argument("--solo-cobertura", action="store_true",
+                    help="solo imprime la cobertura y sale (exit 2 si es parcial)")
+    ap.add_argument("--verbose", action="store_true", help="lista cada pagina generada")
     ap.add_argument("--self-test", action="store_true", help="corre el self-test y sale")
     args = ap.parse_args(argv)
     if args.self_test:
         return self_test()
-    return render_site(args.carpeta, args.salida, args.titulo, args.acento)
+    if args.cobertura or args.solo_cobertura:
+        rc = print_coverage(coverage(args.carpeta, args.cobertura or ".dev/plan/progress.json"))
+        if args.solo_cobertura:
+            return rc
+    titulo = args.titulo
+    if args.titulo_auto:
+        root = Path(args.carpeta).resolve().parent.parent if Path(args.carpeta).name == "manual" \
+            else Path(".")
+        titulo = auto_title(root)
+        print("titulo: %s" % titulo)
+    return render_site(args.carpeta, args.salida, titulo, args.acento, args.verbose)
 
 
 if __name__ == "__main__":

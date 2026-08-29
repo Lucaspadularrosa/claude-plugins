@@ -18,9 +18,14 @@ Que cosecha (si existe):
   .dev/audit/          hallazgos por dimension y reporte (señal/ruido si esta)
   git                  commits [T-xxx], merges, rango de fechas
 
+Ademas precalcula `signals`: la tabla fija de umbrales (metrica -> valor -> umbral
+-> pipeline sospechoso) ya disparada, para que el analista solo redacte y priorice.
+
 Determinista: mismo repo -> mismo output. Sin reloj: `generated_from` es la fecha
-mas nueva vista en los artefactos. Solo stdlib, Python 3.8+. Solo lectura sobre
-.dev/ y git; escribe unicamente en .dev/metrics/.
+mas nueva vista en los artefactos. Siempre imprime el resumen (`headline`) por
+stdout: el orquestador NO necesita abrir metrics.json para ver los numeros.
+Solo stdlib, Python 3.8+. Solo lectura sobre .dev/ y git; escribe unicamente en
+.dev/metrics/.
 
 Uso:
   python metrics_harvest.py [raiz-del-proyecto] [--salida DIR] [--export ARCHIVO.jsonl]
@@ -389,9 +394,58 @@ def collect(root):
             metrics[name] = data
     metrics["pipeline_versions"] = {k: sorted(v) for k, v in sorted(VERSIONS_SEEN.items())}
     metrics["generated_from"] = max(DATES_SEEN).isoformat() if DATES_SEEN else None
+    metrics["sample_size"] = {k: v for k, v in sample_size(metrics).items() if v}
+    metrics["signals"] = signals(metrics)
     if WARNINGS:
         metrics["warnings"] = list(WARNINGS)
     return metrics
+
+
+# Umbrales fijos de la suite: metrica -> (comparador, umbral, pipeline sospechoso, lectura).
+# Es la tabla que antes vivia en el prompt del analista; aca es un `if`, no juicio.
+SIGNAL_RULES = [
+    ("recovery.evidence_check.refuted_rate", ">=", 0.2, "recovery-pipeline/behavior-extraction",
+     "el prompt afirma mas de lo que el codigo sostiene"),
+    ("build.reviews.findings_per_feature", ">=", 3.0, "planning-pipeline/feature-brief | build-pipeline/feature-implementer",
+     "briefs flojos o implementer que no verifica criterios antes de entregar"),
+    ("build.reviews.avg_rounds_proxy", ">=", 2.0, "build-pipeline/feature-implementer",
+     "rondas de correccion altas: el implementer no cierra a la primera"),
+    ("build.security_gates.findings_per_feature", ">=", 1.0, "build-pipeline/stack-profiler",
+     "la base de seguridad del stack no esta llegando al implementer"),
+    ("audit.signal_ratio", "<=", 0.5, "audit-pipeline/bug-hunter | security-auditor | improvement-scout",
+     "muchos propuestos, pocos confirmados: dimensiones generando ruido"),
+    ("requirements.changelog.baseline_churn.churn_rate", ">=", 0.3, "requerimientos/stakeholder-questionnaire | lel-authoring",
+     "se baselinea antes de tiempo: la elicitacion no saca las dudas antes"),
+    ("build.reviews.tests_pass_rate", "<=", 0.8, "build-pipeline/feature-implementer",
+     "entregas con tests en rojo"),
+    ("recovery.owner_questions.answer_rate", "<=", 0.5, "recovery-pipeline/gap-analysis",
+     "el cuestionario al dueño no se esta respondiendo: preguntas poco accionables o demasiadas"),
+]
+
+
+def signals(metrics):
+    """Aplica SIGNAL_RULES sobre el JSON cosechado. Solo metricas presentes."""
+    out = []
+    for path, op, threshold, suspect, reading in SIGNAL_RULES:
+        value = g(metrics, *path.split("."))
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            continue
+        fired = value >= threshold if op == ">=" else value <= threshold
+        out.append({"metrica": path, "valor": value, "umbral": "%s %s" % (op, threshold),
+                    "disparada": fired, "sospechoso": suspect if fired else None,
+                    "lectura": reading if fired else None})
+    return out
+
+
+def sample_size(metrics):
+    """El n que acota cualquier conclusion (features revisadas, checks, etc.)."""
+    return {
+        "features_reviewed": g(metrics, "build", "reviews", "features"),
+        "evidence_checks": g(metrics, "recovery", "evidence_check", "checks"),
+        "features_baselined": g(metrics, "requirements", "changelog", "baseline_churn", "features_baselined"),
+        "audit_findings_proposed": sum((s.get("total") or 0)
+                                       for s in (g(metrics, "audit", "dimensions") or {}).values()),
+    }
 
 
 def headline(metrics):
@@ -409,6 +463,7 @@ def headline(metrics):
         "inspection_defects": sum(
             s.get("total_defects") or 0
             for s in (g(metrics, "requirements", "inspections") or {}).values()),
+        "signals_fired": [s["metrica"] for s in metrics.get("signals", []) if s["disparada"]],
     }
 
 
@@ -443,6 +498,13 @@ def render_html(metrics):
     if metrics.get("generated_from"):
         parts.append('<p>Datos al %s (fecha mas nueva vista en los artefactos).</p>'
                      % html.escape(metrics["generated_from"]))
+    fired = [x for x in metrics.get("signals", []) if x.get("disparada")]
+    if fired:
+        parts.append("<h2>señales disparadas</h2><ul>")
+        for x in fired:
+            parts.append("<li><b>%s</b> = %s (umbral %s) → %s: %s</li>" % tuple(
+                html.escape(str(x[k])) for k in ("metrica", "valor", "umbral", "sospechoso", "lectura")))
+        parts.append("</ul>")
     for section in ("requirements", "planning", "build", "recovery", "audit", "git",
                     "pipeline_versions"):
         data = metrics.get(section)
@@ -506,6 +568,13 @@ def self_test():
             hl["refuted_rate"] == 0.1 and hl["baseline_churn_rate"] == 0.5,
             "&lt;" not in page or "<script>" not in page,
             collect(root) == m,                                # determinista
+            any(x["metrica"] == "build.reviews.findings_per_feature" and x["disparada"]
+                for x in m["signals"]),                        # 3 hallazgos/feature dispara
+            any(x["metrica"] == "recovery.evidence_check.refuted_rate" and not x["disparada"]
+                for x in m["signals"]),                        # 0.1 no dispara
+            "build.reviews.findings_per_feature" in hl["signals_fired"],
+            m["sample_size"].get("features_reviewed") == 1,
+            "señales disparadas" in page,
         ]
         empty = collect(root / "nada")
         checks.append("requirements" not in empty)             # degradacion
@@ -534,6 +603,14 @@ def main():
     (out_dir / "metrics.html").write_text(render_html(metrics), encoding="utf-8")
     print(str(out_dir / "metrics.json"))
     print(str(out_dir / "metrics.html"))
+    print("resumen:")
+    for k, v in headline(metrics).items():
+        if v not in (None, [], {}):
+            print("  %s: %s" % (k, json.dumps(v, ensure_ascii=False)))
+    print("muestra: %s" % json.dumps(metrics.get("sample_size", {}), ensure_ascii=False))
+    for x in metrics.get("signals", []):
+        if x["disparada"]:
+            print("señal: %s=%s (umbral %s) -> %s" % (x["metrica"], x["valor"], x["umbral"], x["sospechoso"]))
     if args.export:
         exp = Path(args.export)
         exp.parent.mkdir(parents=True, exist_ok=True)

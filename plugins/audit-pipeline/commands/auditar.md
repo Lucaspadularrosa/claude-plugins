@@ -13,12 +13,14 @@ Segui la skill `audit-pipeline`:
    señales del recovery), si existe.
 2. Lanza los auditores de las dimensiones elegidas EN PARALELO: `bug-hunter`,
    `security-auditor`, `improvement-scout`. Solo lectura: nada se modifica.
-3. Verificacion adversarial: por cada hallazgo high/medium, lanza un
-   `finding-verifier` que intente refutarlo leyendo el codigo real. En la duda, se
-   descarta. Los low quedan como no verificados. Si hay mas de ~15 a verificar,
-   mostrame el conteo y confirmo el alcance antes de gastar.
-4. Consolida `.dev/audit/audit-report.{json,md}`: confirmados (con severidad ajustada
-   y evidencia), los que necesitan mi respuesta, y los descartados con su razon.
+3. Consolida con `dedupe_findings.py` (duplicados entre dimensiones, grupos por
+   archivo) y verifica: lo mecanico con `verify_mechanical.py`, lo demas con un
+   `finding-verifier` por grupo (opus si tiene algun high, sonnet si no). En la duda,
+   se descarta. Los low quedan sin verificar. Si hay mas de ~10 grupos, mostrame el
+   conteo y confirmo el alcance antes de gastar.
+4. Genera `.dev/audit/audit-report.{json,md}` con `render_audit_report.py` (no lo
+   redactes vos): confirmados con severidad ajustada, los que necesitan mi respuesta
+   y los descartados con su razon.
 5. Mostrame el resumen ejecutivo (lo mas grave primero) y ofreceme convertir los
    confirmados que elija en trabajo trazable: genera `.dev/audit/cr-input-{run}.md`
    con esos hallazgos completos y sugerime `/requerimientos:cambio` con esa ruta (y

@@ -1,6 +1,6 @@
 {
   "name": "metrics-pipeline",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "displayName": "Metrics Pipeline (mejora continua de la suite)",
   "description": "Cosecha a demanda las metricas de proceso de la suite sobre cualquier proyecto que la uso: un script determinista lee los artefactos que los pipelines ya dejaron (cero tokens, cero instrumentacion en los flujos, retroactivo) y un agente analista opcional produce el diagnostico de que mejorar en los pipelines. Con export a un JSONL central para comparar versiones del plugin entre proyectos.",
   "keywords": [

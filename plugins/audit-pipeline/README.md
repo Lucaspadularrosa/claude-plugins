@@ -60,12 +60,30 @@ audit-pipeline/
     bug-hunter.md            correctitud: logica rota, casos borde, estado
     security-auditor.md      seguridad defensiva: authz, inyeccion, secretos, exposicion
     improvement-scout.md     mejoras con retorno concreto, priorizadas por valor/esfuerzo
-    finding-verifier.md      el esceptico: intenta refutar cada hallazgo high/medium
-  skills/audit-pipeline/SKILL.md
+    finding-verifier.md      el esceptico: intenta refutar los hallazgos de un archivo
+  skills/audit-pipeline/
+    SKILL.md
+    scripts/dedupe_findings.py      fusiona duplicados entre dimensiones, grupos por archivo
+    scripts/verify_mechanical.py    verifica lo binario por asercion, sin agente
+    scripts/render_audit_report.py  findings + veredictos -> audit-report.{json,md}
   commands/auditar.md
   PIPELINE.md
   README.md
 ```
+
+## Economia de tokens
+
+- Los tres auditores reciben el inventario del recovery (si existe) como mapa y las
+  señales localizadas (`audit_signals`, `deferred_to_audit`) como punto de partida:
+  no redescubren el repo.
+- `dedupe_findings.py` fusiona lo que dos dimensiones encontraron sobre las mismas
+  lineas y agrupa la verificacion **por archivo**: un verificador lee el archivo una
+  vez y juzga todos los hallazgos que lo citan.
+- Modelo por grupo: `opus` si el grupo tiene algun `high`, `sonnet` si solo tiene
+  `medium`. Lo binario (un literal en una linea, un paquete en el lockfile) lo
+  verifica un script, no un agente.
+- El reporte lo escribe `render_audit_report.py` cruzando findings y veredictos: el
+  orquestador nunca carga los hallazgos completos en su contexto.
 
 ## Garantias
 

@@ -14,6 +14,8 @@ Artefactos que renderiza (los que existan en la carpeta):
   requirements.json     -> requirements.md
   data-model.json       -> data-model.md
   technical-design.json -> technical-design.md
+  lel-inspection.json / requirements-inspection.json / design-inspection.json -> .md
+  stakeholder-questions.json -> stakeholder-questions.md (con espacio de respuesta)
 
 Cada .md arranca con el encabezado de sincronia que verifican las inspecciones:
   > Derivado de `<archivo>.json` version N — no editar a mano.
@@ -22,6 +24,7 @@ Solo stdlib, Python 3.8+. No modifica los .json.
 
 Uso:
   python render_baseline_docs.py [carpeta] [--salida DIR] [--solo NOMBRE ...]
+  python render_baseline_docs.py --self-test
 
   carpeta   por defecto .dev/requirements (donde viven los .json canonicos)
   --salida  carpeta de salida (por defecto la misma carpeta de entrada)
@@ -544,6 +547,145 @@ def render_technical_design(data):
     return out
 
 
+# ------------------------------------------------------------ inspecciones
+
+
+def render_inspection(data, title, json_name):
+    out = header(title, data, json_name)
+    summary = data.get("summary", {}) or {}
+    out.append("**Resultado: %s**" % ("PASA" if data.get("passed") else "NO PASA"))
+    out.append("")
+    if data.get("database_paradigm"):
+        out.append("Paradigma de base de datos: %s (formas normales evaluadas: %s)." % (
+            data["database_paradigm"], "si" if summary.get("normal_form_checked") else "no"))
+        out.append("")
+    out.append("Defectos: %s (confirmados %s) — high %s, medium %s, low %s." % (
+        summary.get("total_defects", "?"), summary.get("confirmed_defects", "?"),
+        summary.get("high_severity", "?"), summary.get("medium_severity", "?"), summary.get("low_severity", "?")))
+    out.append("")
+    refs = [(k, v) for k, v in data.items() if k.endswith("_version_ref")]
+    if refs:
+        out.append("_Inspecciona: %s_" % ", ".join("%s=%s" % (k.replace("_version_ref", ""), v) for k, v in refs))
+        out.append("")
+    unc = summary.get("uncovered_scenario_ids") or []
+    if unc:
+        out.append("Escenarios sin cubrir: %s" % ids(unc))
+        out.append("")
+    defects = data.get("defects", []) or []
+    if defects:
+        out.append("## Defectos")
+        out.append("")
+        out.append("| Id | Check | Severidad | Confirmado | Objetivo | Descripcion | Correccion propuesta |")
+        out.append("|---|---|---|---|---|---|---|")
+        for d in defects:
+            target = d.get("target_id") or d.get("symbol_id") or ""
+            out.append("| %s | %s | %s | %s | %s | %s | %s |" % (
+                cell(d.get("id")), cell(d.get("check_id")), cell(d.get("severity")),
+                "si" if d.get("confirmed") else "no", cell(target), cell(d.get("description")),
+                cell(d.get("proposed_correction", ""))))
+        out.append("")
+        questions = [d for d in defects if d.get("stakeholder_question")]
+        if questions:
+            out.append("## Preguntas al stakeholder derivadas")
+            out.append("")
+            for d in questions:
+                out.append("- `%s`: %s" % (d.get("id", "?"), d["stakeholder_question"]))
+            out.append("")
+    checks = data.get("checks_applied", []) or []
+    if checks:
+        out.append("## Checks aplicados")
+        out.append("")
+        out.append("| Check | Resultado | Detalle |")
+        out.append("|---|---|---|")
+        for c in checks:
+            out.append("| %s | %s | %s |" % (cell(c.get("check_id")), cell(c.get("result")), cell(c.get("reason", ""))))
+        out.append("")
+    section_strings(out, "Suposiciones", data.get("assumptions"))
+    section_strings(out, "Avisos", data.get("warnings"))
+    return out
+
+
+def render_lel_inspection(data):
+    return render_inspection(data, "Inspeccion del LEL", "lel-inspection.json")
+
+
+def render_requirements_inspection(data):
+    return render_inspection(data, "Inspeccion de los requisitos", "requirements-inspection.json")
+
+
+def render_design_inspection(data):
+    return render_inspection(data, "Inspeccion del diseno", "design-inspection.json")
+
+
+# ------------------------------------------------------ stakeholder-questions
+
+
+def render_questionnaire(data):
+    out = header("Cuestionario para el stakeholder", data, "stakeholder-questions.json")
+    summary = data.get("summary", {}) or {}
+    out.append("Preguntas: %s (bloqueantes: %s). Roles: %s." % (
+        summary.get("total_questions", "?"), summary.get("blocking_questions", "?"),
+        ", ".join(summary.get("target_roles") or []) or "—"))
+    out.append("")
+    out.append("Responde debajo de cada pregunta (podes dejar en blanco las que no sepas). "
+               "Las marcadas **[bloqueante]** frenan la elaboracion hasta tener respuesta.")
+    out.append("")
+    questions = {q.get("id"): q for q in data.get("questions", []) or []}
+    placed = set()
+    sections = data.get("sections", []) or []
+    for sec in sections:
+        qids = [q for q in sec.get("question_ids") or [] if q in questions]
+        if not qids:
+            continue
+        out.append("## %s — %s" % (sec.get("id", "?"), sec.get("title", "")))
+        if sec.get("target_role"):
+            out.append("_Rol: %s_" % sec["target_role"])
+        if sec.get("objective"):
+            out.append("")
+            out.append(sec["objective"])
+        if any(questions[q].get("source_kind") == "nfr_checklist" for q in qids):
+            out.append("")
+            out.append("> Esta seccion es **opcional**: si no respondes, se asume lo indicado debajo de cada pregunta.")
+        out.append("")
+        for qid in qids:
+            _render_question(out, questions[qid])
+            placed.add(qid)
+    rest = [q for qid, q in questions.items() if qid not in placed]
+    if rest:
+        out.append("## Otras preguntas")
+        out.append("")
+        for q in rest:
+            _render_question(out, q)
+    section_strings(out, "Suposiciones", data.get("assumptions"))
+    section_strings(out, "Avisos", data.get("warnings"))
+    return out
+
+
+def _render_question(out, q):
+    flag = " **[bloqueante]**" if q.get("priority") == "high" else ""
+    out.append("### %s%s — %s" % (q.get("id", "?"), flag, q.get("question", "")))
+    bits = []
+    if q.get("priority"):
+        bits.append("prioridad %s" % q["priority"])
+    if q.get("expected_answer_type"):
+        bits.append("respuesta: %s" % q["expected_answer_type"])
+    if q.get("choices"):
+        bits.append("opciones: %s" % " / ".join(str(c) for c in q["choices"]))
+    if bits:
+        out.append("_%s_" % " | ".join(bits))
+    if q.get("rationale"):
+        out.append("")
+        out.append("Por que se pregunta: %s" % q["rationale"])
+    if q.get("default_assumption"):
+        out.append("")
+        out.append("> Si no respondes, asumimos: %s" % q["default_assumption"])
+    out.append("")
+    out.append("**Respuesta:**")
+    out.append("")
+    out.append("_(completar)_")
+    out.append("")
+
+
 # --------------------------------------------------------------------- main
 
 RENDERERS = {
@@ -553,10 +695,53 @@ RENDERERS = {
     "requirements": ("requirements.json", "requirements.md", render_requirements),
     "data-model": ("data-model.json", "data-model.md", render_data_model),
     "technical-design": ("technical-design.json", "technical-design.md", render_technical_design),
+    "lel-inspection": ("lel-inspection.json", "lel-inspection.md", render_lel_inspection),
+    "requirements-inspection": ("requirements-inspection.json", "requirements-inspection.md", render_requirements_inspection),
+    "design-inspection": ("design-inspection.json", "design-inspection.md", render_design_inspection),
+    "stakeholder-questions": ("stakeholder-questions.json", "stakeholder-questions.md", render_questionnaire),
 }
 
 
+def self_test():
+    import shutil
+    import tempfile
+    failures = 0
+    tmp = Path(tempfile.mkdtemp(prefix="render-baseline-"))
+    try:
+        (tmp / "requirements-inspection.json").write_text(json.dumps({
+            "version": 2, "passed": False, "requirements_version_ref": "4",
+            "summary": {"total_defects": 1, "confirmed_defects": 1, "high_severity": 1, "medium_severity": 0, "low_severity": 0},
+            "checks_applied": [{"check_id": "REQ-CHECK-001", "result": "defect"}],
+            "defects": [{"id": "DEF-001", "check_id": "REQ-CHECK-001", "target_id": "SCN-002", "severity": "high",
+                         "description": "sin cubrir | pipe", "proposed_correction": "agregar RF", "confirmed": True}]}), encoding="utf-8")
+        (tmp / "stakeholder-questions.json").write_text(json.dumps({
+            "version": 1, "summary": {"total_questions": 2, "blocking_questions": 1, "target_roles": ["negocio"]},
+            "sections": [{"id": "SEC-001", "title": "Dominio", "target_role": "negocio", "question_ids": ["QST-001"]},
+                         {"id": "SEC-002", "title": "No funcionales", "question_ids": ["QST-002"]}],
+            "questions": [{"id": "QST-001", "question": "Que es un socio?", "priority": "high", "source_kind": "defect"},
+                          {"id": "QST-002", "question": "Cuantos usuarios?", "priority": "medium", "source_kind": "nfr_checklist",
+                           "default_assumption": "menos de 100"}]}), encoding="utf-8")
+        code = main([str(tmp), "--solo", "requirements-inspection", "stakeholder-questions"])
+        insp = (tmp / "requirements-inspection.md").read_text(encoding="utf-8")
+        qst = (tmp / "stakeholder-questions.md").read_text(encoding="utf-8")
+        for cond, label in (
+            (code == 0, "render de inspeccion y cuestionario (exit 0)"),
+            ("Derivado de `requirements-inspection.json` version 2" in insp, "encabezado de sincronia de la inspeccion"),
+            ("NO PASA" in insp and "sin cubrir \\| pipe" in insp, "veredicto y celda escapada"),
+            ("[bloqueante]" in qst and "Si no respondes, asumimos: menos de 100" in qst, "cuestionario con bloqueante y default"),
+            ("opcional" in qst and qst.count("**Respuesta:**") == 2, "seccion NFR opcional y espacio de respuesta por pregunta"),
+        ):
+            print("self-test %s: %s" % ("ok" if cond else "FALLO", label))
+            failures += 0 if cond else 1
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    print("SELF-TEST: %d fallo(s)" % failures)
+    return 1 if failures else 0
+
+
 def main(argv):
+    if "--self-test" in argv:
+        return self_test()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("carpeta", nargs="?", default=".dev/requirements", help="carpeta con los .json canonicos (default: .dev/requirements)")
     ap.add_argument("--salida", default=None, help="carpeta de salida (default: la misma carpeta)")

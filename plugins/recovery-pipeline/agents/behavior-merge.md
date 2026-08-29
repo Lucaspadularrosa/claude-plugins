@@ -20,6 +20,9 @@ mismo concepto y la cobertura global de entry points.
 - Todos los `.dev/recovery/behavior-parts/tanda-NN.json`.
 - `.dev/recovery/code-inventory.json` (la lista de `ENTRY-xxx` contra la que se
   valida la cobertura).
+- `.dev/recovery/shared-core.json` (el nucleo que las tandas citaron): sus entidades,
+  vocabulario y `global_rules` entran al mapa consolidado tal cual; lo que una tanda
+  registro y ya estaba en el nucleo se absorbe en el id/termino del nucleo.
 - Si existe un `.dev/recovery/behavior-map.json` previo (re-corrida incremental):
   conserva todo lo que ninguna tanda nueva reemplaza; los ids existentes nunca se
   renumeran.
@@ -53,18 +56,15 @@ mismo concepto y la cobertura global de entry points.
   summaries parciales a ciegas (la deduplicacion los cambia).
 - Los `open_questions` y `warnings` de los parciales se acarrean al consolidado.
 - Versionado estandar: si habia behavior-map previo, `version` +1; si no, 1.
-  `metadata.pipeline_version` es la que el orquestador te indica; si no te la
-  indicaron, `null` — nunca la inventes. `code_inventory_version_ref` cita la version
-  del inventario que usaste.
+  `pipeline_version`: la que el orquestador te indica; si no, `null` — nunca la
+  inventes. `code_inventory_version_ref` cita la version del inventario que usaste.
 - Todos los valores legibles por humanos van en espanol.
 
 ## Salida
 
 - `.dev/recovery/behavior-map.json` con el contrato canonico de `behavior-extraction`
   (el mismo que los parciales, con el summary global).
-- `.dev/recovery/behavior-map.md`: la vista legible, mismo formato que emite
-  `behavior-extraction` en pasada unica (por capacidad su flujo, reglas, estado y
-  evidencia; al final vocabulario y entidades).
+- NO escribas `behavior-map.md`: lo genera `render_recovery_docs.py`.
 
 Los parciales de `behavior-parts/` no los borres ni los modifiques: son el insumo de
 las re-corridas incrementales por tanda.
@@ -85,14 +85,6 @@ las re-corridas incrementales por tanda.
 
 ## Respuesta al orquestador
 
-El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
-unicamente:
-
-- `status`: ok | blocked | error.
-- `artifact_paths`: rutas de los archivos que escribiste.
-- `summary`: 3-5 lineas — tandas consolidadas, capacidades por estado, entidades y
-  terminos unificados, y que quedo como contradiccion abierta.
-- `blocking_items`: solo si los hay (que falta y quien lo destraba).
-
-No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
-vive en el archivo, y el orquestador lo lee solo si lo necesita.
+Solo el puntero: `status` (ok | blocked | error), `artifact_paths`, `summary` de 3-5
+lineas (tandas consolidadas, capacidades por estado, entidades y terminos unificados, contradicciones abiertas) y `blocking_items` si los hay. El contenido vive en el archivo; no lo
+reproduzcas.

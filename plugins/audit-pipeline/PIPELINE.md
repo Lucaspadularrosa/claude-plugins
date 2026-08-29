@@ -18,13 +18,19 @@ contexto opcional: .dev/requirements/ (linea de base), .dev/build/stack-profile.
 [security-auditor]      -> .dev/audit/findings-security.json
 [improvement-scout]     -> .dev/audit/findings-improvements.json
         |
-        v  VERIFICACION ADVERSARIAL (en paralelo, por hallazgo high/medium)
-[finding-verifier] x N      cada uno intenta REFUTAR un hallazgo leyendo el codigo:
+        v  [dedupe_findings.py]  (script: fusiona duplicados, agrupa por archivo)
+.dev/audit/findings-merged.json + grupos de verificacion con model_hint
+        |
+        v  VERIFICACION (pipelineada: bugs+security apenas terminan, mejoras aparte)
+[verify_mechanical.py]      lo binario, por asercion, sin agente
+[finding-verifier] x grupo  un agente por ARCHIVO (opus si hay high, sonnet si no)
+                            intenta REFUTAR cada hallazgo leyendo el codigo:
                             guard rio arriba? framework ya mitiga? escenario
                             inalcanzable? codigo muerto? retorno irreal?
                             En la duda -> refutado.
+.dev/audit/verdicts/*.json  un veredicto por hallazgo
         |
-        v  [orquestador consolida]
+        v  [render_audit_report.py]  (script: cruza findings y veredictos)
 .dev/audit/audit-report.json + .md   confirmados (severidad ajustada) /
                                      necesitan respuesta humana /
                                      descartados con su razon / low sin verificar
@@ -42,9 +48,11 @@ contexto opcional: .dev/requirements/ (linea de base), .dev/build/stack-profile.
 | `bug-hunter` | Correctitud: logica rota, casos borde, estado, errores tragados, divergencia con requisitos | `agents/bug-hunter.md` |
 | `security-auditor` | Seguridad defensiva: authz/authn, inyeccion, secretos, validacion, exposicion de datos | `agents/security-auditor.md` |
 | `improvement-scout` | Mejoras con retorno: tests donde duele, duplicacion, rendimiento, deuda, simplificaciones | `agents/improvement-scout.md` |
-| `finding-verifier` | Esceptico profesional: un hallazgo por invocacion, veredicto confirmed/refuted/needs_human | `agents/finding-verifier.md` |
+| `finding-verifier` | Esceptico profesional: los hallazgos de un archivo por invocacion, un veredicto por id | `agents/finding-verifier.md` |
 
-La orquestacion vive en `skills/audit-pipeline/SKILL.md`.
+La orquestacion vive en `skills/audit-pipeline/SKILL.md`; la consolidacion, la
+verificacion mecanica y el reporte son scripts deterministas en
+`skills/audit-pipeline/scripts/`.
 
 ---
 
@@ -52,9 +60,12 @@ La orquestacion vive en `skills/audit-pipeline/SKILL.md`.
 
 - **Solo lectura**: la auditoria no corrige; correr tests existentes si, modificar
   archivos no.
-- **Verificacion adversarial obligatoria** para `high`/`medium`; en la duda el
-  hallazgo se descarta (queda en la seccion de descartados, con la razon, por
-  transparencia). Los `low` se reportan sin verificar.
+- **Verificacion obligatoria** para `high`/`medium`: adversarial por agente (un
+  verificador por archivo; opus si hay `high`, sonnet si no) o mecanica por script
+  para lo binario. En la duda el hallazgo se descarta (queda en descartados, con la
+  razon). Los `low` se reportan sin verificar.
+- **El orquestador no redacta**: `render_audit_report.py` cruza findings y veredictos;
+  el agente principal lee solo los `summary`.
 - **Seguridad defensiva**: vectores e impacto, no exploits; secretos señalados, nunca
   copiados al reporte.
 - **Con linea de base, audita contra ella**: divergencias codigo-requisito, permisos

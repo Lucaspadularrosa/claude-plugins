@@ -5,14 +5,9 @@ argument-hint: "[opcional: slug de una feature puntual; por defecto, todas las d
 
 Documenta retroactivamente: `$ARGUMENTS`
 
-Segui el modo DOCUMENTAR de la skill `build-pipeline`:
-
-1. Cruza `progress.json` contra `.dev/manual/` y decime que features `done` estan
-   sin guia (o limitate a la que te indique). Si no falta ninguna, decimelo y listo.
-2. Confirma conmigo la lista antes de arrancar.
-3. En una rama `docs/manual-retroactivo`, corre `user-docs-writer` en modo
-   retroactivo por cada feature (reconstruye desde los commits `[T-xxx]` y
-   documenta el codigo actual de la integracion), commit por guia.
-4. Best-effort: la que falle o no tenga superficie de usuario se anota y sigue.
-5. Regenera el indice del manual y abri UN PR con todo. Mostrame el resumen y
-   sugerime `/publicar-manual` si quiero el manual navegable.
+Segui el modo DOCUMENTAR de la skill `build-pipeline` (lee
+`${CLAUDE_PLUGIN_ROOT}/skills/build-pipeline/modes/documentar.md`). Resumen del
+contrato: el universo lo da `render_manual_index.py --solo-cobertura` (no leas
+progress ni guias); confirma la lista conmigo; una rama `docs/manual-retroactivo`
+con un `user-docs-writer` por feature lanzados en una tanda; indice regenerado por
+script y UN PR con todo.

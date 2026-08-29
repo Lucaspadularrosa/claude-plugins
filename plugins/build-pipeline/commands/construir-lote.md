@@ -5,32 +5,11 @@ argument-hint: "[opcional: BATCH-n; por defecto, el proximo lote desbloqueado]"
 
 Construi el lote en paralelo: `$ARGUMENTS`
 
-Segui el modo LOTE de la skill `build-pipeline`:
-
-1. Determina el lote (el indicado, o el primero con features pendientes o retomables
-   — `in_progress` sin PR, de una corrida cortada — y `unlocks_after` completo). Si
-   la ronda de contratos esta pendiente, ejecutala y mergeala primero, con review y
-   security-gate: bloquea todo lo demas.
-2. Asegura el perfil de stack y la base de seguridad (los emite `stack-profiler`);
-   resolve conmigo sus preguntas abiertas si las hay. Si el proyecto no tiene CI que
-   corra test y lint, bootstrapealo en la primera rama de la corrida (checks de PR
-   independientes del reporte de los agentes). En greenfield sin esqueleto,
-   construi una primera feature en secuencia antes de paralelizar.
-3. Prepara un git worktree por feature (limpiando restos de corridas anteriores y
-   corriendo el install del perfil en cada uno) y lanza los `feature-implementer`
-   **en paralelo**, cada uno en su worktree, en modo ejecucion (sin aprobacion de
-   plan: el brief auditado es el contrato).
-4. A medida que cada una termina, corre su `build-reviewer` y su `security-gate`;
-   hallazgos high/medium de cualquiera rebotan al implementador de esa feature en
-   modo correccion (tope: 3 rondas; si no pasa, queda bloqueada con su motivo en
-   `progress.json`). Un bloqueo en una feature no frena a las demas.
-5. Por cada feature que paso (review y gate en verde): corre su `user-docs-writer`
-   (guia de usuario `.dev/manual/{slug}.md` commiteada en la rama; best-effort,
-   nunca bloquea), y despues push, PR contra la rama de integracion, limpieza del
-   worktree y actualizacion de `progress.json`.
-6. Al final, resumen por feature (tareas, cierre por requisito, veredicto del review,
-   veredicto de seguridad, desvios del brief — con su `cr-input-{slug}.md` para
-   `/requerimientos:cambio` —, guia de usuario y PR), bloqueos y lo que el gate haya
-   derivado a `/auditar`, y el proximo paso (mergear PRs; cuando esten `done`, el
-   siguiente lote). Si los PRs mergearon en sesion, ofrece regenerar el indice del
-   manual (`.dev/manual/README.md`, derivado — convenciones de la skill).
+Segui el modo LOTE de la skill `build-pipeline` (lee
+`${CLAUDE_PLUGIN_ROOT}/skills/build-pipeline/modes/lote.md`). Resumen del contrato:
+ronda de contratos primero si esta pendiente; un worktree por feature;
+implementadores en paralelo por tandas de `max_parallel_degree`; cada feature entra a
+su tanda de review (reviewer + gate + docs, en paralelo) apenas termina su
+implementador, sin esperar a las demas; correccion por delta con tope de 3 rondas; un
+bloqueo no frena al resto; compuerta dura por script antes de cada PR; narracion
+dosificada durante el lote y resumen final con `render_batch_summary.py`.

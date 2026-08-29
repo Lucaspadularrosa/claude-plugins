@@ -12,39 +12,44 @@ crecieron). Entrega en dos tiempos: primero el **diagnostico** (siempre), despue
 ```
 codigo de la aplicacion          <- ENTRADA (no se modifica nada)
         |
-        v  [code-inventory]
-.dev/recovery/code-inventory.json     (stack, layout, modulos, entry points,
-                                       señales de salud, contradicciones con la doc)
+        v  [scan_repo.py]  (script: stack, layout, entry points EXACTOS, salud, git)
+        v  [code-inventory] (haiku: rellena solo lo semantico)
+.dev/recovery/code-inventory.json     (+ .md por script)
         |
-        v  [behavior-extraction]           app chica: una pasada
-        |                                  app grande: tandas PARALELAS por modulo
-        |                                  (behavior-parts/tanda-NN.json, rangos de
-        |                                  ids preasignados) + [behavior-merge]
-.dev/recovery/behavior-map.json       (capacidades observables con su flujo, reglas,
-                                       vocabulario, entidades; estado de implementacion
-                                       complete|partial|skeleton|dead; evidencia
-                                       archivo:linea)
+        v  [behavior-extraction]           <= 15 entry points: una pasada (opus)
+        |                                  > 15: nucleo compartido (sonnet,
+        |                                  shared-core.json) + tandas PARALELAS por
+        |                                  modulo que lo citan + [behavior-merge]
+.dev/recovery/behavior-map.json       (capacidades con flujo, reglas, vocabulario,
+                                       entidades; estado complete|partial|skeleton|
+                                       dead; evidencia archivo:linea; .md por script)
         |
-        v  [evidence-spot-check]
-.dev/recovery/evidence-check.json     (verificacion adversarial por muestreo de la
-                                       evidencia; lo refutado vuelve a
-                                       behavior-extraction en modo correccion, una
-                                       ronda)
+        v  [sample_capabilities.py] (script: <= 13 capacidades)
+        v  [evidence-spot-check] (haiku, sobre la muestra)
+.dev/recovery/evidence-check.json     (lo refutado vuelve a behavior-extraction en
+                                       modo correccion con sonnet, una ronda; no se
+                                       re-verifica: gap-analysis aplica "evidencia
+                                       refutada manda")
         |
-        v  [gap-analysis]
+        v  [slice_behavior_map.py] (script: proyeccion sin flujos)
+        v  [gap-analysis] (sonnet, sobre la tajada)
+        v  [render_recovery_docs.py + render_state_report.py]
 .dev/recovery/state-report.json/.md   (estado real por feature + huecos + señales
 .dev/recovery/state-report.html        para auditoria; el .html es el reporte
-.dev/recovery/owner-questions.md       compartible + cuestionario al dueño)
+.dev/recovery/owner-questions.json/.md compartible + cuestionario al dueño)
         |
         v  PAUSA con el dueño: responde en sesion o circula el cuestionario
         |  (respuestas -> owner-answers.md, el registro canonico)
         |
         v  OPT-IN: ¿reconstruir la linea de base?
-        |     si -> [baseline-reconstruction] + entrada REC-xxx en changelog.json
-        |           .dev/requirements/*  (mapa, LEL, escenarios, requisitos,
-        |            data-model, diseno - formato estandar de la suite; lo completo
-        |            baselined, lo parcial en stub)
-        |           + [gap-analysis, update] (completa los FG-xx del reporte)
+        |     si -> [baseline-reconstruction] en PARALELO por modo:
+        |             mecanica (sonnet): lel + data-model
+        |             juicio (opus): product-map + scenarios + requirements
+        |           despues cierre (sonnet): technical-design
+        |           + entrada REC-xxx en changelog.json
+        |           + [validate_baseline_refs.py] (referencias cruzadas, exit code)
+        |           + [backfill_feature_ids.py] (FG-xx del reporte por cruce de CAP;
+        |             gap-analysis solo si hubo grupos partidos/unidos)
         |     no -> el diagnostico queda completo; se puede reconstruir despues
         |
         v  CIERRE: estado + proximos pasos
@@ -57,16 +62,16 @@ codigo de la aplicacion          <- ENTRADA (no se modifica nada)
 
 | Agente | Rol | Definicion |
 |---|---|---|
-| `code-inventory` | Foto estructural por evidencia | `agents/code-inventory.md` |
-| `behavior-extraction` | Que hace la app, observablemente | `agents/behavior-extraction.md` |
-| `behavior-merge` | Consolida las tandas paralelas (solo apps grandes) | `agents/behavior-merge.md` |
-| `evidence-spot-check` | Verificacion adversarial de evidencia por muestreo | `agents/evidence-spot-check.md` |
-| `gap-analysis` | Estado real, huecos y cuestionario al dueño | `agents/gap-analysis.md` |
-| `baseline-reconstruction` | Emite la linea de base en formato `.dev/requirements/` (opt-in) | `agents/baseline-reconstruction.md` |
+| `code-inventory` (haiku) | Completa el esqueleto de `scan_repo.py` con lo semantico | `agents/code-inventory.md` |
+| `behavior-extraction` (opus; sonnet en nucleo y correccion) | Que hace la app, observablemente | `agents/behavior-extraction.md` |
+| `behavior-merge` (sonnet) | Consolida las tandas paralelas (solo apps grandes) | `agents/behavior-merge.md` |
+| `evidence-spot-check` (haiku) | Verificacion adversarial de la muestra | `agents/evidence-spot-check.md` |
+| `gap-analysis` (sonnet) | Estado real, huecos y cuestionario, sobre la tajada | `agents/gap-analysis.md` |
+| `baseline-reconstruction` (sonnet/opus/sonnet por modo) | Emite la linea de base en `.dev/requirements/` (opt-in) | `agents/baseline-reconstruction.md` |
 
-La orquestacion vive en `skills/recovery-pipeline/SKILL.md`. El reporte compartible
-lo genera `skills/recovery-pipeline/scripts/render_state_report.py` (determinista,
-offline, sin dependencias).
+La orquestacion vive en `skills/recovery-pipeline/SKILL.md`. Los scripts
+deterministas (esqueleto del inventario, muestra, tajada, renders, validacion y
+backfill) viven en `skills/recovery-pipeline/scripts/`; ningun agente escribe `.md`.
 
 ---
 

@@ -27,6 +27,12 @@ Checks mecanicos que cubre (mismos ids del checklist de plan-inspection):
   PLAN-CHECK-015 summary de tasks.json consistente con su contenido (red de
                  seguridad de las correcciones quirurgicas con Edit)
 
+Con --inyectar-checks fusiona sus resultados en `.dev/plan/plan-inspection.json`
+(escrito por `plan-inspection` en modo juicio con solo los checks de juicio): agrega
+una entrada por check mecanico a `checks_applied` (ok / defect / skipped con motivo
+"verificado mecanicamente por validate_plan.py"), suma sus defectos y recalcula el
+summary y `passed`. Asi el subagente no gasta output enumerando 14 checks.
+
 Con --briefs valida ademas los briefs de .dev/features/: nombre de archivo,
 encabezados obligatorios, toda tarea y todo requisito de la feature presentes, y
 todo criterio RF-xxx/AC-xxx de la feature mapeado o listado (un criterio sin dueno
@@ -36,7 +42,7 @@ Solo stdlib, Python 3.8+. No modifica nada.
 
 Uso:
   python validate_plan.py [raiz] [--briefs] [--previa TASKS_PREVIO.json]
-                          [--afectadas FG-01 FG-02] [--json]
+                          [--afectadas FG-01 FG-02] [--json] [--inyectar-checks]
   python validate_plan.py --self-test
 
 Exit 0: sin defectos high/medium (los low se listan). Exit 1: hay high/medium.
@@ -559,6 +565,19 @@ def self_test():
                 failures += 1
             else:
                 print("self-test ok (%s): %d defecto(s), exit %d" % (label, len(found), code))
+            if not break_it:
+                (tmp / ".dev" / "plan" / "plan-inspection.json").write_text(json.dumps({
+                    "version": 1, "summary": {}, "passed": False,
+                    "checks_applied": [{"check_id": "PLAN-CHECK-004", "result": "ok", "reason": "juicio"}],
+                    "defects": []}), encoding="utf-8")
+                rc = inject_checks(tmp, found)
+                inj = json.loads((tmp / ".dev" / "plan" / "plan-inspection.json").read_text(encoding="utf-8"))
+                ok_ids = {c["check_id"] for c in inj["checks_applied"]}
+                if rc != 0 or not inj["passed"] or "PLAN-CHECK-001" not in ok_ids or "PLAN-CHECK-004" not in ok_ids:
+                    print("SELF-TEST FALLO (inyectar checks): %s" % inj)
+                    failures += 1
+                else:
+                    print("self-test ok (inyectar checks: %d checks, passed)" % len(inj["checks_applied"]))
             if break_it:
                 got_checks = {d["check_id"] for d in found}
                 expected = {"PLAN-CHECK-001", "PLAN-CHECK-002", "PLAN-CHECK-015", "BRIEF-LINT"}
@@ -637,6 +656,55 @@ def run_checks(root, briefs, previa, afectadas, as_json, quiet=False):
     return (1 if blocking else 0), list(defects)
 
 
+def inject_checks(root, found):
+    """Fusiona los resultados mecanicos en plan-inspection.json (modo juicio)."""
+    path = root / ".dev" / "plan" / "plan-inspection.json"
+    if not path.is_file():
+        print("ERROR: no existe %s para inyectar los checks" % path)
+        return 1
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (ValueError, OSError) as exc:
+        print("ERROR: %s ilegible: %s" % (path, exc))
+        return 1
+    reason = "verificado mecanicamente por validate_plan.py"
+    applied = [c for c in doc.get("checks_applied") or [] if c.get("check_id") not in set(ALL_CHECKS) | {"PLAN-CHECK-013"}
+               or c.get("check_id") in ("PLAN-CHECK-004", "PLAN-CHECK-006", "PLAN-CHECK-012")]
+    judged = {c.get("check_id") for c in applied}
+    for c in ALL_CHECKS + ["PLAN-CHECK-013"]:
+        if c in judged:
+            continue
+        if c in checks_failed:
+            applied.append({"check_id": c, "result": "defect", "reason": reason})
+        elif c in checks_skipped:
+            applied.append({"check_id": c, "result": "skipped", "reason": "%s: %s" % (reason, checks_skipped[c])})
+        else:
+            applied.append({"check_id": c, "result": "ok", "reason": reason})
+    applied.sort(key=lambda c: str(c.get("check_id")))
+    defects_doc = [d for d in doc.get("defects") or [] if not str(d.get("id", "")).startswith("MEC-")]
+    for i, d in enumerate(found, 1):
+        defects_doc.append({
+            "id": "MEC-%03d" % i, "check_id": d["check_id"], "target_kind": "task", "target_id": d["target_id"],
+            "type": "discrepancy", "severity": d["severity"], "description": d["description"],
+            "evidence_refs": [d["target_id"]], "proposed_correction": "rebota a %s" % d["bounce"], "confirmed": True,
+        })
+    confirmed = [d for d in defects_doc if d.get("confirmed")]
+    doc["checks_applied"] = applied
+    doc["defects"] = defects_doc
+    summary = doc.get("summary") or {}
+    summary.update({
+        "total_defects": len(defects_doc), "confirmed_defects": len(confirmed),
+        "high_severity": sum(1 for d in defects_doc if d.get("severity") == "high"),
+        "medium_severity": sum(1 for d in defects_doc if d.get("severity") == "medium"),
+        "low_severity": sum(1 for d in defects_doc if d.get("severity") == "low"),
+    })
+    doc["summary"] = summary
+    doc["passed"] = not [d for d in confirmed if d.get("severity") in ("high", "medium")]
+    path.write_text(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print("inyectado: %s (%d checks, passed=%s)" % (path, len(applied), doc["passed"]))
+    return 0
+
+
 def main(argv):
     if "--self-test" in argv:
         return self_test()
@@ -646,8 +714,13 @@ def main(argv):
     ap.add_argument("--previa", default=None, help="tasks.json previo (activa PLAN-CHECK-013)")
     ap.add_argument("--afectadas", nargs="*", default=None, help="features afectadas por el delta (con --previa)")
     ap.add_argument("--json", action="store_true", help="salida JSON estructurada")
+    ap.add_argument("--inyectar-checks", action="store_true", help="fusionar los resultados en plan-inspection.json")
     args = ap.parse_args(argv)
-    code, _ = run_checks(Path(args.raiz).resolve(), args.briefs, args.previa, args.afectadas, args.json)
+    root = Path(args.raiz).resolve()
+    code, found = run_checks(root, args.briefs, args.previa, args.afectadas, args.json)
+    if args.inyectar_checks:
+        rc = inject_checks(root, found)
+        return rc or code
     return code
 
 

@@ -19,8 +19,9 @@ jobs:
         run: python scripts/validate.py
       - name: Self-test del verificador de artefactos
         run: python scripts/check-artifacts.py --self-test
-      - name: Self-test de los scripts del planning-pipeline
+      - name: Self-test de los scripts de la suite
         run: |
-          python plugins/planning-pipeline/skills/planning-pipeline/scripts/compute_execution_plan.py --self-test
-          python plugins/planning-pipeline/skills/planning-pipeline/scripts/validate_plan.py --self-test
-          python plugins/planning-pipeline/skills/planning-pipeline/scripts/slice_brief_context.py --self-test
+          set -e
+          for s in $(grep -l -- '--self-test' plugins/*/skills/*/scripts/*.py | sort); do
+            echo "== $s"; python "$s" --self-test
+          done

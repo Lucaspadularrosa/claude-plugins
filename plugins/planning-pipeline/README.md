@@ -26,18 +26,23 @@ planning-pipeline/
   .claude-plugin/
     plugin.json
   agents/
-    task-derivation.md       deriva tareas verticales dimensionadas para agentes
-    execution-planning.md    lotes en replanificacion (inicial: script determinista)
-    plan-inspection.md       inspeccion de juicio (lo mecanico lo valida un script)
-    feature-brief.md         emite el brief de una feature; N corren en paralelo
+    task-derivation.md       opus: mapa global (features, aristas, contratos) y
+                             derivacion de UNA feature desde su tajada, N en paralelo
+    task-patch.md            sonnet: aplica defectos sobre tasks.json con Edit
+    plan-inspection.md       sonnet: solo juicio (lo mecanico lo valida un script)
+    feature-brief.md         haiku: completa resumen y superficie OWASP del brief
+    execution-planning.md    sonnet: solo conflictos de replanificacion
   skills/
     planning-pipeline/
       SKILL.md               orquestacion del pipeline
       scripts/
-        compute_execution_plan.py   lotes paralelos por grafo (cero tokens)
-        validate_plan.py            checks mecanicos + linter de briefs (cero tokens)
-        slice_brief_context.py      tajada de contexto por feature para los briefs
-        render_plan_docs.py         vistas .md derivadas de los .json
+        slice_requirements_context.py  proyeccion --mapa y tajada por feature para derivar
+        merge_tasks.py                 esqueleto + parciales -> tasks.json (ids, deps, summary)
+        compute_execution_plan.py      lotes paralelos por grafo; --replan
+        validate_plan.py               checks mecanicos, linter de briefs, --inyectar-checks
+        slice_brief_context.py         tajada de contexto por feature para los briefs
+        render_brief.py                brief completo desde la tajada (marcadores LLM)
+        render_plan_docs.py            tasks.md, execution-plan.md, plan-inspection.md
   commands/
     planificar.md            slash command de entrada
     replanificar.md          actualiza el plan cuando los requisitos cambian
@@ -45,15 +50,35 @@ planning-pipeline/
   README.md
 ```
 
-### Etapas deterministas por script (v2.5)
+### Todo lo determinista es script (v2.6)
 
-Desde la 2.5.0, lo que es teoria de grafos pura no gasta tokens ni tiempo de modelo:
+Desde la 2.6.0 el modelo solo interviene donde hay juicio, y siempre sobre una
+tajada. **Python 3.8+ es requisito** (no hay camino sin scripts):
+
+- **Derivacion en dos fases**: `task-derivation` (opus) hace una pasada global sobre
+  la proyeccion compacta de `slice_requirements_context.py --mapa` (features, aristas
+  cross-feature, tareas-contrato) y despues una pasada **por feature en paralelo**
+  sobre su tajada; `merge_tasks.py` consolida los parciales (ids globales, dependencias
+  cross-feature a nivel requisito, summary). En replanificacion el merge conserva las
+  features no afectadas byte a byte y continua la numeracion.
+- **Correccion barata**: los defectos ya diagnosticados los aplica `task-patch`
+  (sonnet, Edit quirurgico); opus no vuelve a cargar la linea de base para corregir.
+- **Replanificacion por script**: `compute_execution_plan.py --replan` conserva lotes
+  en curso, saca lo construido del grafo, inserta lo nuevo por niveles y emite
+  ajustes `adjustment`/`groupable`; `execution-planning` solo interviene con
+  `CONFLICTO`s y las decisiones del usuario.
+- **Inspeccion sin relleno**: `plan-inspection` emite solo sus tres checks de juicio;
+  `validate_plan.py --inyectar-checks` completa los mecanicos, recalcula `passed` y
+  `render_plan_docs.py` escribe el `.md`. Las vistas se renderizan antes de validar.
+- **Briefs por script**: `render_brief.py` escribe el brief completo desde la tajada;
+  `feature-brief` (haiku) solo reemplaza dos marcadores (resumen y superficie OWASP).
+
+Lo que ya existia desde la 2.5:
 
 - **`compute_execution_plan.py`** arma la ronda de contratos, los lotes por niveles
   topologicos, `task_order`, metricas y warnings accionables directo de `tasks.json`.
   Fail-fast: ante un contrato roto corta con error explicito que rebota a
-  `task-derivation` (nunca adivina). El subagente `execution-planning` queda para la
-  replanificacion, que si requiere juicio.
+  `task-derivation` (nunca adivina).
 - **`validate_plan.py`** corre los PLAN-CHECK mecanicos (cobertura, huerfanos,
   ciclos, staleness, completitud y orden de lotes, metricas, sincronia de vistas,
   consistencia del summary) y con `--briefs` el linter de briefs. `plan-inspection`
@@ -62,7 +87,7 @@ Desde la 2.5.0, lo que es teoria de grafos pura no gasta tokens ni tiempo de mod
   los `feature-brief` corran **en paralelo** (uno por feature) leyendo cada uno un
   archivo chico en vez de la linea de base completa.
 
-Los tres tienen `--self-test` (corren en el CI del repo) y toleran BOM de Windows.
+Todos los scripts tienen `--self-test` (corren en el CI del repo) y toleran BOM de Windows.
 
 ## Instalacion
 
@@ -111,8 +136,8 @@ tarea -> requisito -> escenario -> episodio -> simbolo del LEL -> seccion del do
 
 Lo que hace al plan auditable: toda tarea traza a un requisito (sin huerfanos), todo
 requisito esta cubierto por una tarea, y el plan registra de que version de los requisitos
-se construyo, para detectar cuando quedo desactualizado. La etapa `plan-inspection`
-verifica todo eso.
+se construyo, para detectar cuando quedo desactualizado. `validate_plan.py` verifica
+todo eso por script; `plan-inspection` solo juzga lo que un script no puede.
 
 ## Salidas
 
@@ -145,9 +170,9 @@ Las claves del paralelismo:
   consumidor pasa a depender de la firma (`kind: "contract"`) en vez del codigo completo
   (`kind: "hard"`). Solo las dependencias `hard` bloquean paralelismo.
 - El script `compute_execution_plan.py` emite `.dev/plan/execution-plan.json` con la
-  ronda de contratos y los lotes (en replanificacion lo hace el subagente
-  `execution-planning`). `max_parallel_degree` dice cuantos agentes simultaneos
-  aprovecha el plan; `critical_path_length` cuantos turnos lleva ejecutarlo.
+  ronda de contratos y los lotes (tambien en replanificacion, con `--replan`).
+  `max_parallel_degree` dice cuantos agentes simultaneos aprovecha el plan;
+  `critical_path_length` cuantos turnos lleva ejecutarlo.
 - Cada `feature-brief` declara en que lote cae, con quien corre en paralelo y que tiene
   que estar mergeado antes de arrancar.
 
@@ -170,10 +195,12 @@ plan ni tocar lo construido:
    una **tarea de ajuste**, nunca se reescribe la historia); requisito deprecado ->
    tareas `pending` canceladas, y si habia trabajo construido encima queda como
    conflicto que decide el usuario.
-3. Los lotes se recalculan **solo para el trabajo restante**: las features terminadas
-   salen del grafo (sus dependencias cuentan como satisfechas), las que estan en curso
-   conservan su lote, y lo nuevo se inserta por niveles — incluso en paralelo con lo
-   que ya corre, si el grafo lo permite.
+3. Los lotes se recalculan **solo para el trabajo restante**, por script: las features
+   terminadas salen del grafo (sus dependencias cuentan como satisfechas), las que
+   estan en curso conservan su lote, y lo nuevo se inserta por niveles — incluso en
+   paralelo con lo que ya corre, si el grafo lo permite. Los conflictos que requieren
+   decision (una tarea nueva de una feature en curso que depende de trabajo no
+   mergeado) se presentan al usuario, nunca los resuelve un agente solo.
 4. Se regeneran solo los briefs de las features afectadas, citando que entrada del
    changelog las cambio.
 

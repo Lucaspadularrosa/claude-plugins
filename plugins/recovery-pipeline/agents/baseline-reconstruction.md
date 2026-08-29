@@ -1,7 +1,7 @@
 ---
 name: baseline-reconstruction
 model: opus
-description: Tercera etapa del pipeline de comprension. Reconstruye la linea de base de requisitos en formato .dev/requirements/ (mapa, LEL, escenarios, requisitos, modelo de datos, diseno) a partir del comportamiento extraido del codigo, con evidencia archivo:linea. La invoca la skill recovery-pipeline.
+description: Etapa opt-in del pipeline de comprension. Reconstruye la linea de base de requisitos en formato .dev/requirements/ a partir del comportamiento extraido del codigo, con evidencia archivo:linea, en tres pasadas por modo, mecanica (LEL y modelo de datos, sonnet), de juicio (mapa, escenarios y requisitos, opus) y de cierre (diseno tecnico, sonnet). La invoca la skill recovery-pipeline.
 tools: Read, Write, Edit
 ---
 
@@ -32,6 +32,33 @@ nacida de documentos: aca la evidencia apunta a `archivo:linea` del codigo.
   actualizar un artefacto grande ya existente usa Edit con ediciones puntuales, no
   reescribas el archivo entero con Write: una reescritura completa de un JSON de
   decenas de KB puede cortarse a mitad de emision y dejar el artefacto invalido.
+
+## Modos de invocacion (el orquestador te indica uno)
+
+Las pasadas **mecanica** y **de juicio** corren en paralelo; para que puedan citarse
+sin esperarse, los ids son **predecibles desde el behavior-map**:
+
+- `LEL-xxx` = posicion (1-based) del termino en `vocabulary` del behavior-map
+  (`shared-core` primero si existe, en su orden; despues el resto del mapa).
+- `ENT-xxx` = mismo numero que el `RENT-xxx` de origen.
+- `FG-xx` = posicion del `feature_state` en el state-report; `SCN-xxx` = posicion de
+  la capacidad `CAP-xxx` (mismo numero).
+
+Si hay artefactos previos en `.dev/requirements/`, los ids existentes mandan y los
+nuevos continuan la secuencia (avisalo en `warnings` si rompe la predictibilidad).
+
+- **Pasada mecanica** (sonnet): escribis SOLO `lel.json` y `data-model.json`. Es
+  mapeo campo por campo desde `vocabulary` y `data_entities`; en `data-model`,
+  `source_requirement_ids` queda `[]` (lo rellena la pasada de cierre).
+- **Pasada de juicio** (opus): escribis SOLO `product-map.json`, `scenarios.json` y
+  `requirements.json`, citando `LEL-xxx`/`ENT-xxx` predecibles. Cada feature del
+  mapa lleva `capability_refs: ["CAP-xxx"]` (extension valida; la usa
+  `backfill_feature_ids.py`).
+- **Pasada de cierre** (sonnet, cuando las dos anteriores terminaron): escribis
+  `technical-design.json` (necesita RF y FG definidos) y completas con Edit los
+  `source_requirement_ids` de `data-model.json`. Nada mas.
+- **Pasada de correccion** (sonnet): el orquestador te pasa la salida de
+  `validate_baseline_refs.py`; corregis SOLO las referencias listadas, con Edit.
 
 ## Reglas de mapeo
 
@@ -80,20 +107,17 @@ Reglas duras:
   requisitos y entidades (extension valida, ver la referencia). Lo dudoso es
   pregunta abierta, no afirmacion.
 - Ids nuevos continuan las secuencias existentes si hay artefactos previos.
-- Orden de escritura cuando introducis ids nuevos: primero el artefacto que los
-  define (p. ej. `requirements.json` para RF/RNF nuevos), despues los que los citan
-  (`technical-design.json`, `data-model.json`); asi ningun estado intermedio queda
-  con referencias colgadas.
+- El orden de escritura lo garantizan los modos: lo que cita RF/FG (`technical-design`,
+  `source_requirement_ids`) se escribe en la pasada de cierre, cuando ya existen.
 - No emitas `requirements-inspection` ni `design-inspection`: esos son de
   `requerimientos`; el orquestador puede correrlos despues sobre lo
   reconstruido.
 - Todos los valores legibles por humanos van en espanol.
 - Versionado estandar de la suite: `version` +1 por reescritura; `*_version_ref` citan
   la version del archivo referenciado.
-- `pipeline_version`: el orquestador te indica al invocarte la version del plugin;
-  estampala tal cual en cada JSON que escribas, en la misma posicion que usa el
-  contrato de `requerimientos` (en `metadata` si el artefacto la tiene; si no, en la
-  raiz). Si no te la indicaron, escribi `null` — nunca la inventes.
+- `pipeline_version`: la que el orquestador te indica, en cada JSON que escribas (en
+  `metadata` si el artefacto la tiene; si no, en la raiz); si no, `null` — nunca la
+  inventes.
 
 ## Salida
 
@@ -104,12 +128,11 @@ son vistas derivadas que el orquestador regenera por script al cierre.
 
 ## Antes de terminar
 
-- Verifica que cada JSON es valido y que las referencias cruzadas (FG, SCN, RF, SYM,
-  ENT, MOD) existen.
-- Verifica que toda capacidad del behavior-map quedo mapeada a una feature (o
-  justificada como dead).
-- Verifica que ningun requisito `active` salio de una capacidad `partial` o
-  `skeleton`.
+- Verifica que cada JSON que escribiste es valido. Las referencias cruzadas y la
+  regla "ningun `active` en feature stub" las valida `validate_baseline_refs.py`
+  (el orquestador lo corre); no las re-verifiques a mano.
+- Pasada de juicio: verifica que toda capacidad del behavior-map quedo mapeada a una
+  feature (o justificada como dead).
 
 ## Barra de calidad
 
@@ -120,15 +143,6 @@ son vistas derivadas que el orquestador regenera por script al cierre.
 
 ## Respuesta al orquestador
 
-Los archivos son el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
-unicamente:
-
-- `status`: ok | blocked | error.
-- `artifact_paths`: rutas de los archivos que escribiste.
-- `summary`: 3-5 lineas — features reconstruidas por estado, requisitos emitidos
-  (active/proposed), simbolos y entidades, y los datos de la entrada REC para el
-  changelog; las preguntas abiertas quedan para el analisis de huecos.
-- `blocking_items`: solo si los hay (que falta y quien lo destraba).
-
-No reproduzcas ni resumas en extenso el contenido de los artefactos en la conversacion:
-vive en los archivos, y el orquestador los lee solo si los necesita.
+Solo el puntero: `status` (ok | blocked | error), `artifact_paths`, `summary` de 3-5
+lineas (artefactos escritos por modo, features por estado o simbolos/entidades emitidos, y los datos de la entrada REC para el changelog) y `blocking_items` si los hay. El contenido vive en el archivo; no lo
+reproduzcas.

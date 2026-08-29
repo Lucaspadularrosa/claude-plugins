@@ -8,8 +8,9 @@ siempre desde cero: mismo input -> mismo .md, sin tokens de modelo, sin red, sin
 dependencias. Los agentes NO escriben estos .md; los cambios manuales se pierden.
 
 Artefactos que renderiza (los que existan en la carpeta):
-  tasks.json          -> tasks.md
-  execution-plan.json -> execution-plan.md
+  tasks.json           -> tasks.md
+  execution-plan.json  -> execution-plan.md
+  plan-inspection.json -> plan-inspection.md
 
 Cada .md arranca con el encabezado de sincronia que verifican las inspecciones:
   > Derivado de `<archivo>.json` version N — no editar a mano.
@@ -26,7 +27,7 @@ Uso:
 
   carpeta         por defecto .dev/plan (donde viven los .json canonicos)
   --salida        carpeta de salida (por defecto la misma carpeta)
-  --solo          renderizar solo estos artefactos (tasks, execution-plan)
+  --solo          renderizar solo estos artefactos (tasks, execution-plan, plan-inspection)
   --requirements  carpeta de la linea de base con product-map.json
                   (default: .dev/requirements; si falta, tasks.md sale sin el cruce)
 
@@ -278,9 +279,61 @@ def render_execution_plan(data):
 
 # --------------------------------------------------------------------- main
 
+# --------------------------------------------------------- plan-inspection.md
+
+
+def render_plan_inspection(data):
+    out = header("Inspeccion del plan", data, "plan-inspection.json")
+    summary = data.get("summary", {}) or {}
+    out.append("**Resultado: %s.**" % ("PASA" if data.get("passed") else "NO PASA"))
+    out.append("")
+    out.append("Defectos: %s (confirmados: %s) — high: %s, medium: %s, low: %s."
+               % (summary.get("total_defects", 0), summary.get("confirmed_defects", 0),
+                  summary.get("high_severity", 0), summary.get("medium_severity", 0), summary.get("low_severity", 0)))
+    if summary.get("uncovered_requirement_ids"):
+        out.append("Requisitos sin cubrir: %s." % ids(summary["uncovered_requirement_ids"]))
+    refs = [("tasks", data.get("tasks_version_ref")), ("execution-plan", data.get("execution_plan_version_ref")),
+            ("requirements", data.get("requirements_version_ref"))]
+    out.append("Versiones inspeccionadas: %s." % ", ".join("%s v%s" % r for r in refs if r[1]))
+    out.append("")
+    checks = data.get("checks_applied") or []
+    if checks:
+        out.append("## Checks aplicados")
+        out.append("")
+        out.append("| Check | Resultado | Motivo |")
+        out.append("|---|---|---|")
+        for c in checks:
+            out.append("| %s | %s | %s |" % (cell(c.get("check_id")), cell(c.get("result")), cell(c.get("reason", ""))))
+        out.append("")
+    defects = data.get("defects") or []
+    if defects:
+        out.append("## Defectos")
+        out.append("")
+        for d in defects:
+            out.append("### %s — %s [%s]%s" % (d.get("id"), d.get("check_id"), d.get("severity"),
+                                               "" if d.get("confirmed") else " (no confirmado)"))
+            out.append("")
+            out.append("Objetivo: `%s` (%s). Tipo: %s." % (d.get("target_id"), d.get("target_kind"), d.get("type")))
+            out.append("")
+            out.append(d.get("description", ""))
+            out.append("")
+            if d.get("evidence_refs"):
+                out.append("Evidencia: %s" % ids(d["evidence_refs"]))
+            if d.get("proposed_correction"):
+                out.append("Correccion propuesta: %s" % d["proposed_correction"])
+            out.append("")
+    else:
+        out.append("Sin defectos.")
+        out.append("")
+    section_strings(out, "Suposiciones", data.get("assumptions"))
+    section_strings(out, "Avisos", data.get("warnings"))
+    return out
+
+
 RENDERERS = {
     "tasks": ("tasks.json", "tasks.md", render_tasks),
     "execution-plan": ("execution-plan.json", "execution-plan.md", render_execution_plan),
+    "plan-inspection": ("plan-inspection.json", "plan-inspection.md", render_plan_inspection),
 }
 
 
