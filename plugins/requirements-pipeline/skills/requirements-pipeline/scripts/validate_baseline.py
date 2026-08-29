@@ -375,7 +375,11 @@ def check_design(folder, dm, td, reqs, lel):
             if rel.get("type") not in REL_TYPES:
                 defect("DB-CHECK-005", "high", relid, "cardinalidad invalida %r" % rel.get("type"), bounce)
             elif rel.get("type") == "many_to_many":
-                defect("DB-CHECK-006", "medium", relid, "many_to_many directo: resolver con una entidad intermedia", bounce)
+                # resuelta si declara la entidad intermedia (campo via/through/join_entity o "(via X)" en el nombre)
+                resolved = any(rel.get(k) for k in ("via", "through", "join_entity", "intermediate_entity")) \
+                    or "via " in str(rel.get("name", "")).lower()
+                if not resolved:
+                    defect("DB-CHECK-006", "medium", relid, "many_to_many directo: resolver con una entidad intermedia", bounce)
         meta = dm.get("metadata") or {}
         if reqs is not None and str(meta.get("requirements_version_ref")) != str(reqs.get("version")):
             defect("DB-CHECK-010", "high", "data-model.json/requirements_version_ref",
