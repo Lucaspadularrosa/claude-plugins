@@ -41,7 +41,7 @@ import re
 import sys
 from pathlib import Path
 
-DERIVED_HEADER = re.compile(r"Derivado de `(?P<json>[\w.-]+)` version (?P<version>\d+)")
+DERIVED_HEADER = re.compile(r"Derivado de `?(?P<json>[\w.-]+)`? version (?P<version>\d+)")
 
 LAYOUT = {
     "source-inventory.json", "lel-candidates.json", "supporting-context.json",
@@ -52,6 +52,7 @@ LAYOUT = {
     "requirements-inspection.json", "requirements-inspection.md",
     "data-model.json", "data-model.md", "technical-design.json", "technical-design.md",
     "design-inspection.json", "design-inspection.md",
+    "README.md",  # indice local que dejaron versiones anteriores del pipeline
 }
 DERIVED = ["lel", "product-map", "scenarios", "requirements", "data-model", "technical-design"]
 INSPECTIONS = {
@@ -90,7 +91,7 @@ def run(folder, inspections, corrida, as_json=False, quiet=False):
                 bad("archivo de trabajo sin mergear/borrar: %s" % p)
     for p in folder.iterdir():
         if p.is_dir():
-            if p.name not in ("sources", ".inc-context"):
+            if p.name not in ("sources", ".inc-context", "increments"):
                 bad("carpeta fuera del layout: %s" % p)
             continue
         if p.name not in LAYOUT:

@@ -62,7 +62,7 @@ import sys
 import unicodedata
 from pathlib import Path
 
-DERIVED_HEADER = re.compile(r"Derivado de `(?P<json>[\w.-]+)` version (?P<version>\d+)")
+DERIVED_HEADER = re.compile(r"Derivado de `?(?P<json>[\w.-]+)`? version (?P<version>\d+)")
 LEL_TYPES = {"sujeto", "objeto", "verbo", "estado"}
 PRIORITIES = {"high", "medium", "low"}
 EFFORTS = {"xs", "s", "m", "l", "xl"}
@@ -288,7 +288,8 @@ def check_requirements(folder, reqs, scenarios, lel, pmap):
     # 003 requirement_ids exactos
     for g in groups:
         declared = set(g.get("requirement_ids") or [])
-        real = {r.get("id") for r in items if r.get("feature_group") == g.get("id")}
+        # las reglas de negocio con feature_group tambien forman parte del contenido del grupo
+        real = {r.get("id") for r in items + (reqs.get("business_rules") or []) if r.get("feature_group") == g.get("id")}
         if declared != real:
             defect("REQ-CHECK-003", "medium", g.get("id", "?"),
                    "requirement_ids declara %s pero el contenido da %s" % (sorted(declared), sorted(real)), bounce)
@@ -324,7 +325,7 @@ def check_requirements(folder, reqs, scenarios, lel, pmap):
                 defect("REQ-CHECK-012", "medium", pbc.get("id", "?"), "cambio propuesto sobre lo baselineado sin resolver (falta la confirmacion del usuario)", "orquestador")
     # 013 mecanico
     for br in reqs.get("business_rules") or []:
-        if br.get("kind") not in BR_KINDS:
+        if "kind" in br and br.get("kind") not in BR_KINDS:  # sin kind: artefacto de una version anterior, lo evalua el modo juicio
             defect("REQ-CHECK-013", "medium", br.get("id", "?"), "kind invalido %r" % br.get("kind"), bounce)
         for ref in br.get("enforced_by") or []:
             rid, _, acid = str(ref).partition("/")
@@ -342,6 +343,8 @@ def check_requirements(folder, reqs, scenarios, lel, pmap):
 def check_design(folder, dm, td, reqs, lel):
     bounce = "technical-design"
     rids = {r.get("id") for r in req_items(reqs)} if reqs else set()
+    # las reglas de negocio (RN-xxx) tambien son citables desde el diseno
+    rids |= {br.get("id") for br in (reqs.get("business_rules") or [])} if reqs else set()
     gids = {g.get("id") for g in (reqs.get("feature_groups") or [])} if reqs else set()
     sym_ids = {s.get("id") for s in (lel.get("symbols") or [])} if lel else set()
     ent_ids = set()
