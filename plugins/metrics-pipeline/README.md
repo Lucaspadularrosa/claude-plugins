@@ -18,10 +18,14 @@ eventos**. Este plugin los cosecha a demanda:
   (commits `[T-xxx]`). Emite `.dev/metrics/metrics.json` + `metrics.html`
   (autocontenido, offline). Retroactivo: funciona sobre cualquier proyecto que ya
   uso la suite, sin re-correr nada.
-- **Analisis** (`metrics-analyst`): agente dedicado, opcional y explicito. Lee SOLO
-  el `metrics.json` ya digerido (nunca los artefactos crudos ni el codigo) y escribe
-  `analysis.md`: que señal apunta a que pipeline, que corregir, con honestidad sobre
-  el tamaño de la muestra.
+- **Señales** (`signals` en el JSON): la tabla de umbrales de la suite (metrica ->
+  umbral -> pipeline sospechoso) la aplica el script, no el modelo. El resumen, la
+  muestra y las señales disparadas salen por stdout: el orquestador nunca abre el
+  JSON.
+- **Analisis** (`metrics-analyst`, haiku): agente opcional y explicito. Lee SOLO el
+  `metrics.json` ya digerido y redacta `analysis.md`: prioriza las señales
+  disparadas, propone la correccion concreta en la suite, con honestidad sobre el
+  tamaño de la muestra.
 - **Export** (`--export ruta.jsonl`): apendea el registro compacto del proyecto a un
   JSONL central tuyo, fuera de los repos. Con varios proyectos acumulados, compara
   versiones del plugin: "¿bajo la tasa de refutados con recovery 2.0?".
@@ -37,6 +41,14 @@ eventos**. Este plugin los cosecha a demanda:
 | Churn de la baseline (CRs sobre lo baselineado, y a cuantos dias) | Si se baselinea antes de tiempo |
 | Defectos por tipo en las inspecciones | Reglas que faltan en los prompts autores |
 
+## Piezas
+
+| Pieza | Que hace | Tokens |
+|---|---|---|
+| `scripts/metrics_harvest.py` | Cosecha `.dev/*` + git -> `metrics.json` + `.html`; imprime resumen y señales | Cero |
+| `metrics-analyst` (agente, haiku) | Lee SOLO `metrics.json` y escribe `analysis.md` | Acotado, a demanda |
+| `--export` del script | Apendea el registro compacto al JSONL central | Cero |
+
 ## Uso
 
 ```
@@ -51,10 +63,10 @@ eventos**. Este plugin los cosecha a demanda:
 ```
 metrics-pipeline/
   .claude-plugin/plugin.json
-  agents/metrics-analyst.md      diagnostico sobre el metrics.json (opt-in)
+  agents/metrics-analyst.md      diagnostico sobre el metrics.json (opt-in, haiku)
   skills/metrics-pipeline/
     SKILL.md
-    scripts/metrics_harvest.py   la cosecha determinista (cero tokens)
+    scripts/metrics_harvest.py   la cosecha determinista (cero tokens; --self-test)
   commands/metricas.md
   README.md
 ```
@@ -65,3 +77,9 @@ Los lee a todos y no toca a ninguno: ni un paso ni un token agregado a sus flujo
 Si un diagnostico requiere que un artefacto guarde algo que hoy no guarda (p. ej. un
 historial de rondas), eso se propone como cambio de contrato al mantenedor — decision
 explicita, nunca instrumentacion silenciosa.
+
+## Cambios
+
+- **1.1.0**: el script imprime siempre el resumen, la muestra y las señales por
+  stdout (el modo `solo-datos` ya no requiere abrir el JSON); umbrales precalculados
+  en `signals`; analista en haiku, solo redaccion y priorizacion.

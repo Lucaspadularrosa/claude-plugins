@@ -10,80 +10,69 @@ progreso que retroalimenta la replanificacion.
 
 El plugin no tiene una linea de Next.js, Laravel, Django ni de ningun framework. Lo
 que un build necesita saber del proyecto se **descubre por evidencia** la primera vez
-(`stack-profiler`): manifiestos (`package.json`, `composer.json`, `pyproject.toml`,
-`go.mod`...), configs de test y lint, pipelines de CI, `CLAUDE.md` y el `stack[]` del
-diseno tecnico. El resultado es `.dev/build/stack-profile.json`: comandos exactos de
-test/lint/build, layout, convenciones y rama de integracion — validados cuando se
-puede, marcados como deducidos cuando no.
-
-Para soportar un stack nuevo no se modifica el plugin: se corre en el proyecto. En
-proyectos greenfield (sin codigo todavia), el perfil se deriva del diseno tecnico y la
-primera feature crea el esqueleto.
+(`stack-profiler`): manifiestos, configs de test y lint, pipelines de CI, `CLAUDE.md` y
+el `stack[]` del diseno tecnico. El resultado es `.dev/build/stack-profile.json`:
+comandos exactos de test/lint/build, layout, convenciones y rama de integracion —
+validados cuando se puede, marcados como deducidos cuando no. Para soportar un stack
+nuevo no se modifica el plugin: se corre en el proyecto.
 
 ## Seguridad por construccion (piso OWASP)
 
 En la misma pasada, `stack-profiler` deriva la **base de seguridad** del stack en
-`.dev/build/security-baseline.json`: la superficie de ataque del proyecto (web, API,
-CLI, libreria, servicio), las categorias de OWASP Top 10 que aplican, el mecanismo
-**nativo** del stack para cada una (el ORM que parametriza, el template que escapa, el
-middleware de authz, el hasher de passwords, el gestor de secretos) y el comando de
-audit de dependencias.
+`.dev/build/security-baseline.json`: superficie de ataque, categorias OWASP Top 10
+aplicables, el mecanismo **nativo** del stack para cada una y el comando de audit de
+dependencias. Es el unico artefacto de seguridad que leen el `feature-implementer`
+(codea con ese piso) y el `security-gate` (lo verifica antes del PR): la referencia
+larga `reference/owasp-baseline.md` la lee solo el profiler, una vez por proyecto.
+El gate es **prevencion**, no auditoria: corre en sonnet y el orquestador lo escala a
+opus solo cuando el diff toca control de acceso, criptografia o autenticacion. La
+auditoria profunda sigue siendo `audit-pipeline` (`/auditar`).
 
-Con eso, el `feature-implementer` codea con un **piso de seguridad desde el primer
-commit** — usando lo que el framework ya da, nunca crypto o escaping artesanal — y el
-`security-gate` lo verifica antes del PR: revisa el diff contra las categorias
-aplicables y corre el audit de dependencias. Es **prevencion**, no auditoria: el piso
-que evita los errores tipicos. La auditoria profunda adversarial sigue siendo
-`audit-pipeline` (`/auditar`), al que el gate deriva lo que lo excede.
+## Lo mecanico lo hacen scripts, no modelos
 
-Como todo en el plugin, es por evidencia y agnostico de stack: no hay un checklist de
-seguridad hardcodeado. La referencia de categorias y defensas es
-`reference/owasp-baseline.md`.
+Todo lo derivado, determinista o repetitivo del build vive en
+`skills/build-pipeline/scripts/` (stdlib, con `--self-test`):
+
+| Script | Reemplaza |
+|---|---|
+| `verify.py` | Correr test, lint y audit una vez por ronda y dejar `verification/{b}.json`; reviewer y gate lo leen en vez de re-correr la suite y parsear logs |
+| `progress_update.py` | Editar `progress.json` a mano en cada transicion |
+| `validate_verdict.py` | Validar el contrato de cada veredicto clave por clave, y la compuerta dura pre-PR (`--compuerta`) |
+| `render_cr_input.py` | Redactar `cr-input-{b}.md` desde los desvios del implementador y acumular `tech-debt.md` con dedupe |
+| `render_manual_index.py` | Regenerar el indice del manual y cruzar features `done` contra guias (`--cobertura`) |
+| `render_batch_summary.py` | El resumen final consolidado de un lote o una feature |
+
+Y las decisiones de orquestacion que ahorran contexto: el diff se captura **una
+vez** a `.dev/build/.diff/{b}.patch` y se pasa por ruta; la re-review recibe **solo
+el delta del fix** y los ids a cerrar; reviewer, gate y docs-writer se lanzan
+**siempre en una sola tanda paralela**; el modo plan del implementador corre en
+sonnet; y la skill esta partida por modo (`modes/feature.md`, `modes/lote.md`,
+`modes/documentar.md`) para cargar solo lo que la corrida usa.
 
 ## Documentacion de usuario final
 
-Cada feature que pasa las compuertas (review + gate) sale ademas con su **guia de
-usuario**: `.dev/manual/{slug}.md`, un Markdown escrito por el `user-docs-writer`
-(sonnet: redactar no necesita el modelo de las etapas de juicio) para una persona
-**no tecnica** — que hace la feature, paso a paso (derivado de los escenarios),
-roles, casos especiales. Habla el vocabulario del LEL y documenta el comportamiento
-**real construido** (desvios incluidos), no la spec. La guia viaja en el mismo PR de
-la feature; el indice del manual (`.dev/manual/README.md`) es un archivo derivado
-que regenera el orquestador — por eso los PRs paralelos de un lote nunca se pisan.
-Es best-effort: nunca bloquea un PR, y las features sin superficie de usuario
-(contratos internos, infraestructura) no generan guia.
-
-El Markdown es la **fuente de verdad** del manual y vive en `.dev/` como todo
-artefacto de la suite (renderiza en GitHub y se revisa en el PR). Lo unico de cara
-al usuario final es la publicacion: el plugin **`manual-usuario`**
-(`/publicar-manual`) lo convierte en un sitio HTML navegable en `docs/manual/`,
-fuera de `.dev/` — una publicacion derivada y determinista, separada del build.
-
-¿Proyecto que ya construyo features **antes** de que el pipeline documentara?
-**`/documentar`** genera las guias que faltan retroactivamente: detecta las
-features `done` sin guia, reconstruye lo construido desde sus commits `[T-xxx]`,
-documenta el codigo actual de la integracion y abre un PR con todas las guias y el
-indice regenerado.
+Cada feature sale ademas con su **guia de usuario**: `.dev/manual/{slug}.md`, un
+Markdown escrito por `user-docs-writer` para una persona no tecnica, en el
+vocabulario del LEL y fiel al comportamiento **real construido**. Se escribe en
+paralelo con el review (especulativa: si una correccion cambia comportamiento
+visible, se re-invoca) y viaja en el PR de la feature. Es best-effort: nunca bloquea.
+El indice del manual lo regenera `render_manual_index.py`; la publicacion HTML es
+`/publicar-manual` (plugin `manual-usuario`). `/documentar` genera retroactivamente
+las guias de features construidas antes de este paso.
 
 ## Modo gastada (el build te va a cargar)
 
-El orquestador del build habla en tono de **gastada rioplatense**: entre dato y
-dato te va a tirar comentarios graciosos, con doble sentido y un poco denigrantes
-(*"...la primera en caer seguramente sea FG-13, que es chica... como la tuya"*).
-Es solo en la conversacion: los artefactos — commits, PRs, veredictos, guias de
-usuario — salen siempre profesionales e impecables, y las malas noticias serias se
-comunican en serio. La gastada apunta al usuario o al propio agente, nunca a
-terceros ni a grupos. ¿No va con vos o estas en una demo? Decile "modo serio" y se
-apaga por el resto de la sesion.
+En los modos interactivos el orquestador habla en tono de **gastada rioplatense**:
+entre dato y dato te tira comentarios graciosos y un poco denigrantes. Solo en la
+conversacion — commits, PRs, veredictos y guias salen impecables — y las malas
+noticias serias van en serio. "Modo serio" lo apaga. El registro esta en
+`reference/tono.md`.
 
 ## Que necesitas antes
 
-La salida de `planning-pipeline` en el proyecto:
-- `.dev/features/*.md` (briefs) y `.dev/plan/execution-plan.json` (lotes).
-- `.dev/plan/progress.json` (si falta, se inicializa solo).
-
-`CLAUDE.md` con convenciones del equipo ayuda (el perfil lo respeta como fuente mas
-autoritativa), pero no es obligatorio.
+La salida de `planning-pipeline`: `.dev/features/*.md` y
+`.dev/plan/execution-plan.json` (`progress.json` se inicializa solo). `CLAUDE.md` con
+convenciones ayuda, no es obligatorio. Python 3 para los scripts.
 
 ## Uso
 
@@ -93,85 +82,55 @@ autoritativa), pero no es obligatorio.
 /documentar [feature]         guias de usuario retroactivas para features ya construidas
 ```
 
-### `/construir <feature>` — control fino
+`/construir` te muestra el plan de implementacion y espera tu OK; despues
+implementa tarea por tarea con commits `[T-xxx]`, verifica por script, pasa review y
+gate (lazo de correccion con tope de 3 rondas) y abre el PR con el resumen.
+`/construir-lote` hace lo mismo para todo un lote sin pausas: ronda de contratos
+primero si esta pendiente, un worktree por feature, implementadores en paralelo, y
+cada feature entra a su review apenas termina — un bloqueo no frena a las demas.
 
-1. Verifica que el lote de la feature este desbloqueado y que el perfil de stack
-   exista (lo genera si no).
-2. Te muestra el **plan de implementacion** (enfoque por tarea, archivos, como se
-   verifica cada criterio) y **espera tu aprobacion**.
-3. Implementa tarea por tarea en `feature/{slug}`: cada tarea se verifica contra sus
-   criterios Gherkin (tests con el framework del perfil) y se commitea con su
-   `[T-xxx]`.
-4. `build-reviewer` revisa el diff (cobertura del brief, scope, correctitud, tests
-   corridos de verdad) y `security-gate` revisa el piso de seguridad (OWASP + audit de
-   dependencias); los hallazgos de ambos rebotan al implementador en modo correccion
-   (tope: 3 rondas; lo no corregible se bloquea y se escala).
-5. `user-docs-writer` escribe la guia de usuario de la feature (`.dev/manual/{slug}.md`,
-   best-effort) y se commitea en la rama.
-6. PR contra la rama de integracion, con el resumen, los veredictos (review y seguridad)
-   y la guia de usuario.
-
-### `/construir-lote` — el ejecutor del plan
-
-Para correr el plan de corrido: toma el proximo lote desbloqueado, ejecuta y mergea
-primero la **ronda de contratos** si esta pendiente, crea un worktree por feature y
-lanza todos los implementadores **a la vez**. Sin pausas de aprobacion: el brief ya
-fue auditado por `plan-inspection`, y el control humano queda en los PRs (uno por
-feature). Un bloqueo en una feature no frena a las demas.
-
-Tambien podes repartir el lote entre **varias instancias de Claude Code** (una por PC
-o licencia): cada una corre `/construir <feature>` con una feature distinta del mismo
-lote. `progress.json` coordina el estado **solo si viaja por git**: el protocolo
-minimo es commitear y pushear el `progress.json` al marcar la feature `in_progress`
-(el claim), y pullear antes de la compuerta de lote y antes de marcar `done`. Si dos
-instancias reclaman la misma feature, vale el claim pusheado primero; la otra toma
-otra feature.
+Tambien podes repartir un lote entre **varias instancias** de Claude Code, cada una
+con `/construir <feature>`: `progress.json` coordina el estado si viaja por git
+(commitear y pushear el claim al marcar `in_progress`, pullear antes de la compuerta
+de lote y antes de marcar `done`).
 
 ## Estructura del plugin
 
 ```
 build-pipeline/
-  .claude-plugin/
-    plugin.json
+  .claude-plugin/plugin.json
   agents/
-    stack-profiler.md        descubre el stack y la base de seguridad (por evidencia)
-    feature-implementer.md   construye una feature (modo plan / modo ejecucion)
-    build-reviewer.md        revisa el diff contra el brief antes del PR
-    security-gate.md         revisa el piso de seguridad (OWASP) antes del PR
-    user-docs-writer.md      escribe la guia de usuario final (Markdown)
-  skills/
-    build-pipeline/
-      SKILL.md               orquestacion de los dos modos
-  commands/
-    construir.md             /construir <feature>
-    construir-lote.md        /construir-lote [BATCH-n]
-    documentar.md            /documentar [feature] (guias retroactivas)
+    stack-profiler.md        perfil de stack + base de seguridad (por evidencia; modo parcial)
+    feature-implementer.md   construye una feature (plan en sonnet / ejecucion / correccion)
+    build-reviewer.md        revisa el diff contra el brief; lee verification/, no corre tests
+    security-gate.md         piso OWASP (sonnet; opus si toca A01/A02/A07)
+    user-docs-writer.md      guia de usuario (especulativa, best-effort)
+  skills/build-pipeline/
+    SKILL.md                 lo comun: convenciones, scripts, reglas, layout
+    modes/{feature,lote,documentar}.md   procedimiento por modo, cargado a demanda
+    scripts/*.py             verify, progress_update, validate_verdict, render_*
+  commands/                  /construir, /construir-lote, /documentar
   reference/
-    owasp-baseline.md        base de seguridad canonica (OWASP Top 10 2021)
-  PIPELINE.md
-  README.md
+    owasp-baseline.md        referencia OWASP (la lee solo stack-profiler)
+    tono.md                  registro de la gastada (solo modos interactivos)
+  PIPELINE.md  README.md
 ```
 
 ## Garantias
 
-- **Nada sin verificar**: una tarea esta terminada cuando sus criterios Gherkin se
-  demostraron con tests verdes. El reviewer corre los tests; no le cree al reporte.
-- **Nada fuera del brief**: sin features extra, refactors oportunistas ni dependencias
-  que el diseno no pida. Tocar archivos de otra feature del lote es hallazgo `high`
-  (rompe el paralelismo).
-- **Piso de seguridad OWASP**: cada feature se codea con los mecanismos nativos del
-  stack contra las categorias OWASP aplicables, y el `security-gate` lo verifica (mas el
-  audit de dependencias) antes del PR. Veredictos en `.dev/build/security/`.
-- **Trazabilidad hasta el codigo**: commits `[T-xxx]` → tarea → requisito → escenario
-  → LEL → fuente. Reviews archivados en `.dev/build/reviews/`.
-- **Manual de usuario que crece con el producto**: cada feature con superficie de
-  usuario sale de su PR con su guia (`.dev/manual/`), en el vocabulario del LEL y
-  fiel a lo construido. Best-effort: nunca bloquea un PR.
-- **`progress.json` siempre al dia**: `done` = mergeado. Es lo que le permite a
-  `/replanificar` absorber cambios de requisitos sin pisar lo construido.
+- **Nada sin verificar**: una tarea termina cuando sus criterios Gherkin corren en
+  verde, y la suite la corre `verify.py` — ningun agente cree en un reporte, lee un
+  exit code.
+- **Nada fuera del brief**: sin features extra ni dependencias que el diseno no
+  pida; tocar otra feature del lote es hallazgo `high`.
+- **Piso de seguridad OWASP** verificado antes del PR; veredictos en
+  `.dev/build/security/`.
+- **Compuerta dura por script**: ningun PR se abre sin review y gate validos en
+  `passed: true` y de la misma rama.
+- **Trazabilidad hasta el codigo**: commits `[T-xxx]` → tarea → requisito →
+  escenario → LEL → fuente; desvios estructurados que terminan en un CR.
+- **`progress.json` siempre al dia y siempre valido**: `done` = mergeado; solo lo
+  escribe `progress_update.py`.
 
-Ver `PIPELINE.md` para el diagrama completo y las reglas de orquestacion.
-
-Nota historica: el plugin `feature-pipeline` (primera generacion, atado a
-Next.js/TypeScript y a `/features/`) fue retirado a `archive/`; `build-pipeline` es
-su reemplazo agnostico de stack.
+Ver `PIPELINE.md` para el diagrama y las reglas de orquestacion. El plugin
+`feature-pipeline` (primera generacion, atado a Next.js) esta en `archive/`.

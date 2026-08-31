@@ -90,8 +90,15 @@ requirements-pipeline/
   skills/
     requirements-pipeline/
       SKILL.md                   orquestacion de los 4 modos
-      scripts/
+      scripts/                   deterministas, solo stdlib, cero tokens
+        check_pipeline_version.py version cargada y avisos de desfase (transversal a la suite)
         extract_document.py      extrae texto de .docx / .pdf / .md / .txt
+        slice_increment_context.py una tajada de contexto por feature (+ indice compacto)
+        apply_delta.py           merge de deltas paralelos, renumeracion de ids, summary
+        validate_baseline.py     checks mecanicos de LEL / requisitos / diseno
+        render_baseline_docs.py  todos los .md derivados (artefactos, inspecciones, cuestionario)
+        check_closure.py         compuerta de cierre (layout, inspecciones, versiones, vistas)
+        render_index.py          indice .dev/README.md
   commands/
     requerimientos.md            modo completo (clasico)
     descubrir.md                 modo descubrir
@@ -100,6 +107,30 @@ requirements-pipeline/
   PIPELINE.md                    diagrama y reglas del flujo
   README.md                      este archivo
 ```
+
+## Como gasta tokens (y como no)
+
+El orquestador no carga artefactos de contenido en su contexto: los scripts hacen lo
+mecanico y los subagentes leen **tajadas** por feature, no la linea de base entera.
+
+- **Inspecciones en dos mitades**: `validate_baseline.py` corre los checks de
+  integridad (ids, enums, ciclos, cobertura, version refs, sincronia de vistas) en
+  milisegundos e itera hasta verde; recien entonces el subagente inspector corre en
+  **modo juicio** sobre lo que un script no puede evaluar. Las re-pasadas son
+  `focused`: solo los ids corregidos.
+- **Paralelismo por feature**: escenarios y requisitos se elaboran con un agente por
+  feature al mismo tiempo, cada uno con su tajada (`slice_increment_context.py`) y
+  escribiendo un delta con ids provisionales; `apply_delta.py` mergea, renumera y
+  recalcula. El intake tambien corre en paralelo por fuente.
+- **Etapas independientes en paralelo**: el mapa del producto no espera al
+  cuestionario; el diseno tecnico no espera al lazo de inspeccion de requisitos.
+- **Modelo por modo**: generacion en opus donde hay juicio (LEL inicial, escenarios,
+  requisitos, diseno, y el mapa del producto); correccion y actualizacion en sonnet;
+  inspeccion del LEL en haiku sobre los restos que deja el script.
+- **Vistas `.md` por script**, incluidas inspecciones y cuestionario, y siempre
+  **antes** de inspeccionar (asi la sincronia nunca sale en rojo por orden).
+- **Cierre por exit code**: `check_closure.py` verifica layout cerrado, inspecciones
+  en verde y vigentes, versiones que solo crecen y vistas sincronizadas.
 
 ## Instalacion
 

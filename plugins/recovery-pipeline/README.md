@@ -71,20 +71,42 @@ responderlo mas tarde y re-correr `/comprender`.
 recovery-pipeline/
   .claude-plugin/plugin.json
   agents/
-    code-inventory.md          foto estructural de la app (por evidencia)
-    behavior-extraction.md     que hace la app, con archivo:linea (pasada unica,
-                               tandas paralelas o modo correccion)
+    code-inventory.md          completa el esqueleto del inventario (haiku, solo lo semantico)
+    behavior-extraction.md     que hace la app, con archivo:linea (nucleo compartido,
+                               pasada unica, tandas paralelas o modo correccion)
     behavior-merge.md          consolida las tandas paralelas (solo apps grandes)
-    evidence-spot-check.md     verificacion adversarial de evidencia por muestreo
-    gap-analysis.md            estado real + huecos + cuestionario al dueño
-    baseline-reconstruction.md emite la linea de base en formato .dev/requirements/
+    evidence-spot-check.md     verificacion adversarial de la muestra (haiku)
+    gap-analysis.md            estado real + huecos + cuestionario, sobre la tajada
+    baseline-reconstruction.md linea de base en tres pasadas por modo (sonnet/opus/sonnet)
   skills/recovery-pipeline/
     SKILL.md
-    scripts/render_state_report.py   state-report.json -> HTML compartible
+    scripts/scan_repo.py               repo -> esqueleto del inventario (entry points exactos)
+    scripts/sample_capabilities.py     behavior-map -> muestra determinista del spot-check
+    scripts/slice_behavior_map.py      behavior-map -> proyeccion para gap-analysis
+    scripts/render_recovery_docs.py    los JSON -> code-inventory/behavior-map/state-report/owner-questions .md
+    scripts/render_state_report.py     state-report.json -> HTML compartible
+    scripts/validate_baseline_refs.py  referencias cruzadas de la linea de base (exit code)
+    scripts/backfill_feature_ids.py    completa los FG-xx del state-report por cruce de CAP
   commands/comprender.md
   PIPELINE.md
   README.md
 ```
+
+## Economia de tokens
+
+- Lo que es globs, greps y `git log` lo hace `scan_repo.py`; el agente de
+  inventario (haiku) solo rellena lo semantico.
+- Los agentes escriben **solo JSON**; los `.md` los regeneran los scripts. Nada del
+  diagnostico se emite dos veces por modelo.
+- El spot-check recibe la muestra ya cortada (<= 13 capacidades) y `gap-analysis`
+  una proyeccion sin flujos: nadie relee el behavior-map entero salvo la
+  reconstruccion.
+- En apps grandes, una pasada barata deriva el nucleo compartido (entidades,
+  vocabulario, guards) y las tandas lo citan en vez de re-derivarlo N veces.
+- Modelo por modo: opus solo para descubrir y juzgar; correccion con diagnostico
+  hecho y mapeo de campos en sonnet; verificacion sobre tajada en haiku.
+- La linea de base se valida y se engancha al reporte por script (exit code), sin
+  re-invocar agentes completos.
 
 ## Relacion con los otros plugins
 

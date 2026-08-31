@@ -5,35 +5,11 @@ argument-hint: <slug o nombre de la feature>
 
 Construi la feature: `$ARGUMENTS`
 
-Segui el modo FEATURE de la skill `build-pipeline`:
-
-1. Resolve la feature contra `.dev/features/` y verifica que su lote este
-   desbloqueado (lotes anteriores `done`, contratos mergeados). Si no, decime que
-   falta.
-2. Asegura el perfil de stack y la base de seguridad (`.dev/build/stack-profile.json` y
-   `.dev/build/security-baseline.json`); si es la primera vez o quedaron stale, corre
-   `stack-profiler` (emite ambos). Si el perfil tiene preguntas abiertas (comando de
-   test, rama de integracion), resolvelas conmigo antes de seguir. Si el proyecto no
-   tiene CI que corra test y lint, bootstrapealo en la primera rama que construyas:
-   los checks del PR verifican independiente del reporte del agente.
-3. Corre `feature-implementer` en modo plan y mostrame el plan de implementacion
-   (enfoque por tarea, archivos, como se verifica cada criterio). **Espera mi
-   aprobacion**; si pido cambios, ajustalo.
-4. Aprobado: crea la rama `feature/{slug}`, marca `in_progress` en `progress.json` y
-   corre `feature-implementer` en modo ejecucion. Tarea terminada y verificada =
-   tarea `done` en progress. Al final del implementador viene el cierre de feature:
-   cada criterio de los REQUISITOS del brief demostrado (no solo los de las tareas).
-5. Corre `build-reviewer` y `security-gate` (piso OWASP + audit de dependencias);
-   hallazgos high/medium de cualquiera rebotan al implementador en modo correccion,
-   con tope de 3 rondas: si no pasa, o algo es no corregible (p. ej. vulnerabilidad
-   de dependencia sin fix), bloquea y mostrame el caso.
-6. Con review y gate en verde, corre `user-docs-writer`: la guia de usuario de la
-   feature (`.dev/manual/{slug}.md`, Markdown en el vocabulario del LEL) se
-   commitea en la rama y viaja en el PR. Es best-effort: si falla o la feature no
-   tiene superficie de usuario, el PR sale igual. Reconcilia el indice del manual
-   (`.dev/manual/README.md`, derivado) segun las convenciones de la skill.
-7. Crea el PR contra la rama de integracion y mostrame el resumen (tareas, criterios
-   verificados, cierre por requisito, veredicto del review, veredicto de seguridad,
-   desvios del brief declarados — con su `cr-input-{slug}.md` y la sugerencia de
-   `/requerimientos:cambio` —, guia de usuario y PR). La feature queda `done` recien
-   cuando el PR mergea.
+Segui el modo FEATURE de la skill `build-pipeline` (lee
+`${CLAUDE_PLUGIN_ROOT}/skills/build-pipeline/modes/feature.md`). Resumen del
+contrato: plan de implementacion con mi aprobacion antes de tocar codigo; ejecucion
+tarea por tarea con commits `[T-xxx]`; verificacion por script (`verify.py`);
+`build-reviewer`, `security-gate` y `user-docs-writer` **siempre en una sola tanda
+paralela**; lazo de correccion con tope de 3 rondas por delta del fix; compuerta dura
+por script antes del PR; resumen final con `render_batch_summary.py`. `progress.json`
+solo via `progress_update.py`.

@@ -1,74 +1,61 @@
 ---
 name: manual-usuario
-description: Publica el manual de usuario que el build-pipeline escribe en .dev/manual/ (guias Markdown por feature + indice) como un sitio HTML estatico navegable en docs/manual/, offline y sin dependencias externas, con un render determinista por script. Usar cuando el usuario quiere publicar, exportar o entregar el manual de usuario en HTML, o regenerarlo porque hay guias nuevas.
+description: Publica el manual de usuario (.dev/manual/*.md del build-pipeline) como sitio HTML estatico offline en docs/manual/, con render determinista por script. Usar cuando el usuario quiere publicar, exportar o regenerar el manual de usuario en HTML.
 ---
 
 # Manual de usuario — publicacion HTML
 
-Esta skill convierte las guias Markdown de `.dev/manual/` (las escribe el
-`user-docs-writer` del `build-pipeline`; el indice `README.md` lo deriva su
-orquestador) en un **sitio HTML estatico** en `docs/manual/`: una pagina por guia +
-`index.html`, navegable offline, sin JavaScript ni requests externos. La fuente vive
-en `.dev/` como todo artefacto de la suite; la publicacion es lo unico que sale
-afuera.
-
-La conversion NO la hace un agente: la hace un script **determinista** (mismo
-Markdown -> mismo sitio, cero tokens). El script ademas escapa todo HTML embebido
-y neutraliza links e imagenes externas: el sitio publicado no puede ejecutar nada
-ni llamar afuera, venga lo que venga en los .md.
+Convierte las guias Markdown de `.dev/manual/` en un sitio HTML estatico en
+`docs/manual/` (una pagina por guia + `index.html`). Todo lo hace el script
+`render_manual.py`: cobertura, titulo y render son deterministas, cero tokens. Vos
+solo interpretas su stdout y hablas con el usuario (el por que del diseño y la
+seguridad del render estan en el README del plugin).
 
 ## Procedimiento
 
-1. Verifica que exista `.dev/manual/` con al menos una guia `.md`. Si no hay,
-   explicale al usuario que el manual lo va escribiendo el build
-   (`/construir` / `/construir-lote` generan una guia por feature) y no hay nada
-   que publicar todavia.
-2. **Cobertura del manual** (chequeo automatico; pregunta solo si hay huecos): si
-   existe `.dev/plan/progress.json`, cruza las features del plan contra las guias
-   presentes (el `feature` del frontmatter):
-   - Features `done` sin guia (docs best-effort que fallaron, o sin superficie de
-     usuario) y features del plan todavia no `done`: el manual saldria incompleto.
-   - Guias de features que NO estan `done` (estas publicando desde una rama con
-     trabajo sin mergear): el manual prometeria algo que la integracion aun no tiene.
-   Si todo cierra, segui sin preguntar. Si hay huecos, mostra el estado (que entra,
-   que falta y por que) y **pregunta si publicar igual** — un manual parcial es
-   valido (crece con el producto), pero se publica a sabiendas. Para las features
-   `done` sin guia (construidas antes de que el build documentara, o docs que
-   fallaron), sugeri **`/documentar`** (build-pipeline): genera las guias
-   retroactivamente desde los commits y el codigo actual. Sin `progress.json`
-   (proyecto fuera de la suite), saltea el chequeo y anotalo en el resumen.
-3. Determina el nombre del producto para el titulo del sitio: el que el usuario
-   diga, o derivalo de `.dev/requirements/product-map.json` si existe (si no, del
-   nombre del repo). Si el usuario pidio un color de marca, pasalo en `--acento`.
-4. Corre el render:
+1. **Cobertura** (sin leer ningun archivo):
 
 ```bash
-python "${CLAUDE_PLUGIN_ROOT}/skills/manual-usuario/scripts/render_manual.py" --titulo "{producto}"
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/manual-usuario/scripts/render_manual.py" --solo-cobertura
 ```
 
-   (Si `${CLAUDE_PLUGIN_ROOT}` no estuviera definida, ubica `render_manual.py`
-   dentro del plugin `manual-usuario` instalado. Defaults: lee `.dev/manual/` y
-   publica en `docs/manual/`. Flags: la carpeta de guias como argumento posicional,
-   `--salida DIR` para otra carpeta de salida, `--acento "#rrggbb"` para el color
-   de marca.)
+   (si `python3` no existe: `python`, despues `py -3`; si `${CLAUDE_PLUGIN_ROOT}`
+   no esta definida, ubica el script dentro del plugin `manual-usuario` instalado).
+   Imprime `cobertura: completa|parcial` y, si es parcial, que falta:
+   - `done sin guia`: docs best-effort que fallaron o features sin superficie de
+     usuario; sugeri **`/documentar`** (build-pipeline) para generarlas.
+   - `guias de features no done`: estas publicando desde una rama con trabajo sin
+     mergear.
+   - `features pendientes`: el plan no termino; el manual saldria incompleto.
+   - `sin progress.json`: proyecto fuera de la suite; anotalo y segui.
 
-5. Mostra el resultado: cuantas paginas se generaron, donde quedo `index.html`, la
-   cobertura (completo, o parcial y que quedo afuera), y
-   los **avisos** del script si los hubo (links o imagenes externas neutralizadas:
-   eso viene del Markdown y puede ameritar corregir la guia). Sugerile al usuario
-   abrir `docs/manual/index.html` en el navegador.
-6. Si la salida quedo dentro del repo y el usuario quiere versionarla, commit
-   aparte (`docs: manual de usuario publicado en HTML`); si el proyecto ya sirve
-   estaticos (GitHub Pages, carpeta public del stack), ofrece copiarla ahi —
-   preguntando antes, sin asumir el deploy.
+   Si no hay guias (`Sin guias .md`), explicale al usuario que el manual lo escribe el
+   build (`/construir` / `/construir-lote`) y no hay nada que publicar todavia.
+   Con cobertura completa (exit 0), segui sin preguntar. Con parcial (exit 2), mostra
+   el estado tal cual lo imprimio el script y **pregunta si publicar igual**: un
+   manual parcial es valido, pero se publica a sabiendas.
+
+2. **Render**:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/manual-usuario/scripts/render_manual.py" --titulo-auto
+```
+
+   `--titulo "Nombre"` solo si el usuario dijo el nombre del producto (si no,
+   `--titulo-auto` lo saca del product-map o del repo); `--acento "#rrggbb"` si pidio
+   color de marca; `--salida DIR` para otra carpeta. Por defecto lee `.dev/manual/`
+   y publica en `docs/manual/`.
+
+3. **Cierre**: mostra el conteo de paginas, donde quedo `index.html`, la cobertura
+   del paso 1 y los **avisos** del script (links o imagenes externas neutralizadas:
+   vienen del Markdown y pueden ameritar corregir la guia). Sugeri abrir
+   `docs/manual/index.html`. Si el usuario quiere versionarlo, commit aparte
+   (`docs: manual de usuario publicado en HTML`); si el proyecto sirve estaticos,
+   ofrece copiarlo ahi preguntando antes.
 
 ## Reglas
 
-- No edites los `.md` de `.dev/manual/` desde esta skill: la fuente de verdad es
-  del build-pipeline. Si una guia esta mal, el arreglo va por
-  `/construir` (correccion de la feature) o a mano en el PR de la guia — no en el
-  HTML generado.
-- No retoques el HTML generado a mano: es derivado; se regenera entero en cada
-  corrida. Cualquier ajuste estable va en el script o en las guias.
-- El render es fiel: si el script reporta avisos de recursos externos, mostralos —
-  son senal de que una guia rompio la regla de autocontencion.
+- No leas las guias ni `progress.json` ni `product-map.json`: el script ya los cruzo.
+- No edites los `.md` de `.dev/manual/` (son del build-pipeline) ni el HTML generado
+  (es derivado y se regenera entero). Ajustes estables van al script o a las guias.
+- El render es fiel: los avisos de recursos externos se muestran siempre.

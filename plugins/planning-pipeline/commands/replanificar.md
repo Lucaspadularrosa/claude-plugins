@@ -5,42 +5,14 @@ argument-hint: "[opcional: ids de changelog a aplicar, ej. INC-002 CR-001]"
 
 Replanifica el plan de ejecucion segun los cambios de requisitos: `$ARGUMENTS`
 
-Segui el modo REPLANIFICACION de la skill `planning-pipeline`:
+Segui el modo REPLANIFICACION de la skill `planning-pipeline`: delta contra
+`applied_changelog_ids`/`deferred_changelog_ids` (si pase ids, limita el delta a esos
+y posterga el resto avisandome), estado del build desde `progress.json` (si no existe,
+preguntame; no asumas), resumen previo, derivacion acotada a las features afectadas
+(un subagente por feature, merge por script), PAUSA por cada conflicto, lotes por
+script (`--replan`; solo con CONFLICTOs interviene `execution-planning` con mis
+decisiones), inspeccion con el invariante PLAN-CHECK-013, briefs solo de las
+afectadas y cierre con `progress.json` sincronizado y sin archivos temporales.
 
-1. Verifica que exista el plan (`.dev/plan/tasks.json`, `execution-plan.json`) y la
-   linea de base de requisitos. Si no hay plan, esto es un `/planificar` normal.
-2. Calcula el delta: entradas `INC-xxx` / `CR-xxx` / `REC-xxx` con `status: applied`
-   en `.dev/requirements/changelog.json` que NO esten en
-   `metadata.applied_changelog_ids` ni en `metadata.deferred_changelog_ids` de
-   `tasks.json`. Si pase ids como argumento, limita el delta a esos y registra el
-   resto como postergado (`deferred_changelog_ids`), avisandome que quedo pendiente.
-   Si no hay delta y las versiones coinciden, informa que el plan esta al dia y
-   termina.
-3. Lee `.dev/plan/progress.json` (estado del build). Si no existe, preguntame que
-   features/tareas estan hechas o en curso antes de seguir; no asumas que nada se
-   construyo sin confirmarmelo.
-4. Mostrame el resumen del delta (features afectadas, veredictos) y corre
-   `task-derivation` en modo replanificacion: re-deriva solo las features afectadas.
-5. Si reporta conflictos (requisito deprecado con tarea ya construida, requisito
-   modificado con tarea en curso), hace la PAUSA: mostramelos y espera mi decision
-   uno por uno. Aplicalas re-invocando al agente.
-6. Corre `execution-planning` en modo replanificacion: recalcula los lotes solo del
-   trabajo restante (lo `done` queda fuera del grafo, lo `in_progress` conserva su
-   lote).
-7. Corre la validacion mecanica por script (`validate_plan.py --previa <tasks previo>
-   --afectadas <FG-xx...>`, que activa el invariante PLAN-CHECK-013) hasta verde, y
-   despues `plan-inspection` en modo juicio con su lazo (tope: 3 pasadas; si no pasa,
-   mostrame los defectos remanentes y decido yo). Indicale que es replanificacion y
-   pasale la version previa de `tasks.json` (referencia git o ruta).
-8. Regenera los briefs solo de las features afectadas, con el mecanismo del Paso 4 de
-   la skill: tajadas (`slice_brief_context.py --features ...`), un `feature-brief`
-   por feature en paralelo marcando que cambio, y el linter
-   (`validate_plan.py --briefs`).
-9. Al final: si algun agente reporto un delta (`*.delta.json`), mergealo al canonico,
-   verifica el resultado y borralo antes de cerrar — no pueden quedar archivos
-   `*delta*`, `*patch*` ni `_*` en `.dev/plan/` ni `.dev/requirements/`, ni la
-   carpeta temporal `.dev/plan/.brief-context/`; el layout es cerrado. Sincroniza `progress.json.plan_ref` (tasks_version y
-   applied_changelog_ids) con el `tasks.json` recien emitido. Despues el resumen de
-   que se agrego/modifico/cancelo, los nuevos lotes
-   del trabajo restante, el paralelismo resultante y los `applied_changelog_ids`
-   actualizados.
+Si no hay plan, esto es un `/planificar` normal. Al final: que se agrego/modifico/
+cancelo, los lotes del trabajo restante, el paralelismo y los `applied_changelog_ids`.

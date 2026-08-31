@@ -33,9 +33,11 @@ Una sola vez por usuario:
 `.claude-plugin/marketplace.json`; verificalo con `/plugin` si los comandos varían en
 tu versión de Claude Code.)
 
-Requisitos: Claude Code con soporte de plugins, y **Python 3.8+** para extraer texto
-de documentos. Para leer PDF: `pip install pypdf`. Word (`.docx`), Markdown y texto
-plano no necesitan nada.
+Requisitos: Claude Code con soporte de plugins, y **Python 3.8+** (solo biblioteca
+estándar). Desde la versión de agosto 2026 todos los pipelines apoyan sus etapas
+mecánicas en scripts (validaciones, tajadas de contexto, renders, merges), así que
+Python es requisito duro, no opcional. Para leer PDF: `pip install pypdf`. Word
+(`.docx`), Markdown y texto plano no necesitan nada más.
 
 En tus proyectos no hay que copiar ninguna carpeta: los plugins viven fuera del
 proyecto y solo generan salidas bajo `.dev/` (requirements, plan, features, build,

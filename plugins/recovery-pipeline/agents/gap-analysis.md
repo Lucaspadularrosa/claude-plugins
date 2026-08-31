@@ -17,8 +17,12 @@ nada.
 ## Entradas
 
 - `.dev/recovery/code-inventory.json` (señales de salud, contradicciones con la doc).
-- `.dev/recovery/behavior-map.json` (estados de implementacion, preguntas).
-- `.dev/recovery/evidence-check.json` (los veredictos del spot-check de evidencia).
+- `.dev/recovery/.slice-gap-analysis.json`: la proyeccion del behavior-map que genera
+  `slice_behavior_map.py` — por capacidad su estado, `status_evidence`, manejo de
+  errores, conteos de flujo y reglas, y los checks `refuted`/`imprecise` del
+  evidence-check ya cruzados; mas vocabulario compacto, entidades con campos sin
+  uso y preguntas abiertas. NO leas `behavior-map.json` ni `evidence-check.json`
+  enteros: todo lo que necesitas esta en la tajada.
 - **Si existen** (el diagnostico corre antes que la reconstruccion, asi que en la
   primera corrida normalmente no estan): los artefactos de `.dev/requirements/`
   (mapa, requisitos con `proposed`, preguntas abiertas de cada artefacto). Su
@@ -49,11 +53,12 @@ Cuando el orquestador te indica que hay reporte y cuestionario previos:
   secuencia. `owner-answers.md` traza por `OWN-xxx`: si renumeras, las respuestas
   quedan huerfanas.
 - Las preguntas respondidas no se borran: marcalas `"status": "answered"` (las
-  abiertas quedan `"status": "open"`) y no las repitas en el `.md` salvo como
-  registro. Un hueco resuelto por una respuesta pasa a `"resolved"` citando la
+  abiertas quedan `"status": "open"`); el render las muestra como respondidas. Un hueco resuelto por una respuesta pasa a `"resolved"` citando la
   respuesta.
-- Tras la reconstruccion de la linea de base: completa los `feature_id` (ver
-  Agrupacion en features) y marca `resolved` los huecos que la reconstruccion
+- Tras la reconstruccion de la linea de base, los `feature_id` los completa
+  `backfill_feature_ids.py`; a vos te invocan solo si el script reporto grupos
+  partidos o unidos (te pasa la lista): resolve esos siguiendo al product-map,
+  anotalo en `warnings`, y marca `resolved` los huecos que la reconstruccion
   resolvio, citando el artefacto.
 - Re-evalua los huecos contra el estado actual de los artefactos; no reconstruyas
   de cero.
@@ -84,10 +89,11 @@ Cuando el orquestador te indica que hay reporte y cuestionario previos:
   entender el alcance real.
 - No preguntes lo que el codigo ya responde. No audites bugs ni seguridad a fondo:
   registra la señal y delega en `audit-pipeline`.
-- **Evidencia refutada manda**: una capacidad con checks `refuted` en el
-  evidence-check no puede sostener estado `complete` en el reporte — bajala a
-  `partial` con el detalle del verificador en `missing`, y si el spot-check dejo
-  imprecisiones sin corregir, reflejalas en `warnings`.
+- **Evidencia refutada manda**: una capacidad con checks `refuted` (vienen en
+  `evidence_check` de la tajada) no puede sostener estado `complete` en el reporte
+  — bajala a `partial` con el detalle del verificador en `missing`; las
+  imprecisiones sin corregir van a `warnings`. No hay re-verificacion por agente
+  tras la correccion: esta regla es la que cierra el lazo.
 - Usa ids `GAP-001` para huecos y `OWN-001` para preguntas al dueño.
 - Todos los valores legibles por humanos van en espanol.
 
@@ -117,10 +123,10 @@ Cuando el orquestador te indica que hay reporte y cuestionario previos:
 }
 ```
 
-### 2. `.dev/recovery/owner-questions.md` (+ `.json` con el mismo contenido estructurado)
+### 2. `.dev/recovery/owner-questions.json`
 
-El cuestionario legible para el dueño, agrupado por feature y priorizado, con espacio
-de respuesta debajo de cada pregunta. Estructura JSON:
+El cuestionario para el dueño, estructurado (el `.md` legible con espacio de
+respuesta lo genera `render_recovery_docs.py`):
 
 ```json
 {
@@ -132,36 +138,26 @@ de respuesta debajo de cada pregunta. Estructura JSON:
 }
 ```
 
-### 3. `.dev/recovery/state-report.md`
+NO escribas `state-report.md` ni `owner-questions.md`: los genera
+`render_recovery_docs.py` desde los JSON.
 
-El reporte legible: el estado general en un parrafo, la tabla de features por estado,
-los huecos por tipo y las señales para auditoria.
-
-Versionado: `version` +1 por reescritura. `pipeline_version` es la version del plugin
-que el orquestador te indica al invocarte: estampala tal cual en ambos JSON; si no te
-la indicaron, escribi `null` — nunca la inventes.
+Versionado: `version` +1 por reescritura. `pipeline_version`: la que el orquestador
+te indica, en ambos JSON; si no, `null` — nunca la inventes.
 
 ## Antes de terminar
 
-- Verifica que los JSON son validos y los conteos coinciden.
+- Verifica que los dos JSON son validos y los conteos coinciden.
 - Verifica que cada pregunta traza a un `GAP-xxx` y que ningun hueco `high` quedo sin
   pregunta o sin resolucion sugerida.
 
 ## Barra de calidad
 
-- El dueño lee `state-report.md` y entiende el estado real de su app en cinco minutos.
+- El dueño lee el `state-report.md` renderizado y entiende el estado real de su app en cinco minutos.
 - Las preguntas se pueden responder sin abrir un solo archivo de codigo.
 - Nada del reporte es opinion sin evidencia.
 
 ## Respuesta al orquestador
 
-El archivo es el entregable; tu respuesta es solo el puntero. Tu mensaje final trae
-unicamente:
-
-- `status`: ok | blocked | error.
-- `artifact_paths`: rutas de los archivos que escribiste.
-- `summary`: 3-5 lineas — el estado general de la app, los huecos `high` y cuantas preguntas van al dueño.
-- `blocking_items`: solo si los hay (que falta y quien lo destraba).
-
-No reproduzcas ni resumas en extenso el contenido del artefacto en la conversacion:
-vive en el archivo, y el orquestador lo lee solo si lo necesita.
+Solo el puntero: `status` (ok | blocked | error), `artifact_paths`, `summary` de 3-5
+lineas (el estado general de la app, los huecos `high` y cuantas preguntas van al dueño) y `blocking_items` si los hay. El contenido vive en el archivo; no lo
+reproduzcas.

@@ -32,8 +32,10 @@ si una guia saliera contaminada, la publicacion no lo convierte en ejecucion.
 
 ## Cobertura antes de publicar
 
-`/publicar-manual` cruza las guias presentes contra `.dev/plan/progress.json` (si
-existe): con el plan completo y cada feature `done` con su guia, publica directo;
+`render_manual.py --solo-cobertura` cruza las guias presentes (frontmatter `fg`)
+contra `.dev/plan/progress.json` (si existe) e imprime el estado; el agente no
+abre ninguna guia ni el plan. Con el plan completo y cada feature `done` con su
+guia, `/publicar-manual` publica directo;
 con huecos — features sin guia, features sin mergear, guias de trabajo no
 integrado — muestra el estado y **pregunta antes de publicar**. Un manual parcial
 es valido (crece con el producto, lote a lote), pero se publica a sabiendas, no
@@ -50,9 +52,14 @@ sugiere `/documentar` (build-pipeline), que genera las guias retroactivamente.
 O directo, sin agente:
 
 ```bash
+python plugins/manual-usuario/skills/manual-usuario/scripts/render_manual.py --solo-cobertura
 python plugins/manual-usuario/skills/manual-usuario/scripts/render_manual.py \
-  --titulo "Mi Producto" --acento "#0a7d55"
+  --titulo-auto --acento "#0a7d55"          # o --titulo "Mi Producto"
 ```
+
+Flags: `--cobertura [progress.json]`, `--solo-cobertura` (exit 2 si es parcial),
+`--titulo-auto` (product-map `project.name` o nombre del repo), `--verbose`
+(lista cada pagina), `--self-test`.
 
 Entrada (default): `.dev/manual/`. Salida (default): `docs/manual/` — `index.html`
 (del `README.md` derivado del build, o sintetizado desde el frontmatter de las
@@ -73,3 +80,9 @@ manual-usuario/
 Guias en `.dev/manual/*.md` con frontmatter (`feature`, `fg`, `titulo`, `resumen`)
 — las genera el `build-pipeline` en cada PR de feature. Sin guias no hay manual que
 publicar.
+
+## Cambios
+
+- **1.1.0**: cobertura y titulo resueltos por el script (`--solo-cobertura`,
+  `--titulo-auto`); el agente ya no lee guias, `progress.json` ni `product-map.json`.
+  Salida por defecto sin listar paginas (`--verbose` para el detalle).
