@@ -314,17 +314,7 @@ def harvest_recovery(dev):
     return out or None
 
 
-def harvest_audit(dev):
-
-
-run_log = harvest_run_log(dev)
-
-
-if run_log:
-
-
-    metrics["run_log"] = run_log
-    aud = dev / "audit"
+def harvest_audit(dev):    aud = dev / "audit"
     if not aud.is_dir():
         return None
     out = {}
@@ -397,6 +387,7 @@ def collect(root):
                 "build": harvest_build(dev),
                 "recovery": harvest_recovery(dev),
                 "audit": harvest_audit(dev),
+                "run_log": harvest_run_log(dev),
                 "git": harvest_git(root)}
     for name, data in sections.items():
         if data:
