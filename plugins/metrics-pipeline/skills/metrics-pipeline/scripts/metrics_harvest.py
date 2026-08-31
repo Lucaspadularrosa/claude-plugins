@@ -314,7 +314,8 @@ def harvest_recovery(dev):
     return out or None
 
 
-def harvest_audit(dev):    aud = dev / "audit"
+def harvest_audit(dev):
+    aud = dev / "audit"
     if not aud.is_dir():
         return None
     out = {}
