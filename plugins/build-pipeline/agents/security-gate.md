@@ -38,7 +38,10 @@ greps y lecturas locales; secretos se senalan por ubicacion, nunca por valor.
 Solo las categorias que la superficie del baseline justifica y que el diff toca:
 
 - **A01** rutas/acciones sin authz server-side, authz solo en cliente, queries sin
-  scope por dueno, contrato `auth_required: true` que no lo exige.
+  scope por dueno, contrato `auth_required: true` que no lo exige. Si el baseline
+  declara helpers de alcance, todo listado/consulta del diff debe derivar su filtro
+  de ese helper: un endpoint que arma su propio `where` a partir del rol es hallazgo
+  aunque el resultado parezca correcto.
 - **A03** SQL/NoSQL concatenada, shell string con entrada, salida sin escapar, path
   traversal.
 - **A02** secretos hardcodeados, passwords sin el hasher del framework, datos

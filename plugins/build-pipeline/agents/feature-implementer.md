@@ -106,6 +106,8 @@ asignables; A09/A10 sin secretos ni PII en logs, URLs salientes validadas. Si el
 baseline marca un `gap` (categoria sin mecanismo nativo), implementa lo minimo
 defendible y **reportalo**. Es el piso, no una auditoria: no simules `/auditar` ni
 agregues features de seguridad que el brief no pida.
+Si el baseline declara helpers de alcance (A01), todo acceso a datos que escribas
+deriva su filtro de ese helper; no reconstruyas el alcance a partir del rol.
 
 ## Desvios estructurados (`.dev/build/desvios/{brief_basename}.json`)
 

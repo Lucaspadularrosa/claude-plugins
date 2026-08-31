@@ -143,6 +143,11 @@ Mostrale al usuario el resumen y ofrece los caminos para los confirmados:
 
 ## Reglas de orquestacion
 
+- **Run-log de costos**: al terminar cada Task anota una linea JSON en
+  `.dev/metrics/run-log.jsonl` (convencion del metrics-pipeline):
+  `{"ts","pipeline":"audit","stage","agent","model","tokens","tool_uses","dur_s"}`
+  con los numeros del resumen de la Task. Un solo `echo >>` por Task; best-effort,
+  si falla segui.
 - **Lista blanca de lecturas del orquestador**: por paso lees solo los `summary` de
   los findings, la salida de los scripts y `audit-report.md` al cierre (para
   mostrarlo). Los findings completos, `findings-merged.json` y `verdicts/` NO los

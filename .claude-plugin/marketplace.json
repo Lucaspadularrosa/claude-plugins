@@ -11,7 +11,7 @@
     {
       "name": "planning-pipeline",
       "description": "Convierte una linea de base de requisitos en un plan de ejecucion para agentes IA: deriva tareas trazables dimensionadas para una pasada de agente, calcula los lotes de features paralelas por script determinista, valida el plan por script + inspeccion de juicio y emite los briefs de feature en paralelo. Con /replanificar absorbe cambios de requisitos sin tocar lo construido.",
-      "version": "2.6.0",
+      "version": "2.7.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"
@@ -22,7 +22,7 @@
     {
       "name": "audit-pipeline",
       "description": "Audita un codebase en tres dimensiones, bugs de correctitud, seguridad defensiva y mejoras de alto retorno, con verificacion adversarial de cada hallazgo antes de reportarlo. Funciona standalone o integrado con la suite: los confirmados se convierten en change requests planificables.",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"
@@ -33,7 +33,7 @@
     {
       "name": "build-pipeline",
       "description": "Ejecuta el plan de los pipelines de requisitos y planificacion, en cualquier lenguaje o framework: detecta el stack por evidencia, implementa cada feature en su rama verificando los criterios de aceptacion, construye lotes en paralelo (un agente por feature en worktrees), genera la guia de usuario final de cada feature (Markdown en .dev/manual/) y mantiene progress.json al dia para la replanificacion. En consola conversa en modo gastada (humor rioplatense, solo en la charla: los artefactos salen impecables).",
-      "version": "1.6.0",
+      "version": "1.7.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"
@@ -55,7 +55,7 @@
     {
       "name": "recovery-pipeline",
       "description": "Comprende una aplicacion ya desarrollada aunque no tenga documentacion (vibe-coding): inventaria el codigo, extrae que hace con evidencia archivo:linea (en tandas paralelas si la app es grande), verifica la evidencia con un spot-check adversarial, reporta el estado real con un HTML compartible y arma el cuestionario de decisiones para el dueño. Opt-in: reconstruye la linea de base de requisitos en formato .dev/requirements/ compatible con toda la suite.",
-      "version": "2.1.0",
+      "version": "2.2.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"
@@ -66,7 +66,7 @@
     {
       "name": "requerimientos",
       "description": "Pipeline iterativo de ingenieria de requisitos (LEL y Escenarios): descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; y absorbe cambios con confirmacion y changelog, todo trazable.",
-      "version": "2.5.0",
+      "version": "2.6.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"
@@ -77,7 +77,7 @@
     {
       "name": "metrics-pipeline",
       "description": "Metricas de proceso de la suite con telemetria cero: un script determinista cosecha a demanda los artefactos que los pipelines ya dejaron (cero tokens, retroactivo, sin instrumentar ningun flujo) y un agente analista opcional diagnostica que mejorar en los pipelines. Export a un JSONL central para comparar versiones del plugin entre proyectos.",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"

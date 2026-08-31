@@ -63,7 +63,15 @@ senalan por ubicacion, nunca por valor.
   `ci` por evidencia nueva, incrementa `version` y `updated_at`, y deja todo lo demas
   tal cual. Es una pasada corta.
 - **Base de seguridad por evidencia, no checklist**: cada `control` cita el mecanismo
-  nativo real; si no hay, `mechanism` vacio + `gaps` + `warnings`. Solo categorias que
+  nativo real; si no hay, `mechanism` vacio + `gaps` + `warnings`.
+- **Alcance por actor es mecanismo obligatorio**: si la superficie tiene actores con
+  alcances distintos (roles, tenants, "campania", carteras), el control A01 DEBE
+  nombrar el helper concreto que deriva el `where`/filtro del alcance de la sesion
+  (middleware, scope-builder, policy), y su `how_to_apply` debe decir que TODO
+  endpoint o query nuevos derivan su filtro de ese helper — nunca del rol a mano.
+  Si el helper no existe todavia, el gap va en `gaps` y el primer contrato del build
+  debe crearlo. (Evidencia benchmark SIGEC 2026-08: el alcance a mano aparecio en
+  4 de 6 gates y en los 3 hallazgos high de la auditoria.) Solo categorias que
   la superficie justifica (tabla de la referencia): sin XSS en una CLI, sin authz sin
   actores. `A04` no va en `applicable_categories` (llega como RNF y criterios del
   brief); si la superficie lo ameritaria y el diseno no trae nada, `warnings`.

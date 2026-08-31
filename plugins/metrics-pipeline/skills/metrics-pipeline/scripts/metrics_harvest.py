@@ -315,6 +315,15 @@ def harvest_recovery(dev):
 
 
 def harvest_audit(dev):
+
+
+run_log = harvest_run_log(dev)
+
+
+if run_log:
+
+
+    metrics["run_log"] = run_log
     aud = dev / "audit"
     if not aud.is_dir():
         return None
@@ -403,6 +412,41 @@ def collect(root):
 
 # Umbrales fijos de la suite: metrica -> (comparador, umbral, pipeline sospechoso, lectura).
 # Es la tabla que antes vivia en el prompt del analista; aca es un `if`, no juicio.
+
+def harvest_run_log(dev):
+    """Cosecha .dev/metrics/run-log.jsonl: una linea JSON por Task que el orquestador
+    de cada pipeline anota (best-effort). Tolerante: lineas rotas se cuentan y se siguen."""
+    path = dev / "metrics" / "run-log.jsonl"
+    if not path.is_file():
+        return None
+    by_pipeline, by_model = {}, {}
+    total = {"invocations": 0, "tokens": 0, "tool_uses": 0, "dur_s": 0, "bad_lines": 0}
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            e = json.loads(line)
+        except ValueError:
+            total["bad_lines"] += 1
+            continue
+        total["invocations"] += 1
+        for key, field in (("tokens", "tokens"), ("tool_uses", "tool_uses"), ("dur_s", "dur_s")):
+            try:
+                total[key] += int(e.get(field) or 0)
+            except (TypeError, ValueError):
+                pass
+        for bucket, k in ((by_pipeline, e.get("pipeline")), (by_model, e.get("model"))):
+            if k:
+                b = bucket.setdefault(str(k), {"invocations": 0, "tokens": 0})
+                b["invocations"] += 1
+                try:
+                    b["tokens"] += int(e.get("tokens") or 0)
+                except (TypeError, ValueError):
+                    pass
+    return {"total": total, "by_pipeline": by_pipeline, "by_model": by_model}
+
+
 SIGNAL_RULES = [
     ("recovery.evidence_check.refuted_rate", ">=", 0.2, "recovery-pipeline/behavior-extraction",
      "el prompt afirma mas de lo que el codigo sostiene"),
@@ -463,6 +507,8 @@ def headline(metrics):
         "inspection_defects": sum(
             s.get("total_defects") or 0
             for s in (g(metrics, "requirements", "inspections") or {}).values()),
+        "run_tokens": g(metrics, "run_log", "total", "tokens"),
+        "run_invocations": g(metrics, "run_log", "total", "invocations"),
         "signals_fired": [s["metrica"] for s in metrics.get("signals", []) if s["disparada"]],
     }
 
