@@ -23,8 +23,9 @@ siempre contra `{raiz}`, con `--cwd <worktree>` cuando ejecutan comandos).
    recien cuando el worktree quedo listo:
    `git worktree add ../{repo}-wt-{slug} -b feature/{slug} {rama_integracion}`.
    - Restos de corridas anteriores: si retomas, reusalos; si no, limpialos
-     (`git worktree remove --force`, `git worktree prune`; la rama solo si no tiene
-     commits que importen).
+     (recursos externos del worktree primero — `docker compose down -v` si su
+     proyecto compose sigue existiendo —, `git worktree remove --force`,
+     `git worktree prune`; la rama solo si no tiene commits que importen).
    - Bootstrap: corre `commands.install` del perfil en cada worktree y copia la
      config local no versionada que los tests necesiten (`.env` de test). Usa la
      cache del gestor para no descargar N veces (`npm ci --prefer-offline`, el store
@@ -53,8 +54,12 @@ siempre contra `{raiz}`, con `--cwd <worktree>` cuando ejecutan comandos).
    `--note "SIN GUIA: <motivo>"`); `render_cr_input.py {raiz} --brief {b}`;
    `validate_verdict.py {raiz} --compuerta --brief {b}` — si esta CERRADA, la
    feature no abre PR: `--note "BLOQUEADA: <salida del script>"`. Con la compuerta
-   ABIERTA: push, PR contra la rama de integracion, `--note "PR #n"`, y
-   `git worktree remove`. Los worktrees de features bloqueadas quedan en pie.
+   ABIERTA: push, PR contra la rama de integracion, `--note "PR #n"`, baja los
+   recursos externos que ese worktree haya levantado — contenedores y volumenes de
+   su proyecto compose (`docker compose down -v` corrido en el worktree), DBs
+   efimeras de test — y recien entonces `git worktree remove` (borrar la carpeta no
+   los borra: quedan nombrados por directorio y sobreviven como basura). Los
+   worktrees de features bloqueadas quedan en pie, con sus recursos.
    **Narracion dosificada**: al cerrar cada feature, 2-3 lineas al usuario (estado,
    PR, dato saliente) mas el puntero a sus veredictos. Nada de hallazgos ni cierres
    por requisito en el medio del lote: el detalle vive en los artefactos.
