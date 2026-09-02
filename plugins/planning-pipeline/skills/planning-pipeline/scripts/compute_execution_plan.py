@@ -56,6 +56,9 @@ ID_T = re.compile(r"^T-\d+$")
 ID_FG = re.compile(r"^FG-\d+$")
 TASK_TYPES = {"feature", "data", "integration", "infra", "spike", "contract"}
 TASK_STATUSES = {"pending", "cancelled"}
+# Suites viejas avanzaban el status del build en tasks.json (hoy vive en
+# progress.json): se toleran como progreso legado, no como contrato roto.
+LEGACY_BUILD_STATUSES = {"done", "in_progress"}
 DEP_KINDS = {"hard", "contract"}
 PRIORITY_RANK = {"high": 0, "medium": 1, "low": 2}
 
@@ -112,7 +115,7 @@ def validate_tasks(doc):
         tid = t["id"]
         if t.get("feature_group") not in fids:
             fail("%s: feature_group %r no existe en features[]" % (tid, t.get("feature_group")))
-        if t.get("status", "pending") not in TASK_STATUSES:
+        if t.get("status", "pending") not in TASK_STATUSES | LEGACY_BUILD_STATUSES:
             fail("%s: status invalido %r (esperado pending|cancelled)" % (tid, t.get("status")))
         if t.get("type") not in TASK_TYPES:
             fail("%s: type invalido %r" % (tid, t.get("type")))
@@ -129,8 +132,18 @@ def validate_tasks(doc):
     return by_id
 
 
-def guard_replan(plan_dir):
+def guard_replan(plan_dir, doc):
     """Si hay build en progreso, la replanificacion es del subagente, no del script."""
+    legacy = sorted(
+        t.get("id") for t in (doc.get("tasks") or [])
+        if isinstance(t, dict) and t.get("status") in LEGACY_BUILD_STATUSES
+    )
+    if legacy:
+        fail(
+            "tasks.json registra trabajo de build (%s%s): esto es una replanificacion; "
+            "corre este script con --replan"
+            % (", ".join(str(t) for t in legacy[:5]), "..." if len(legacy) > 5 else "")
+        )
     progress_path = plan_dir / "progress.json"
     if not progress_path.is_file():
         return
@@ -423,6 +436,24 @@ def compute_replan(doc, progress, prev, pipeline_version, now):
     warnings = []
     fstatus = {e.get("feature_id"): e.get("status", "pending") for e in progress.get("features") or []}
     tstatus = {e.get("task_id"): e.get("status", "pending") for e in progress.get("tasks") or []}
+    # Build legado: suites viejas escribian el avance en tasks.json. Se lee como
+    # progreso (progress.json tiene prioridad) para que el script corra sobre
+    # proyectos que ya construyeron con ese contrato.
+    legacy = {t["id"]: t["status"] for t in doc["tasks"] if t.get("status") in LEGACY_BUILD_STATUSES}
+    if legacy:
+        for ltid, lst in legacy.items():
+            tstatus.setdefault(ltid, lst)
+        for fid in {t["feature_group"] for t in doc["tasks"]}:
+            sts = {tstatus.get(t["id"], "pending") for t in doc["tasks"]
+                   if t["feature_group"] == fid and t.get("status", "pending") != "cancelled"}
+            if sts == {"done"}:
+                fstatus.setdefault(fid, "done")
+            elif sts & LEGACY_BUILD_STATUSES:
+                fstatus.setdefault(fid, "in_progress")
+        warnings.append(
+            "tasks.json trae status de build legado en %d tarea(s): se leyo como "
+            "progreso (progress.json tiene prioridad si existe)." % len(legacy)
+        )
     prev_batch_of = {}
     max_batch = 0
     for b in prev.get("batches") or []:
@@ -730,6 +761,15 @@ def self_test():
             {"features": [{"feature_id": "FG-01", "status": "in_progress"}], "tasks": []}), encoding="utf-8")
         r = subprocess.run([sys.executable, __file__, str(tmp)], capture_output=True, text=True)
         check(r.returncode == 1 and "replanificacion" in r.stdout, "guard de replanificacion")
+
+        # build legado: status done en tasks.json (sin --replan) guia a --replan en vez de cortar por contrato
+        (tmp / "progress.json").unlink()
+        legacy_doc = base_tasks()
+        legacy_doc["tasks"][1]["status"] = "done"
+        (tmp / "tasks.json").write_text(json.dumps(legacy_doc), encoding="utf-8")
+        r = subprocess.run([sys.executable, __file__, str(tmp)], capture_output=True, text=True)
+        check(r.returncode == 1 and "--replan" in r.stdout and "status invalido" not in r.stdout,
+              "guard: status de build legado en tasks.json guia a --replan")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
@@ -765,6 +805,19 @@ def self_test():
     plan_c = compute_replan(rp, progress, prev_plan, None, now)
     check(any(w.startswith("CONFLICTO") for w in plan_c["warnings"]), "replan: conflicto detectado")
 
+    # replan sobre proyecto legado: el avance vive en tasks.json, sin progress.json
+    lg = base_tasks()
+    for t in lg["tasks"]:
+        if t["feature_group"] == "FG-01":
+            t["status"] = "done"
+    lg["tasks"][3]["status"] = "in_progress"   # T-004 de FG-03 a medias
+    plan_lg = compute_replan(lg, {}, prev_plan, None, now)
+    check(plan_lg["metadata"]["completed_feature_ids"] == ["FG-01"], "legado: FG-01 done leida de tasks.json")
+    lv_lg = {e["feature_id"]: b["id"] for b in plan_lg["batches"] for e in b["features"]}
+    check("FG-01" not in lv_lg and set(lv_lg) == {"FG-02", "FG-03"}, "legado: solo el trabajo restante en lotes (%s)" % lv_lg)
+    check(lv_lg["FG-03"] == "BATCH-2", "legado: in_progress conserva su lote")
+    check(any("legado" in w for w in plan_lg["warnings"]), "legado: warning de status leido de tasks.json")
+
     print("%s: %d fallo(s)" % ("SELF-TEST", len(failures)))
     return 1 if failures else 0
 
@@ -795,13 +848,18 @@ def main(argv):
     if args.replan:
         ppath = plan_dir / "progress.json"
         if not ppath.is_file():
-            fail("--replan necesita progress.json (estado del build); si no existe, preguntale al usuario")
-        try:
-            progress = json.loads(ppath.read_text(encoding="utf-8-sig"))
-        except (ValueError, OSError) as exc:
-            fail("progress.json ilegible: %s" % exc)
+            if any(isinstance(t, dict) and t.get("status") in LEGACY_BUILD_STATUSES
+                   for t in (doc.get("tasks") or [])):
+                progress = {}  # build legado: el avance vive en tasks.json y se lee de ahi
+            else:
+                fail("--replan necesita progress.json (estado del build); si no existe, preguntale al usuario")
+        else:
+            try:
+                progress = json.loads(ppath.read_text(encoding="utf-8-sig"))
+            except (ValueError, OSError) as exc:
+                fail("progress.json ilegible: %s" % exc)
     else:
-        guard_replan(plan_dir)
+        guard_replan(plan_dir, doc)
 
     prev = None
     out_path = plan_dir / "execution-plan.json"
