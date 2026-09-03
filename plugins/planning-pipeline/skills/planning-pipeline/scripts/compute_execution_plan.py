@@ -26,7 +26,12 @@ Que calcula (mismo contrato de salida que el subagente):
 Politica fail-fast: ante un tasks.json que no cumple el contrato (ids invalidos,
 depends_on en formato viejo, ciclos entre tareas, kind desconocido) el script corta
 con error explicito y NO adivina. El defecto rebota a `task-derivation`; degradar en
-silencio seria peor que fallar.
+silencio seria peor que fallar. Tres tolerancias explicitas para proyectos construidos
+con contratos viejos, siempre con warning en el plan: status de build en tasks.json
+(done|in_progress, se lee como progreso), type legado (fix|chore) en tareas que ya
+no estan pendientes (no afecta los lotes; en una pendiente sigue cortando) y entradas
+de progress.json que no son features de tasks.json (ajustes o correctivos construidos
+en rama propia: se ignoran para los lotes).
 
 Solo stdlib, Python 3.8+. No modifica tasks.json.
 
@@ -59,6 +64,10 @@ TASK_STATUSES = {"pending", "cancelled"}
 # Suites viejas avanzaban el status del build en tasks.json (hoy vive en
 # progress.json): se toleran como progreso legado, no como contrato roto.
 LEGACY_BUILD_STATUSES = {"done", "in_progress"}
+# Replanificaciones viejas (correctivos de auditoria) clasificaron tareas con types
+# fuera del contrato. En una tarea que ya no esta pendiente el type no afecta el
+# calculo de lotes, asi que se tolera con warning; en una pendiente sigue cortando.
+LEGACY_TASK_TYPES = {"fix", "chore"}
 DEP_KINDS = {"hard", "contract"}
 PRIORITY_RANK = {"high": 0, "medium": 1, "low": 2}
 
@@ -118,7 +127,13 @@ def validate_tasks(doc):
         if t.get("status", "pending") not in TASK_STATUSES | LEGACY_BUILD_STATUSES:
             fail("%s: status invalido %r (esperado pending|cancelled)" % (tid, t.get("status")))
         if t.get("type") not in TASK_TYPES:
-            fail("%s: type invalido %r" % (tid, t.get("type")))
+            if t.get("type") in LEGACY_TASK_TYPES and t.get("status", "pending") != "pending":
+                pass  # type legado en tarea ya construida o cancelada: no afecta los lotes (warning en el plan)
+            elif t.get("type") in LEGACY_TASK_TYPES:
+                fail("%s: type legado %r en tarea pendiente; reclasificarla como %s"
+                     % (tid, t.get("type"), "|".join(sorted(TASK_TYPES - {"contract"}))))
+            else:
+                fail("%s: type invalido %r" % (tid, t.get("type")))
         for dep in t.get("depends_on") or []:
             if not isinstance(dep, dict):
                 fail("%s: depends_on en formato viejo (%r); el contrato exige objetos {task_id, kind}" % (tid, dep))
@@ -130,6 +145,20 @@ def validate_tasks(doc):
             if kind == "contract" and by_id[did].get("type") != "contract":
                 fail("%s: dependencia kind=contract apunta a %s que no es type=contract" % (tid, did))
     return by_id
+
+
+def legacy_type_warning(doc):
+    """Warning (o None) por tareas no pendientes con type fuera del contrato."""
+    legacy = sorted((t["id"] for t in doc["tasks"] if t.get("type") in LEGACY_TASK_TYPES), key=tnum)
+    if not legacy:
+        return None
+    return (
+        "tasks.json trae type legado (%s) en %d tarea(s) ya construida(s) o cancelada(s) "
+        "(%s%s): se toleran porque no afectan los lotes; el contrato vigente es %s."
+        % ("|".join(sorted(LEGACY_TASK_TYPES)), len(legacy),
+           ", ".join(legacy[:5]), "..." if len(legacy) > 5 else "",
+           "|".join(sorted(TASK_TYPES)))
+    )
 
 
 def guard_replan(plan_dir, doc):
@@ -249,6 +278,9 @@ def compute(doc, pipeline_version, now, prev):
     by_id = validate_tasks(doc)
     tasks = doc["tasks"]
     warnings = []
+    ltw = legacy_type_warning(doc)
+    if ltw:
+        warnings.append(ltw)
 
     active = [t for t in tasks if t.get("status", "pending") != "cancelled"]
     contract_ids = []
@@ -434,8 +466,23 @@ def compute_replan(doc, progress, prev, pipeline_version, now):
     if not prev:
         fail("--replan necesita el execution-plan.json previo")
     warnings = []
+    ltw = legacy_type_warning(doc)
+    if ltw:
+        warnings.append(ltw)
     fstatus = {e.get("feature_id"): e.get("status", "pending") for e in progress.get("features") or []}
     tstatus = {e.get("task_id"): e.get("status", "pending") for e in progress.get("tasks") or []}
+    # progress.json puede registrar unidades de build que el plan no modela como
+    # feature (ajustes o correctivos construidos en rama propia por suites viejas):
+    # el grafo es sobre las features de tasks.json, asi que se ignoran con warning.
+    fids = {f["id"] for f in doc["features"]}
+    unknown = sorted(str(f) for f in fstatus if f not in fids)
+    if unknown:
+        fstatus = {f: st for f, st in fstatus.items() if f in fids}
+        warnings.append(
+            "progress.json registra %d unidad(es) de build que no son features de tasks.json "
+            "(%s%s): se ignoran para el calculo de lotes."
+            % (len(unknown), ", ".join(unknown[:5]), "..." if len(unknown) > 5 else "")
+        )
     # Build legado: suites viejas escribian el avance en tasks.json. Se lee como
     # progreso (progress.json tiene prioridad) para que el script corra sobre
     # proyectos que ya construyeron con ese contrato.
@@ -770,6 +817,14 @@ def self_test():
         r = subprocess.run([sys.executable, __file__, str(tmp)], capture_output=True, text=True)
         check(r.returncode == 1 and "--replan" in r.stdout and "status invalido" not in r.stdout,
               "guard: status de build legado en tasks.json guia a --replan")
+
+        # type legado (fix|chore) en tarea pendiente: sigue cortando, con mensaje de reclasificacion
+        pend_doc = base_tasks()
+        pend_doc["tasks"][1]["type"] = "fix"
+        (tmp / "tasks.json").write_text(json.dumps(pend_doc), encoding="utf-8")
+        r = subprocess.run([sys.executable, __file__, str(tmp)], capture_output=True, text=True)
+        check(r.returncode == 1 and "type legado 'fix' en tarea pendiente" in r.stdout,
+              "type legado en tarea pendiente corta con mensaje de reclasificacion")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
@@ -817,6 +872,33 @@ def self_test():
     check("FG-01" not in lv_lg and set(lv_lg) == {"FG-02", "FG-03"}, "legado: solo el trabajo restante en lotes (%s)" % lv_lg)
     check(lv_lg["FG-03"] == "BATCH-2", "legado: in_progress conserva su lote")
     check(any("legado" in w for w in plan_lg["warnings"]), "legado: warning de status leido de tasks.json")
+
+    # type legado (fix|chore) en tareas done o cancelled: se tolera con warning y no altera los lotes
+    lt = base_tasks()
+    for t in lt["tasks"]:
+        if t["feature_group"] == "FG-01":
+            t["status"] = "done"
+    lt["tasks"][1]["type"] = "fix"          # T-002 done
+    lt["tasks"][4]["status"] = "cancelled"  # T-005 cancelada
+    lt["tasks"][4]["type"] = "chore"
+    plan_lt = compute_replan(lt, {}, prev_plan, None, now)
+    lv_lt = {e["feature_id"]: b["id"] for b in plan_lt["batches"] for e in b["features"]}
+    check(any("type legado" in w and "T-002, T-005" in w for w in plan_lt["warnings"]),
+          "type legado: warning con las tareas afectadas")
+    check(plan_lt["metadata"]["completed_feature_ids"] == ["FG-01"] and set(lv_lt) == {"FG-02", "FG-03"},
+          "type legado: no altera los lotes (%s)" % lv_lt)
+
+    # progress.json con unidades de build que no son features del plan (ajustes en rama propia)
+    prog_x = {"features": [{"feature_id": "FG-01", "status": "done"},
+                           {"feature_id": "FG-01-ajuste-cr003", "status": "done"},
+                           {"feature_id": "CR-002-web", "status": "in_progress"}],
+              "tasks": [{"task_id": "T-001", "status": "done"}, {"task_id": "T-002", "status": "done"}]}
+    plan_x = compute_replan(base_tasks(), prog_x, prev_plan, None, now)
+    lv_x = {e["feature_id"]: b["id"] for b in plan_x["batches"] for e in b["features"]}
+    check(any("no son features de tasks.json" in w and "CR-002-web, FG-01-ajuste-cr003" in w for w in plan_x["warnings"]),
+          "progress con unidades ajenas al plan: warning")
+    check(plan_x["metadata"]["completed_feature_ids"] == ["FG-01"] and set(lv_x) == {"FG-02", "FG-03"},
+          "progress con unidades ajenas al plan: se ignoran sin alterar los lotes (%s)" % lv_x)
 
     print("%s: %d fallo(s)" % ("SELF-TEST", len(failures)))
     return 1 if failures else 0
