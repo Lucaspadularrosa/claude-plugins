@@ -23,7 +23,9 @@ from pathlib import Path
 
 ID_RE = {
     "FG": re.compile(r"^FG-\d+$"),
-    "SYM": re.compile(r"^SYM-\d+$"),
+    # Los simbolos del LEL son LEL-nnn desde la 2.5 (antes SYM-nnn): se aceptan
+    # los dos y el prefijo viejo sale como aviso, no como contrato roto.
+    "LEL": re.compile(r"^(LEL|SYM)-\d+$"),
     "SCN": re.compile(r"^SCN-\d+$"),
     "RF": re.compile(r"^RF-\d+$"),
     "RNF": re.compile(r"^RNF-\d+$"),
@@ -35,9 +37,16 @@ ID_RE = {
     "BR": re.compile(r"^BR-\d+$"),
 }
 
+# Prefijo de simbolo pre-2.5: sigue siendo valido, pero se avisa para migrarlo.
+LEGACY_SYM = re.compile(r"^SYM-\d+$")
+
 MAP_STATUSES = {"stub", "elaborated", "baselined", "deprecated"}
 ITEM_STATUSES = {"active", "proposed", "deprecated"}
 TASK_STATUSES = {"pending", "cancelled"}
+# Suites viejas avanzaban el status del build en tasks.json (hoy vive en
+# progress.json). compute_execution_plan.py los tolera con warning desde la
+# 2.7.1; el verificador hace lo mismo para no romper lo ya construido.
+LEGACY_BUILD_STATUSES = {"done", "in_progress"}
 PROGRESS_FEATURE_STATUSES = {"pending", "in_progress", "done"}
 PROGRESS_TASK_STATUSES = {"pending", "in_progress", "done", "blocked", "cancelled"}
 CHANGELOG_STATUSES = {"in_progress", "applied", "rejected"}
@@ -102,7 +111,13 @@ def check_requirements_stage(dev):
     lel = load_json(reqdir / "lel.json")
     if lel is not None:
         symbols = lel.get("symbols", [])
-        ctx["symbols"] = unique_ids(symbols, "id", ID_RE["SYM"], "lel.json/symbols")
+        ctx["symbols"] = unique_ids(symbols, "id", ID_RE["LEL"], "lel.json/symbols")
+        legacy_sym = sorted(s["id"] for s in symbols
+                            if isinstance(s.get("id"), str) and LEGACY_SYM.match(s["id"]))
+        if legacy_sym:
+            warn("lel.json", "{} simbolo(s) con el prefijo viejo SYM-nnn (hoy LEL-nnn):"
+                             " se aceptan; migralos cuando toques el LEL (ej. {})"
+                 .format(len(legacy_sym), legacy_sym[0]))
         for s in symbols:
             if s.get("status") not in ITEM_STATUSES | {None}:
                 problem("lel.json", "{}: status invalido {!r}".format(s.get("id"), s.get("status")))
@@ -227,14 +242,19 @@ def check_plan_stage(dev, ctx):
         features = tasks_doc.get("features", [])
         feature_ids = unique_ids(features, "id", ID_RE["FG"], "tasks.json/features")
         tasks = tasks_doc.get("tasks", [])
+        legacy_build = []
         task_ids = unique_ids(tasks, "id", ID_RE["T"], "tasks.json/tasks")
         for t in tasks:
             tid = t.get("id")
             if t.get("feature_group") not in feature_ids:
                 problem("tasks.json", "{}: feature_group {!r} no existe".format(tid, t.get("feature_group")))
-            if t.get("status") not in TASK_STATUSES:
-                problem("tasks.json", "{}: status invalido {!r}".format(tid, t.get("status")))
-            elif t.get("status") != "cancelled":
+            tstatus = t.get("status")
+            if tstatus in LEGACY_BUILD_STATUSES:
+                legacy_build.append(tid)
+                active_task_ids.add(tid)
+            elif tstatus not in TASK_STATUSES:
+                problem("tasks.json", "{}: status invalido {!r}".format(tid, tstatus))
+            elif tstatus != "cancelled":
                 active_task_ids.add(tid)
             for dep in t.get("depends_on", []):
                 if not isinstance(dep, dict) or dep.get("kind") not in {"hard", "contract"}:
@@ -243,6 +263,10 @@ def check_plan_stage(dev, ctx):
                     problem("tasks.json", "{}: depende de {} que no existe".format(tid, dep.get("task_id")))
             if ctx.get("requirements"):
                 check_refs(t.get("requirement_ids"), ctx["requirements"], "tasks.json", str(tid))
+        if legacy_build:
+            warn("tasks.json", "{} tarea(s) con status de build legado (hoy el progreso"
+                               " vive en progress.json): se leen como no pendientes (ej. {})"
+                 .format(len(legacy_build), legacy_build[0]))
         for f in features:
             check_refs(f.get("task_ids"), task_ids, "tasks.json", str(f.get("id")))
 
@@ -352,21 +376,25 @@ def self_test():
     import shutil
     import tempfile
 
-    def fixture(root, break_it):
+    def fixture(root, break_it, legacy=False):
+        # legacy: linea de base vieja (simbolos SYM-nnn y progreso del build en
+        # tasks.json). Debe pasar sin problemas y con avisos.
+        sym = "SYM-001" if legacy else "LEL-001"
+        tstatus = "done" if legacy else "pending"
         req = root / ".dev" / "requirements"
         req.mkdir(parents=True)
         (req / "lel.json").write_text(json.dumps({
             "version": 1,
-            "symbols": [{"id": "SYM-001", "canonical_name": "turno", "status": "active"}],
+            "symbols": [{"id": sym, "canonical_name": "turno", "status": "active"}],
         }), encoding="utf-8")
         (req / "product-map.json").write_text(json.dumps({
             "version": 1,
             "summary": {"stub_count": 0, "elaborated_count": 0, "baselined_count": 1, "deprecated_count": 0},
-            "features": [{"id": "FG-01", "status": "baselined", "lel_symbol_ids": ["SYM-001"]}],
+            "features": [{"id": "FG-01", "status": "baselined", "lel_symbol_ids": [sym]}],
         }), encoding="utf-8")
         (req / "scenarios.json").write_text(json.dumps({
             "version": 1, "metadata": {"lel_version_ref": "1"},
-            "scenarios": [{"id": "SCN-001", "status": "active", "lel_symbol_ids": ["SYM-001"]}],
+            "scenarios": [{"id": "SCN-001", "status": "active", "lel_symbol_ids": [sym]}],
         }), encoding="utf-8")
         (req / "requirements.json").write_text(json.dumps({
             "version": 1, "metadata": {"lel_version_ref": "1"},
@@ -386,7 +414,7 @@ def self_test():
         (plan / "tasks.json").write_text(json.dumps({
             "version": 1,
             "features": [{"id": "FG-01", "task_ids": ["T-001"]}],
-            "tasks": [{"id": "T-001", "feature_group": "FG-01", "status": "pending",
+            "tasks": [{"id": "T-001", "feature_group": "FG-01", "status": tstatus,
                        "depends_on": [], "requirement_ids": ["RF-001"]}],
         }), encoding="utf-8")
         (plan / "execution-plan.json").write_text(json.dumps({
@@ -398,21 +426,29 @@ def self_test():
         }), encoding="utf-8")
 
     failures = 0
-    for break_it, expect_problems in ((False, False), (True, True)):
+    cases = (
+        ("fixture consistente", False, False, False, None),
+        ("fixture rota", True, False, True, None),
+        ("fixture legado (SYM-nnn + status de build)", False, True, False, "SYM-nnn"),
+    )
+    for label, break_it, legacy, expect_problems, expect_warning in cases:
         tmp = Path(tempfile.mkdtemp(prefix="check-artifacts-"))
         try:
-            fixture(tmp, break_it)
+            fixture(tmp, break_it, legacy)
             del problems[:]
             del warnings[:]
             ctx = check_requirements_stage(tmp / ".dev")
             check_plan_stage(tmp / ".dev", ctx)
-            got = bool(problems)
-            label = "fixture rota" if break_it else "fixture consistente"
-            if got != expect_problems:
+            if bool(problems) != expect_problems:
                 print("SELF-TEST FALLO ({}): problemas={}".format(label, problems or "ninguno"))
                 failures += 1
+            elif expect_warning and not any(expect_warning in w for w in warnings):
+                print("SELF-TEST FALLO ({}): falta el aviso {!r}; avisos={}".format(
+                    label, expect_warning, warnings or "ninguno"))
+                failures += 1
             else:
-                print("self-test ok ({}): {} problema(s)".format(label, len(problems)))
+                print("self-test ok ({}): {} problema(s), {} aviso(s)".format(
+                    label, len(problems), len(warnings)))
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
     del problems[:]
