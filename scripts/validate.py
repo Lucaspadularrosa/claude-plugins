@@ -15,8 +15,18 @@ externas (usa pyyaml si esta instalado, si no aplica las reglas del escalar plan
    espacio) ni ` #`, ni empezar con un caracter especial de YAML — eso invalida el
    frontmatter completo y el comando/agente no se registra (o pierde sus tools).
 
+3. Todo agente lleva los bloques que el contrato de la suite da por sentados:
+   "Frontera de confianza" y "Respuesta al orquestador".
+4. Donde una skill publica una tabla de modelo por subagente, la tabla coincide con
+   el `model` del frontmatter de cada agente.
+5. Todo prefijo de id que los prompts prometen (`"id": "XXX-001"`) lo acepta alguna
+   expresion de `scripts/check-artifacts.py`, o esta declarado como no verificado.
+   Sin esto, renombrar un id en los prompts deja al verificador atras en silencio
+   (fue el caso de SYM-nnn -> LEL-nnn).
+
 `archive/` se ignora. Salida: lista de problemas y exit code 1 si hay alguno.
 Uso: python scripts/validate.py [raiz-del-repo]
+     python scripts/validate.py --self-test
 """
 
 import json
@@ -31,12 +41,28 @@ try:
 except ImportError:
     HAVE_YAML = False
 
-ROOT = Path(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent).resolve()
+_args = [a for a in sys.argv[1:] if not a.startswith("--")]
+ROOT = Path(_args[0] if _args else Path(__file__).resolve().parent.parent).resolve()
 
 REQUIRED_KEYS = {
     "agents": {"name", "description", "tools", "model"},
     "commands": {"description"},
     "skills": {"name", "description"},
+}
+
+# Bloques que el resto de la suite da por sentados en CADA agente.
+BLOQUES_AGENTE = ("frontera de confianza", "respuesta al orquestador")
+
+MODELOS = {"opus", "sonnet", "haiku"}
+
+# Prefijos de id que los prompts usan y que check-artifacts.py NO verifica (a
+# proposito: no cruzan plugins o no viven en los artefactos que revisa). Agregar
+# uno aca es una decision consciente; el chequeo existe para que renombrar un id
+# no pase inadvertido.
+PREFIJOS_NO_VERIFICADOS = {
+    "ACT", "ADR", "API", "BUG", "CAP", "CHK", "CTX", "DEF", "DESVIO", "ENT",
+    "ENTRY", "EP", "EXC", "GAP", "IMP", "K", "L", "MOD", "NOT", "OWN", "PBC",
+    "PROP", "Q", "QST", "REL", "RENT", "RES", "RMOD", "SCR", "SEC", "SPQ", "SRC",
 }
 
 problems = []
@@ -145,11 +171,134 @@ def check_marketplace():
     return len(entries)
 
 
+# ---------------------------------------------------- invariantes de contenido
+
+def modelo_de_fila(fila):
+    """Modelo declarado en una fila de tabla markdown, o None."""
+    for celda in fila.split("|"):
+        c = celda.strip().strip("*").strip("`").lower()
+        if c in MODELOS:
+            return c
+    return None
+
+
+def tabla_de_modelos(texto):
+    """{agente: modelo} segun las filas `| `agente` | ... | modelo |` de una skill."""
+    out = {}
+    for linea in texto.splitlines():
+        m = re.match(r"^\|\s*`([a-z][\w-]*)`\s*\|", linea)
+        if not m:
+            continue
+        modelo = modelo_de_fila(linea[m.end():])
+        if modelo:
+            out[m.group(1)] = modelo
+    return out
+
+
+def prefijos_de_id(texto):
+    """Prefijos de id que un prompt promete: `"id": "RF-001"` -> RF."""
+    return set(re.findall(r'"id":\s*"([A-Z]+)-\d', texto))
+
+
+def id_regexes():
+    """ID_RE de scripts/check-artifacts.py, sin duplicar la fuente."""
+    import importlib.util
+    ruta = ROOT / "scripts" / "check-artifacts.py"
+    if not ruta.exists():
+        return None
+    spec = importlib.util.spec_from_file_location("check_artifacts", ruta)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return list(getattr(mod, "ID_RE", {}).values())
+
+
+def check_bloques_agentes():
+    for f in sorted(ROOT.glob("plugins/*/agents/*.md")):
+        bajo = f.read_text(encoding="utf-8").lower()
+        faltan = [b for b in BLOQUES_AGENTE if b not in bajo]
+        if faltan:
+            problem(f, "al agente le falta el bloque obligatorio: {}".format(
+                ", ".join('"{}"'.format(b) for b in faltan)))
+
+
+def check_tabla_modelos():
+    """Donde una skill publica modelo por subagente, tiene que coincidir."""
+    filas = 0
+    for skill in sorted(ROOT.glob("plugins/*/skills/*/SKILL.md")):
+        plugin_dir = skill.parent.parent.parent
+        tabla = tabla_de_modelos(skill.read_text(encoding="utf-8"))
+        for agente, modelo in sorted(tabla.items()):
+            agente_md = plugin_dir / "agents" / (agente + ".md")
+            if not agente_md.exists():
+                continue  # la fila nombra algo que no es un agente de este plugin
+            filas += 1
+            data = parse_frontmatter(agente_md) or {}
+            real = str(data.get("model", "")).strip().lower()
+            if real and real != modelo:
+                problem(skill, "la tabla dice '{}' para `{}` y su frontmatter dice '{}'".format(
+                    modelo, agente, real))
+    return filas
+
+
+def check_prefijos_de_id():
+    """Todo prefijo prometido en los prompts lo acepta el verificador, o esta declarado."""
+    regexes = id_regexes()
+    if regexes is None:
+        problem(ROOT / "scripts" / "check-artifacts.py", "no existe: no pude verificar los prefijos de id")
+        return 0
+    vistos = set()
+    for f in sorted(list(ROOT.glob("plugins/*/agents/*.md"))
+                    + list(ROOT.glob("plugins/*/reference/*.md"))):
+        vistos |= prefijos_de_id(f.read_text(encoding="utf-8"))
+    for prefijo in sorted(vistos - PREFIJOS_NO_VERIFICADOS):
+        muestra = "{}-001".format(prefijo)
+        if not any(rx.match(muestra) for rx in regexes):
+            problem(ROOT / "scripts" / "check-artifacts.py",
+                    "los prompts producen ids '{}' y ninguna expresion de ID_RE los acepta "
+                    "(agregala, o declara el prefijo en PREFIJOS_NO_VERIFICADOS)".format(muestra))
+    return len(vistos)
+
+
+def self_test():
+    fallos = []
+
+    def check(nombre, got, want):
+        if got != want:
+            fallos.append("{}: {!r} != {!r}".format(nombre, got, want))
+
+    check("tabla con columna de correccion",
+          tabla_de_modelos("| `scenario-modeling` | Elabora | opus | opus |"),
+          {"scenario-modeling": "opus"})
+    check("tabla con modelo en negrita",
+          tabla_de_modelos("| `product-mapping` | Mapa | **opus** | opus |"),
+          {"product-mapping": "opus"})
+    check("tabla con el modelo en la segunda columna",
+          tabla_de_modelos("| `stack-profiler` | sonnet | Perfil |"),
+          {"stack-profiler": "sonnet"})
+    check("fila sin modelo se ignora",
+          tabla_de_modelos("| `algo` | Rol | descripcion |"), {})
+    check("prefijos de id", prefijos_de_id('{"id": "LEL-001", "x": 1} y "id": "RF-007"'),
+          {"LEL", "RF"})
+
+    for f in fallos:
+        print("SELF-TEST FALLO ({})".format(f))
+    if not fallos:
+        print("self-test ok (5 casos: tabla de modelos y prefijos de id).")
+    return 1 if fallos else 0
+
+
 def main():
+    if "--self-test" in sys.argv[1:]:
+        return self_test()
     n_entries = check_marketplace()
     n_files = check_frontmatters()
+    check_bloques_agentes()
+    n_filas = check_tabla_modelos()
+    n_pref = check_prefijos_de_id()
     mode = "pyyaml" if HAVE_YAML else "reglas de escalar plano (sin pyyaml)"
     print(f"Validados {n_entries} plugins del marketplace y {n_files} frontmatters ({mode}).")
+    print(f"Invariantes: bloques obligatorios, {n_filas} fila(s) de tabla de modelos, "
+          f"{n_pref} prefijo(s) de id.")
     if problems:
         print(f"\n{len(problems)} problema(s):")
         for p in problems:
