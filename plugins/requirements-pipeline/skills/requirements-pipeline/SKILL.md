@@ -19,12 +19,19 @@ veredictos chicos y salidas de script.
 
 ## Subagentes y modelo por modo
 
-El `model` del frontmatter de cada agente es su modo de **generacion**. Los modos de
-**correccion y actualizacion** (aplicar defectos ya diagnosticados, respuestas ya
-redactadas, propuestas ya confirmadas) son transcripcion guiada: invocalos pasando
-`model: sonnet` en la llamada Task. La tabla es el contrato:
+El `model` del frontmatter de cada agente es su modo de **generacion**. Los otros dos
+modos no comparten modelo, asi que pasa siempre el `model` explicito en la llamada
+Task:
 
-| Subagente | Rol | Generacion | Correccion / actualizacion |
+- **Correccion** (aplicar defectos ya diagnosticados por el script o por una
+  inspeccion): el modelo de la columna `Correccion`. Exige releer el artefacto y
+  razonar sobre el defecto, no es transcripcion.
+- **Actualizacion** (respuestas del stakeholder ya redactadas, propuestas ya
+  confirmadas): `sonnet` siempre. Eso si es transcripcion guiada.
+
+La tabla es el contrato:
+
+| Subagente | Rol | Generacion | Correccion |
 |---|---|---|---|
 | `requirements-intake` | Clasifica una fuente en inventario, candidatos LEL y contexto | sonnet | sonnet |
 | `lel-authoring` | Construye o actualiza el LEL | opus | opus |

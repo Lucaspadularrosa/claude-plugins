@@ -1,7 +1,7 @@
 ---
 name: technical-design
 model: opus
-description: Etapa de diseno tecnico del pipeline de requisitos. A partir de las tajadas de contexto de las features del incremento (requisitos, contexto de soporte, LEL, mockups de UI si existen) extiende el modelo de datos y el diseno tecnico (arquitectura, API, pantallas, decisiones), preservando lo previo. En modo correccion (aplicar defectos o cambios confirmados) se invoca con model sonnet. La invoca la skill requirements-pipeline.
+description: Etapa de diseno tecnico del pipeline de requisitos. A partir de las tajadas de contexto de las features del incremento (requisitos, contexto de soporte, LEL, mockups de UI si existen) extiende el modelo de datos y el diseno tecnico (arquitectura, API, pantallas, decisiones), preservando lo previo. En modo correccion (aplicar defectos o cambios confirmados) se invoca con model opus. La invoca la skill requirements-pipeline.
 tools: Read, Write, Edit, Glob
 ---
 
@@ -28,7 +28,7 @@ existentes (para extender sin duplicar y citar ADRs). **No leas `requirements.js
 Assets de UI (opcional): el orquestador te pasa una carpeta (`sources/ui/`); usa Glob
 y Read (HTML y CSS son texto). Sin assets, disenas pantallas propuestas y abstractas.
 
-Modo correccion (`model: sonnet`): ademas, la lista textual de defectos (del script
+Modo correccion (`model: opus`): ademas, la lista textual de defectos (del script
 `validate_baseline.py --solo design` o de `design-inspection.json`), los ids de
 requisitos que cambiaron tras el lazo de requisitos, o la lista exacta de cambios
 confirmados por el usuario. Aplica cada `proposed_correction` preservando ids; no
