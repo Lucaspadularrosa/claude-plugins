@@ -20,6 +20,7 @@ cómo ejecutar el plan con agentes en paralelo.
 | `manual-usuario` | Publica el manual de usuario que el build va escribiendo en `.dev/manual/` como un **sitio HTML estático navegable** en `docs/manual/` (offline, sin dependencias externas): una página por guía + índice, con render determinístico vía script. Lo único de la suite que sale de `.dev/`. |
 | `recovery-pipeline` | Comprende una app ya desarrollada (aunque no tenga documentación): qué hace, en qué estado está, qué falta y qué hay que decidir. Reconstruye la línea de base de requisitos con evidencia `archivo:línea`, compatible con toda la suite. |
 | `audit-pipeline` | Audita el codebase en tres dimensiones — bugs, seguridad defensiva y mejoras — con verificación adversarial de cada hallazgo antes de reportarlo. Los confirmados se convierten en change requests planificables. |
+| `metrics-pipeline` | Cosecha las **métricas de proceso** de la suite sobre cualquier proyecto que la usó: un script determinista lee los artefactos que los pipelines ya dejaron (cero tokens, cero instrumentación, retroactivo) y un analista opcional dice qué mejorar. Con export a un JSONL central para comparar versiones del plugin entre proyectos. |
 
 ## Instalación
 
@@ -31,6 +32,7 @@ cómo ejecutar el plan con agentes en paralelo.
 /plugin install manual-usuario@lpadularrosa-dev-plugins
 /plugin install recovery-pipeline@lpadularrosa-dev-plugins
 /plugin install audit-pipeline@lpadularrosa-dev-plugins
+/plugin install metrics-pipeline@lpadularrosa-dev-plugins
 ```
 
 Requisitos: Python 3.8+ (extracción de documentos); para PDF, `pip install pypdf`.
