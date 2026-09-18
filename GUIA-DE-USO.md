@@ -79,6 +79,7 @@ deprecia) y **nada baselineado se modifica sin tu confirmación**.
 | `/auditar [alcance]` | audit | Bugs, seguridad y mejoras, con verificación adversarial de cada hallazgo. Funciona en cualquier repo. |
 | `/documentar` | build | Genera retroactivamente las guías de usuario de features ya construidas que quedaron sin documentar. Un PR con todas. |
 | `/publicar-manual` | manual-usuario | Publica `.dev/manual/` como sitio HTML estático navegable en `docs/manual/`. |
+| `/estado` | requirements | En qué estado está la suite en este proyecto: qué corrió, qué falta, qué bloquea y qué conviene hacer. Solo lectura, cero tokens de modelo. |
 | `/metricas [solo-datos]` | metrics | Cosecha las métricas de proceso de la suite (script, cero tokens) y opcionalmente las analiza para saber qué mejorar de los pipelines. |
 
 Todos funcionan también en lenguaje natural ("genera los requisitos a partir de estos

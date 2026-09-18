@@ -221,29 +221,24 @@ NOTAS_MAPA = {
 }
 
 
-def render_fg(dev, out):
+def estado_features(dev):
+    """Estado de cada FG cruzando mapa, plan y build. Datos, sin formato.
+
+    Lo consume la tabla de este indice y tambien `suite_status.py`: es la misma
+    lectura de `product-map.json` x `tasks.json` x `progress.json`, y tenerla dos
+    veces seria justo la clase de duplicacion que la suite viene cerrando.
+    """
     pmap = load_json(dev / "requirements" / "product-map.json")
     tasks = load_json(dev / "plan" / "tasks.json")
     progress = load_json(dev / "plan" / "progress.json")
     if not any((pmap, tasks, progress)):
-        return
+        return []
     map_feats = {f.get("id"): f for f in (pmap or {}).get("features", []) or []}
     plan_feats = {f.get("id"): f for f in (tasks or {}).get("features", []) or []}
     build_state = {f.get("feature_id"): f.get("status") for f in (progress or {}).get("features", []) or []}
-    all_ids = sorted(set(map_feats) | set(plan_feats) | set(build_state), key=str)
-    if not all_ids:
-        return
-    out.append("## Estado por feature (FG)")
-    out.append("")
-    out.append("| FG | Feature | Mapa | Plan | Build | Nota |")
-    out.append("|---|---|---|---|---|---|")
-    for fid in all_ids:
-        mf = map_feats.get(fid)
-        pf = plan_feats.get(fid)
-        name = (mf or pf or {}).get("name", "")
-        map_status = mf.get("status", "?") if mf else "—"
-        plan_status = "planificada" if pf else "—"
-        build_status = build_state.get(fid, "—")
+    filas = []
+    for fid in sorted(set(map_feats) | set(plan_feats) | set(build_state), key=str):
+        mf, pf = map_feats.get(fid), plan_feats.get(fid)
         nota = ""
         if mf and not pf:
             nota = NOTAS_MAPA.get(mf.get("status"), "sin tareas en el plan")
@@ -253,45 +248,77 @@ def render_fg(dev, out):
             nota = "feature sintetica del plan (bootstrap)"
         elif pf and not mf:
             nota = "en el plan pero no en el mapa: revisar"
-        out.append("| %s | %s | %s | %s | %s | %s |" % (fid, name.replace("|", "\\|"), map_status, plan_status, build_status, nota))
+        filas.append({
+            "id": fid,
+            "name": (mf or pf or {}).get("name", ""),
+            "mapa": mf.get("status", "?") if mf else None,
+            "plan": bool(pf),
+            "build": build_state.get(fid),
+            "nota": nota,
+        })
+    return filas
+
+
+def render_fg(dev, out):
+    filas = estado_features(dev)
+    if not filas:
+        return
+    out.append("## Estado por feature (FG)")
+    out.append("")
+    out.append("| FG | Feature | Mapa | Plan | Build | Nota |")
+    out.append("|---|---|---|---|---|---|")
+    for f in filas:
+        out.append("| %s | %s | %s | %s | %s | %s |" % (
+            f["id"], (f["name"] or "").replace("|", "\\|"),
+            f["mapa"] or "—", "planificada" if f["plan"] else "—",
+            f["build"] or "—", f["nota"]))
     out.append("")
 
 
-def render_changelog(dev, out):
+def estado_changelog(dev):
+    """INC/CR pendientes, aplicados sin absorber y postergados. Datos, sin formato."""
     changelog = load_json(dev / "requirements" / "changelog.json")
     if not changelog:
-        return
+        return None
     entries = changelog.get("entries", []) or []
     tasks = load_json(dev / "plan" / "tasks.json") or {}
     meta = tasks.get("metadata", {}) or {}
     absorbed = set(meta.get("applied_changelog_ids") or []) | set(meta.get("deferred_changelog_ids") or [])
+    aplicados = [e for e in entries
+                 if e.get("status") == "applied"
+                 and e.get("kind") in ("increment", "change_request", "recovery")]
+    return {
+        "pendientes": [e for e in entries if e.get("status") not in ("applied", "rejected")],
+        "no_absorbidos": [e for e in aplicados if e.get("id") not in absorbed] if tasks else [],
+        "postergados": list(meta.get("deferred_changelog_ids") or []),
+    }
+
+
+def render_changelog(dev, out):
+    est = estado_changelog(dev)
+    if est is None:
+        return
     out.append("## INC / CR")
     out.append("")
-    pending = [e for e in entries if e.get("status") not in ("applied", "rejected")]
-    if pending:
+    if est["pendientes"]:
         out.append("Pendientes (no aplicados a la linea de base):")
         out.append("")
-        for e in pending:
-            note = (e.get("notes") or "").split("\n")[0].strip()
-            out.append("- `%s` (%s, **%s**, %s)%s" % (e.get("id", "?"), e.get("kind", "?"), e.get("status", "?"), e.get("date", "?"), ": %s" % note if note else ""))
+        for e in est["pendientes"]:
+            note = ((e.get("notes") or "").splitlines() or [""])[0].strip()
+            out.append("- `%s` (%s, **%s**, %s)%s" % (
+                e.get("id", "?"), e.get("kind", "?"), e.get("status", "?"),
+                e.get("date", "?"), ": %s" % note if note else ""))
         out.append("")
-    # Solo INC/CR/REC alimentan el plan; los DSC no se "absorben".
-    applied = [
-        e for e in entries
-        if e.get("status") == "applied" and e.get("kind") in ("increment", "change_request", "recovery")
-    ]
-    not_absorbed = [e for e in applied if e.get("id") not in absorbed] if tasks else []
-    if not_absorbed:
+    if est["no_absorbidos"]:
         out.append("Aplicados a los requisitos pero NO absorbidos por el plan (correr `/replanificar`):")
         out.append("")
-        for e in not_absorbed:
+        for e in est["no_absorbidos"]:
             out.append("- `%s` (%s, %s)" % (e.get("id", "?"), e.get("kind", "?"), e.get("date", "?")))
         out.append("")
-    deferred = meta.get("deferred_changelog_ids") or []
-    if deferred:
-        out.append("Postergados a proposito en la replanificacion: %s." % ", ".join(deferred))
+    if est["postergados"]:
+        out.append("Postergados a proposito en la replanificacion: %s." % ", ".join(est["postergados"]))
         out.append("")
-    if not pending and not not_absorbed and not deferred:
+    if not any((est["pendientes"], est["no_absorbidos"], est["postergados"])):
         out.append("Nada pendiente: todo lo aplicado esta absorbido por el plan (o no hay plan aun).")
         out.append("")
 

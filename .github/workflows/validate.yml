@@ -42,7 +42,7 @@ jobs:
       - name: Self-test de los scripts de la suite
         run: |
           set -e
-          for s in $(grep -l -- '--self-test' plugins/*/skills/*/scripts/*.py | sort); do
+          for s in $(grep -l -- '--self-test' plugins/*/skills/*/scripts/*.py plugins/*/hooks/*.py | sort); do
             echo "== $s"; python "$s" --self-test
           done
 

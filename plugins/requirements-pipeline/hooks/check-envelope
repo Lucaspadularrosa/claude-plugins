@@ -1,0 +1,23 @@
+#!/bin/sh
+# Ejecutable del plugin `requerimientos`, invocable por nombre desde cualquier
+# plugin de la suite mientras este instalado y habilitado (Claude Code agrega
+# `bin/` de cada plugin al PATH de la Bash tool).
+#
+# Existe porque la ruta relativa que se usaba antes
+# (`${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/...`) solo resuelve cuando el
+# marketplace es un directorio local. En una instalacion normal el plugin vive en
+# `~/.claude/plugins/cache/<marketplace>/<nombre-del-plugin>/<version>/`, asi que
+# faltaba un nivel Y el directorio se llama por el NOMBRE del plugin
+# (`requerimientos`), no por la carpeta del repo (`requirements-pipeline`).
+#
+# Este wrapper resuelve su propio script relativo a si mismo, que es estable en
+# cualquiera de los dos layouts.
+set -e
+raiz=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+script="$raiz/hooks/check_envelope.py"
+[ -f "$script" ] || { echo "check-envelope: no encuentro $script" >&2; exit 1; }
+if command -v python3 >/dev/null 2>&1; then exec python3 "$script" "$@"; fi
+if command -v python  >/dev/null 2>&1; then exec python  "$script" "$@"; fi
+if command -v py      >/dev/null 2>&1; then exec py -3   "$script" "$@"; fi
+echo "check-envelope: no encontre Python 3 (probe python3, python, py -3)" >&2
+exit 127

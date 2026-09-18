@@ -2,3 +2,4 @@
 # shebang no arranca ("/bin/sh^M: bad interpreter"). Se versionan y se checkoutean
 # siempre con LF, en cualquier sistema.
 plugins/*/bin/* text eol=lf
+plugins/*/hooks/* text eol=lf

@@ -37,9 +37,10 @@ cómo ejecutar el plan con agentes en paralelo.
 
 Requisitos: Python 3.8+ (extracción de documentos); para PDF, `pip install pypdf`.
 
-**Dependencia entre plugins**: `planning`, `build`, `recovery` y `audit` usan cuatro
-ejecutables que provee `requerimientos` (`suite-pipeline-version`, `suite-stage-check`,
-`suite-render-index` y `suite-render-baseline-docs`), que Claude Code pone en el `PATH` mientras ese plugin
+**Dependencia entre plugins**: `planning`, `build`, `recovery` y `audit` usan cinco
+ejecutables que provee `requerimientos` (`suite-status`, `suite-pipeline-version`,
+`suite-stage-check`, `suite-render-index` y `suite-render-baseline-docs`), que Claude
+Code pone en el `PATH` mientras ese plugin
 esté instalado y habilitado. Sin él, esos pasos se saltean y quedan anotados; el resto
 funciona igual. No se alcanzan por ruta relativa: en una instalación normal cada plugin
 vive en `~/.claude/plugins/cache/<marketplace>/<nombre>/<versión>/` y una ruta relativa
@@ -85,6 +86,13 @@ plugin para el detalle técnico.
 - `python scripts/check-artifacts.py <proyecto>` — todo **cumple contrato**: verifica
   los artefactos `.dev/` que una corrida real generó (ids, enums, referencias
   cruzadas, cobertura de lotes).
+- `suite-status <proyecto>/.dev` (o `/estado`) — en que **estado** esta la suite en un
+  proyecto: que pipelines corrieron, que features estan en cada etapa, que bloquea y
+  que conviene hacer. Deriva todo de los artefactos, sin estado propio. `--json` emite
+  el contrato `suite.status/v1`.
+- Un hook `SubagentStop` avisa cuando un subagente de la suite cierra sin su sobre de
+  retorno (`status`, `artifact_paths`, `summary`) — el caso de la Task que termina sin
+  reporte, que antes pasaba inadvertido.
 - [`tests/golden/`](tests/golden/README.md) — todo **funciona**: el test dorado, una
   corrida completa de la suite sobre una visión fija, con checklist por etapa. Se
   corre a mano antes de mergear cambios de comportamiento en los prompts.

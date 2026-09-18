@@ -34,6 +34,7 @@ Uso: python scripts/validate.py [raiz-del-repo]
      python scripts/validate.py --self-test
 """
 
+import ast
 import json
 import re
 import sys
@@ -422,6 +423,45 @@ def check_tools_declaradas():
             n += 1
     return n
 
+def check_lista_de_plugins_del_hook():
+    """El hook del sobre filtra por prefijo de plugin: esa lista no puede derivar.
+
+    Si se agrega un plugin y no entra en `PLUGINS`, sus agentes dejan de
+    verificarse sin que nadie se entere — exactamente el modo de falla silenciosa
+    que el hook viene a cerrar.
+    """
+    ruta = ROOT / "plugins" / "requirements-pipeline" / "hooks" / "check_envelope.py"
+    if not ruta.exists():
+        return
+    try:
+        arbol = ast.parse(ruta.read_text(encoding="utf-8"))
+    except SyntaxError as e:
+        problem(ruta, "no parsea: {}".format(e))
+        return
+    declarados = None
+    for nodo in arbol.body:
+        if isinstance(nodo, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "PLUGINS" for t in nodo.targets):
+            try:
+                declarados = set(ast.literal_eval(nodo.value))
+            except ValueError:
+                problem(ruta, "PLUGINS no es una tupla de literales")
+                return
+    if declarados is None:
+        problem(ruta, "no declara PLUGINS")
+        return
+    try:
+        mp = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    reales = {e.get("name") for e in mp.get("plugins", [])}
+    faltan, sobran = reales - declarados, declarados - reales
+    if faltan:
+        problem(ruta, "PLUGINS no incluye {}: los agentes de ese plugin no se "
+                      "verifican".format(", ".join(sorted(faltan))))
+    if sobran:
+        problem(ruta, "PLUGINS nombra plugins que no existen: {}".format(", ".join(sorted(sobran))))
+
 def prefijos_de_id(texto):
     """Prefijos de id que un prompt promete: `"id": "RF-001"` -> RF."""
     return set(re.findall(r'"id":\s*"([A-Z]+)-\d', texto))
@@ -516,6 +556,7 @@ def main():
     check_rutas_cruzadas()
     n_plug = check_nombres_de_plugin()
     check_tools_declaradas()
+    check_lista_de_plugins_del_hook()
     n_pref = check_prefijos_de_id()
     mode = "pyyaml" if HAVE_YAML else "reglas de escalar plano (sin pyyaml)"
     print(f"Validados {n_entries} plugins del marketplace y {n_files} frontmatters ({mode}).")
