@@ -314,6 +314,27 @@ def check_modelo_fijado_en_diseno():
                 n += 1
     return n
 
+# Un plugin no alcanza los archivos de otro por ruta relativa: en una instalacion
+# normal cada plugin vive en `.../cache/<marketplace>/<nombre>/<version>/`, asi que
+# `${CLAUDE_PLUGIN_ROOT}/../<otro>` no resuelve (falta el nivel de version y el
+# directorio se llama por el NOMBRE del plugin, no por la carpeta del repo). Solo
+# funciona cuando el marketplace es un directorio local, que es como lo ve quien
+# desarrolla la suite: falla justo para todos los demas. Lo compartido se expone
+# como ejecutable en `bin/`, que Claude Code pone en el PATH.
+RUTA_CRUZADA = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/\.\./")
+
+
+def check_rutas_cruzadas():
+    for pat in ("plugins/*/skills/*/SKILL.md", "plugins/*/skills/*/modes/*.md",
+                "plugins/*/agents/*.md", "plugins/*/commands/*.md"):
+        for f in sorted(ROOT.glob(pat)):
+            for i, linea in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+                if RUTA_CRUZADA.search(linea):
+                    problem(f, "linea {}: alcanza otro plugin por ruta relativa "
+                               "(${{CLAUDE_PLUGIN_ROOT}}/../); solo resuelve con un "
+                               "marketplace de directorio local. Expone lo compartido "
+                               "como ejecutable en bin/ del plugin que lo provee".format(i))
+
 def prefijos_de_id(texto):
     """Prefijos de id que un prompt promete: `"id": "RF-001"` -> RF."""
     return set(re.findall(r'"id":\s*"([A-Z]+)-\d', texto))
@@ -405,6 +426,7 @@ def main():
     n_filas = check_tabla_modelos()
     n_prosa = check_prosa_modelos(mapa_declarado())
     check_modelo_fijado_en_diseno()
+    check_rutas_cruzadas()
     n_pref = check_prefijos_de_id()
     mode = "pyyaml" if HAVE_YAML else "reglas de escalar plano (sin pyyaml)"
     print(f"Validados {n_entries} plugins del marketplace y {n_files} frontmatters ({mode}).")

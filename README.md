@@ -37,6 +37,14 @@ cómo ejecutar el plan con agentes en paralelo.
 
 Requisitos: Python 3.8+ (extracción de documentos); para PDF, `pip install pypdf`.
 
+**Dependencia entre plugins**: `planning`, `build`, `recovery` y `audit` usan tres
+ejecutables que provee `requerimientos` (`suite-pipeline-version`, `suite-render-index`
+y `suite-render-baseline-docs`), que Claude Code pone en el `PATH` mientras ese plugin
+esté instalado y habilitado. Sin él, esos pasos se saltean y quedan anotados; el resto
+funciona igual. No se alcanzan por ruta relativa: en una instalación normal cada plugin
+vive en `~/.claude/plugins/cache/<marketplace>/<nombre>/<versión>/` y una ruta relativa
+entre plugins no resuelve.
+
 ## Los dos flujos
 
 **Greenfield** — de la idea a la app:

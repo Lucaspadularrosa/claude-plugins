@@ -3,7 +3,8 @@
 """Version del plugin cargado y avisos de desfase, en una linea y sin tokens.
 
 Script transversal de la suite (vive en requirements-pipeline; los plugins hermanos
-lo invocan por la ruta `${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/...`).
+lo invocan por el ejecutable `suite-pipeline-version` del plugin
+`requerimientos`, que Claude Code pone en el PATH).
 Reemplaza el "Paso 0" que cada skill hacia a mano: leer plugin.json, comparar con
 el pipeline_version de los artefactos previos y mirar si el marketplace local tiene
 una version mas nueva que la cargada.

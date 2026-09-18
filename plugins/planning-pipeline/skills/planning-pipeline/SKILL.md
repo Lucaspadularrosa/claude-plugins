@@ -37,7 +37,7 @@ el OK.
 ## Paso 0 - Version del pipeline (script)
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/check_pipeline_version.py" --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/plan/tasks.json
+suite-pipeline-version --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/plan/tasks.json
 ```
 
 (vive en el plugin hermano `requirements-pipeline`; si no esta instalado, lee la
@@ -196,7 +196,7 @@ incompleto.
 ### Paso 5 - Cierre (scripts en una sola tanda)
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/render_index.py" .dev; python3 "$S/slice_brief_context.py" . --limpiar; python3 "$S/slice_requirements_context.py" . --limpiar
+suite-render-index .dev; python3 "$S/slice_brief_context.py" . --limpiar; python3 "$S/slice_requirements_context.py" . --limpiar
 ```
 
 (si `render_index.py` no esta, saltea el indice y avisalo). Las carpetas

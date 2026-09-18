@@ -53,7 +53,7 @@ plugin desactualizado lo da el script de la suite (plugin hermano
 `requirements-pipeline`); correlo y mostra su salida si dice algo:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/check_pipeline_version.py" --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/recovery/code-inventory.json
+suite-pipeline-version --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/recovery/code-inventory.json
 ```
 
 Retomes de corridas anteriores, en este orden:
@@ -186,8 +186,8 @@ Si acepta:
 5. Regenera las vistas `.md` de la linea de base y el indice `.dev/README.md`:
 
    ```bash
-   python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/render_baseline_docs.py" .dev/requirements
-   python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/render_index.py" .dev
+   suite-render-baseline-docs .dev/requirements
+   suite-render-index .dev
    ```
 
 6. Cierra la entrada `REC-xxx` (`applied`, con versiones de artefactos y features

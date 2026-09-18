@@ -1,0 +1,4 @@
+# Los ejecutables de `bin/` los interpreta /bin/sh: con finales de linea CRLF el
+# shebang no arranca ("/bin/sh^M: bad interpreter"). Se versionan y se checkoutean
+# siempre con LF, en cualquier sistema.
+plugins/*/bin/* text eol=lf

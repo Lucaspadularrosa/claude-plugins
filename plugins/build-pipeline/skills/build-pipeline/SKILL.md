@@ -42,7 +42,7 @@ inicializalo con el script: `progress_update.py <raiz> --init --pipeline-version
 invocarlo** (`pipeline_version: X.Y.Z`): todo artefacto JSON la estampa. El aviso de
 artefactos previos generados con otra version o de instalacion desactualizada lo da
 el script de la suite (vive en el plugin hermano `requirements-pipeline`):
-`python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/check_pipeline_version.py" --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/build/stack-profile.json`
+`suite-pipeline-version --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/build/stack-profile.json`
 — imprime el aviso o nada; si el script no esta, segui sin bloquear (es informativo).
 
 ## Scripts del plugin (`${CLAUDE_PLUGIN_ROOT}/skills/build-pipeline/scripts/`)
@@ -63,8 +63,10 @@ proyecto, mostra su salida al usuario — no lo suplas a mano.
 | `render_batch_summary.py <raiz> [--lote BATCH-n \| --features FG-xx]` | Resumen final consolidado en Markdown desde los artefactos | Cierre de FEATURE y LOTE |
 
 Ademas, el indice de `.dev` (`.dev/README.md`) lo regenera el script de la suite:
-`python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/render_index.py" .dev`
-al cierre de cada corrida; si no esta instalado, saltealo y anotalo.
+`suite-render-index .dev`
+al cierre de cada corrida. Es un ejecutable del plugin `requerimientos`: si ese plugin
+no esta instalado el comando no existe (`command -v suite-render-index` no resuelve),
+asi que saltealo y anotalo.
 
 ## Subagentes (en `agents/` del plugin)
 

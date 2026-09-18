@@ -52,7 +52,7 @@ Los scripts viven en `${CLAUDE_PLUGIN_ROOT}/skills/audit-pipeline/scripts/`. Si
   `requirements-pipeline`); correlo y mostra su salida si dice algo:
 
   ```bash
-  python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/check_pipeline_version.py" --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/audit/audit-report.json
+  suite-pipeline-version --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/audit/audit-report.json
   ```
 
   Si el script no esta, segui sin bloquear: el aviso es informativo.
