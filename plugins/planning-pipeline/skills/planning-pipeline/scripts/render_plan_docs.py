@@ -24,6 +24,7 @@ listan con su motivo, para explicar los huecos de numeracion.
 Uso:
   python render_plan_docs.py [carpeta] [--salida DIR] [--solo NOMBRE ...]
                              [--requirements DIR]
+  python render_plan_docs.py --self-test
 
   carpeta         por defecto .dev/plan (donde viven los .json canonicos)
   --salida        carpeta de salida (por defecto la misma carpeta)
@@ -39,6 +40,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -337,13 +339,97 @@ RENDERERS = {
 }
 
 
+# ------------------------------------------------------------------ self-test
+
+# El encabezado de sincronia que verifican validate_plan.py y check_closure.py.
+# Si este render deja de emitirlo con ese formato exacto, las inspecciones marcan
+# los .md como desincronizados: por eso se testea contra la misma expresion.
+_DERIVED_HEADER = re.compile(r"Derivado de `(?P<json>[\w.-]+)` version (?P<version>\d+)")
+
+_FIXTURES = {
+    "tasks": {
+        "version": 3, "project": {"name": "demo"},
+        "features": [{"id": "FG-01", "name": "Turnos", "task_ids": ["T-001"]}],
+        "tasks": [{"id": "T-001", "feature_group": "FG-01", "title": "Crear turno",
+                   "status": "pending", "complexity": "low", "depends_on": [],
+                   "requirement_ids": ["RF-001"], "acceptance_criteria": ["anda"]}],
+        "summary": {"complexity_breakdown": {"low": 1, "medium": 0, "high": 0}},
+    },
+    "execution-plan": {
+        "version": 2, "project": {"name": "demo"},
+        "contract_round": {"id": "BATCH-0", "task_ids": []},
+        "batches": [{"id": "BATCH-1", "unlocks_after": ["BATCH-0"],
+                     "features": [{"feature_id": "FG-01", "task_ids": ["T-001"],
+                                   "task_order": ["T-001"]}]}],
+        "summary": {"max_parallel_degree": 1, "batch_count": 1},
+    },
+    "plan-inspection": {
+        "version": 1, "project": {"name": "demo"}, "passed": True,
+        "summary": {"total_defects": 0, "confirmed_defects": 0,
+                    "high_severity": 0, "medium_severity": 0, "low_severity": 0},
+        "defects": [],
+    },
+}
+
+
+def self_test():
+    import shutil
+    import tempfile
+
+    fallos = 0
+    tmp = Path(tempfile.mkdtemp(prefix="render-plan-docs-"))
+    try:
+        for name, doc in _FIXTURES.items():
+            json_name, _md, _r = RENDERERS[name]
+            (tmp / json_name).write_text(json.dumps(doc), encoding="utf-8")
+
+        code = main([str(tmp), "--requirements", str(tmp / "no-existe")])
+        if code != 0:
+            print("SELF-TEST FALLO: main() devolvio %s" % code)
+            fallos += 1
+
+        for name, doc in _FIXTURES.items():
+            json_name, md_name, _r = RENDERERS[name]
+            dest = tmp / md_name
+            if not dest.is_file():
+                print("SELF-TEST FALLO (%s): no se genero %s" % (name, md_name))
+                fallos += 1
+                continue
+            texto = dest.read_text(encoding="utf-8")
+            m = _DERIVED_HEADER.search(texto)
+            if not m:
+                print("SELF-TEST FALLO (%s): sin encabezado de sincronia parseable" % name)
+                fallos += 1
+            elif m.group("json") != json_name or m.group("version") != str(doc["version"]):
+                print("SELF-TEST FALLO (%s): el encabezado cita %s version %s" % (
+                    name, m.group("json"), m.group("version")))
+                fallos += 1
+            else:
+                print("self-test ok (%s): %s, encabezado sincronizado" % (name, md_name))
+
+        # un .json ilegible se reporta y no rompe el resto
+        (tmp / "tasks.json").write_text("{roto", encoding="utf-8")
+        if main([str(tmp), "--solo", "tasks", "--requirements", str(tmp / "no-existe")]) != 1:
+            print("SELF-TEST FALLO: un .json ilegible deberia dar exit 1")
+            fallos += 1
+        else:
+            print("self-test ok (json ilegible): exit 1")
+    finally:
+        shutil.rmtree(str(tmp), ignore_errors=True)
+    return 1 if fallos else 0
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("carpeta", nargs="?", default=".dev/plan", help="carpeta con los .json canonicos (default: .dev/plan)")
     ap.add_argument("--salida", default=None, help="carpeta de salida (default: la misma carpeta)")
     ap.add_argument("--solo", nargs="+", choices=sorted(RENDERERS), default=None, help="renderizar solo estos artefactos")
     ap.add_argument("--requirements", default=".dev/requirements", help="carpeta de la linea de base con product-map.json (default: .dev/requirements)")
+    ap.add_argument("--self-test", action="store_true", help="corre el self-test sobre fixtures embebidas y sale")
     args = ap.parse_args(argv)
+
+    if args.self_test:
+        return self_test()
 
     src = Path(args.carpeta)
     if not src.is_dir():

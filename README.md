@@ -65,9 +65,15 @@ plugin para el detalle técnico.
 
 ## QA de la suite
 
-- `python scripts/validate.py` — todo **carga**: marketplace, plugin.json y los
-  frontmatters de agentes/comandos/skills (corre en CI; atrapa el YAML que
-  des-registra un comando o le da todas las tools a un agente).
+- `python scripts/validate.py` — todo **carga** y todo **coincide**: marketplace,
+  plugin.json y los frontmatters de agentes/comandos/skills (atrapa el YAML que
+  des-registra un comando o le da todas las tools a un agente), más tres invariantes
+  contra la deriva entre copias: los bloques obligatorios de cada agente, el modelo
+  que declaran `SKILL.md` y `PIPELINE.md` contra el frontmatter, y los prefijos de id
+  que prometen los prompts contra los que verifica `check-artifacts.py`. Corre en CI.
+- `python scripts/check-version-bump.py` — todo **llega**: un plugin que cambia sube
+  su versión. El caché se indexa por versión, así que un fix sin bump no le llega a
+  quien ya tiene esa versión instalada. Corre en CI sobre cada PR.
 - `python scripts/check-artifacts.py <proyecto>` — todo **cumple contrato**: verifica
   los artefactos `.dev/` que una corrida real generó (ids, enums, referencias
   cruzadas, cobertura de lotes).

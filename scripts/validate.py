@@ -17,8 +17,11 @@ externas (usa pyyaml si esta instalado, si no aplica las reglas del escalar plan
 
 3. Todo agente lleva los bloques que el contrato de la suite da por sentados:
    "Frontera de confianza" y "Respuesta al orquestador".
-4. Donde una skill publica una tabla de modelo por subagente, la tabla coincide con
-   el `model` del frontmatter de cada agente.
+4. Donde un documento publica modelo por subagente (el `SKILL.md` de la skill o el
+   `PIPELINE.md` de diseno), el `model` del frontmatter esta entre los que nombra.
+   PIPELINE.md no lo carga ningun comando, pero declara modelos igual: si queda
+   atras, el orquestador termina con dos fuentes en conflicto.
+   Limite conocido: se leen filas de tabla, no prosa suelta.
 5. Todo prefijo de id que los prompts prometen (`"id": "XXX-001"`) lo acepta alguna
    expresion de `scripts/check-artifacts.py`, o esta declarado como no verificado.
    Sin esto, renombrar un id en los prompts deja al verificador atras en silencio
@@ -173,26 +176,65 @@ def check_marketplace():
 
 # ---------------------------------------------------- invariantes de contenido
 
-def modelo_de_fila(fila):
-    """Modelo declarado en una fila de tabla markdown, o None."""
-    for celda in fila.split("|"):
-        c = celda.strip().strip("*").strip("`").lower()
-        if c in MODELOS:
-            return c
-    return None
+def modelos_de_fila(fila):
+    """Modelos que una fila de tabla markdown nombra para un agente.
+
+    Las declaraciones calificadas son legitimas y frecuentes: `agente (opus)`,
+    `opus (plan: sonnet)`, `sonnet (opus si A01/A02/A07)`,
+    `(sonnet/opus/sonnet por modo)`. No se intenta adivinar cual es el primario:
+    el invariante es que el `model` del frontmatter este ENTRE los que el
+    documento nombra. Una fila que nombra solo 'sonnet' para un agente cuyo
+    frontmatter dice 'opus' es la deriva que se quiere atrapar.
+    """
+    return set(re.findall(r"[a-z]+", fila.lower())) & MODELOS
 
 
 def tabla_de_modelos(texto):
-    """{agente: modelo} segun las filas `| `agente` | ... | modelo |` de una skill."""
+    """{agente: {modelos}} segun las filas `| `agente` ... |` de una tabla.
+
+    Se mira la fila entera, no solo lo que sigue al nombre: hay tablas que meten
+    el modelo en la misma celda del agente
+    (`| `baseline-reconstruction` (sonnet/opus/sonnet por modo) | ...`).
+    """
     out = {}
     for linea in texto.splitlines():
-        m = re.match(r"^\|\s*`([a-z][\w-]*)`\s*\|", linea)
+        m = re.match(r"^\|\s*`([a-z][\w-]+)`", linea)
         if not m:
             continue
-        modelo = modelo_de_fila(linea[m.end():])
-        if modelo:
-            out[m.group(1)] = modelo
+        resto = linea[:m.start(1)] + linea[m.end():]
+        modelos = modelos_de_fila(resto)
+        if modelos:
+            out[m.group(1)] = modelos
     return out
+
+
+def docs_con_tabla():
+    """(documento, carpeta del plugin) de todo lo que puede declarar modelos.
+
+    PIPELINE.md no lo carga ningun comando, pero es el documento de diseno del
+    pipeline y declara modelo por agente: si queda atras, el orquestador termina
+    con dos fuentes en conflicto igual.
+    """
+    for skill in sorted(ROOT.glob("plugins/*/skills/*/SKILL.md")):
+        yield skill, skill.parent.parent.parent
+    for pl in sorted(ROOT.glob("plugins/*/PIPELINE.md")):
+        yield pl, pl.parent
+
+
+def check_tabla_modelos():
+    """El `model` del frontmatter tiene que estar entre los que el doc nombra."""
+    filas = 0
+    for doc, plugin_dir in docs_con_tabla():
+        for agente, modelos in sorted(tabla_de_modelos(doc.read_text(encoding="utf-8")).items()):
+            agente_md = plugin_dir / "agents" / (agente + ".md")
+            if not agente_md.exists():
+                continue  # la fila nombra algo que no es un agente de este plugin
+            filas += 1
+            real = str((parse_frontmatter(agente_md) or {}).get("model", "")).strip().lower()
+            if real and real not in modelos:
+                problem(doc, "nombra {} para `{}` y su frontmatter dice '{}'".format(
+                    " y ".join("'%s'" % m for m in sorted(modelos)), agente, real))
+    return filas
 
 
 def prefijos_de_id(texto):
@@ -221,25 +263,6 @@ def check_bloques_agentes():
                 ", ".join('"{}"'.format(b) for b in faltan)))
 
 
-def check_tabla_modelos():
-    """Donde una skill publica modelo por subagente, tiene que coincidir."""
-    filas = 0
-    for skill in sorted(ROOT.glob("plugins/*/skills/*/SKILL.md")):
-        plugin_dir = skill.parent.parent.parent
-        tabla = tabla_de_modelos(skill.read_text(encoding="utf-8"))
-        for agente, modelo in sorted(tabla.items()):
-            agente_md = plugin_dir / "agents" / (agente + ".md")
-            if not agente_md.exists():
-                continue  # la fila nombra algo que no es un agente de este plugin
-            filas += 1
-            data = parse_frontmatter(agente_md) or {}
-            real = str(data.get("model", "")).strip().lower()
-            if real and real != modelo:
-                problem(skill, "la tabla dice '{}' para `{}` y su frontmatter dice '{}'".format(
-                    modelo, agente, real))
-    return filas
-
-
 def check_prefijos_de_id():
     """Todo prefijo prometido en los prompts lo acepta el verificador, o esta declarado."""
     regexes = id_regexes()
@@ -266,24 +289,29 @@ def self_test():
         if got != want:
             fallos.append("{}: {!r} != {!r}".format(nombre, got, want))
 
-    check("tabla con columna de correccion",
-          tabla_de_modelos("| `scenario-modeling` | Elabora | opus | opus |"),
-          {"scenario-modeling": "opus"})
-    check("tabla con modelo en negrita",
-          tabla_de_modelos("| `product-mapping` | Mapa | **opus** | opus |"),
-          {"product-mapping": "opus"})
-    check("tabla con el modelo en la segunda columna",
-          tabla_de_modelos("| `stack-profiler` | sonnet | Perfil |"),
-          {"stack-profiler": "sonnet"})
-    check("fila sin modelo se ignora",
-          tabla_de_modelos("| `algo` | Rol | descripcion |"), {})
+    check("columna de correccion", tabla_de_modelos(
+          "| `scenario-modeling` | Elabora | opus | opus |"), {"scenario-modeling": {"opus"}})
+    check("modelo en negrita", tabla_de_modelos(
+          "| `product-mapping` | Mapa | **opus** | opus |"), {"product-mapping": {"opus"}})
+    check("modelo suelto en una celda", tabla_de_modelos(
+          "| `stack-profiler` | sonnet | Perfil |"), {"stack-profiler": {"sonnet"}})
+    check("declaracion calificada", tabla_de_modelos(
+          "| `feature-implementer` | opus (plan: sonnet) | Construye |"),
+          {"feature-implementer": {"opus", "sonnet"}})
+    check("modelo entre parentesis tras una palabra", tabla_de_modelos(
+          "| `bug-hunter` | agente (opus) | correctitud |"), {"bug-hunter": {"opus"}})
+    check("multi-modo en la celda del nombre", tabla_de_modelos(
+          "| `baseline-reconstruction` (sonnet/opus/sonnet por modo) | Emite |"),
+          {"baseline-reconstruction": {"opus", "sonnet"}})
+    check("fila sin modelo se ignora", tabla_de_modelos(
+          "| `algo` | Rol | descripcion |"), {})
     check("prefijos de id", prefijos_de_id('{"id": "LEL-001", "x": 1} y "id": "RF-007"'),
           {"LEL", "RF"})
 
     for f in fallos:
         print("SELF-TEST FALLO ({})".format(f))
     if not fallos:
-        print("self-test ok (5 casos: tabla de modelos y prefijos de id).")
+        print("self-test ok (8 casos: tabla de modelos y prefijos de id).")
     return 1 if fallos else 0
 
 
