@@ -26,23 +26,24 @@ Task:
 - **Correccion** (aplicar defectos ya diagnosticados por el script o por una
   inspeccion): el modelo de la columna `Correccion`. Exige releer el artefacto y
   razonar sobre el defecto, no es transcripcion.
-- **Actualizacion** (respuestas del stakeholder ya redactadas, propuestas ya
-  confirmadas): `sonnet` siempre. Eso si es transcripcion guiada.
+- **Actualizacion** (respuestas del stakeholder ya redactadas, propuestas o cambios
+  ya confirmados): el de la columna `Actualizacion`. Es transcripcion guiada y va en
+  `sonnet`; `—` marca los agentes que no tienen ese modo.
 
 La tabla es el contrato:
 
-| Subagente | Rol | Generacion | Correccion |
-|---|---|---|---|
-| `requirements-intake` | Clasifica una fuente en inventario, candidatos LEL y contexto | sonnet | sonnet |
-| `lel-authoring` | Construye o actualiza el LEL | opus | opus |
-| `lel-inspection` | Juicio sobre el LEL (lo mecanico lo hace el script) | haiku | haiku |
-| `stakeholder-questionnaire` | Preguntas al stakeholder; elicitacion | sonnet | sonnet |
-| `product-mapping` | Mapa del producto: features, stubs, valor y prioridad | **opus** | opus |
-| `scenario-modeling` | Elabora los escenarios de UNA feature | opus | opus |
-| `requirements-specification` | Especifica los requisitos de UNA feature | opus | opus |
-| `requirements-inspection` | Juicio sobre la especificacion | sonnet | sonnet |
-| `technical-design` | Extiende modelo de datos y diseno | opus | opus |
-| `design-inspection` | Juicio sobre el diseno y la normalizacion | sonnet | sonnet |
+| Subagente | Rol | Generacion | Correccion | Actualizacion |
+|---|---|---|---|---|
+| `requirements-intake` | Clasifica una fuente en inventario, candidatos LEL y contexto | sonnet | sonnet | sonnet |
+| `lel-authoring` | Construye o actualiza el LEL | opus | opus | sonnet |
+| `lel-inspection` | Juicio sobre el LEL (lo mecanico lo hace el script) | haiku | haiku | — |
+| `stakeholder-questionnaire` | Preguntas al stakeholder; elicitacion | sonnet | sonnet | — |
+| `product-mapping` | Mapa del producto: features, stubs, valor y prioridad | **opus** | opus | sonnet |
+| `scenario-modeling` | Elabora los escenarios de UNA feature | opus | opus | sonnet |
+| `requirements-specification` | Especifica los requisitos de UNA feature | opus | opus | sonnet |
+| `requirements-inspection` | Juicio sobre la especificacion | sonnet | sonnet | — |
+| `technical-design` | Extiende modelo de datos y diseno | opus | opus | sonnet |
+| `design-inspection` | Juicio sobre el diseno y la normalizacion | sonnet | sonnet | — |
 
 > Correccion en opus por evidencia del benchmark SIGEC (2026-08): con sonnet cada
 > lazo de correccion de spec y diseno necesito 2 pasadas (fue el mayor costo del

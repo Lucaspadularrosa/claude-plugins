@@ -21,7 +21,9 @@ externas (usa pyyaml si esta instalado, si no aplica las reglas del escalar plan
    `PIPELINE.md` de diseno), el `model` del frontmatter esta entre los que nombra.
    PIPELINE.md no lo carga ningun comando, pero declara modelos igual: si queda
    atras, el orquestador termina con dos fuentes en conflicto.
-   Limite conocido: se leen filas de tabla, no prosa suelta.
+   Como AVISO (no bloquea), la prosa de esos documentos y de `modes/` que fije
+   para un agente un modelo que ninguna tabla declara: es el hueco que dejaba el
+   punto anterior, que solo lee filas de tabla.
 5. Todo prefijo de id que los prompts prometen (`"id": "XXX-001"`) lo acepta alguna
    expresion de `scripts/check-artifacts.py`, o esta declarado como no verificado.
    Sin esto, renombrar un id en los prompts deja al verificador atras en silencio
@@ -69,6 +71,18 @@ PREFIJOS_NO_VERIFICADOS = {
 }
 
 problems = []
+warnings = []
+
+
+def _rel(path):
+    try:
+        return path.relative_to(ROOT)
+    except ValueError:
+        return path
+
+
+def warn(path, msg):
+    warnings.append(f"{_rel(path)}: {msg}")
 
 
 def problem(path, msg):
@@ -237,6 +251,69 @@ def check_tabla_modelos():
     return filas
 
 
+def mapa_declarado():
+    """{agente: {modelos}} segun todas las tablas verificables de la suite."""
+    out = {}
+    for doc, plugin_dir in docs_con_tabla():
+        for agente, modelos in tabla_de_modelos(doc.read_text(encoding="utf-8")).items():
+            if (plugin_dir / "agents" / (agente + ".md")).exists():
+                out.setdefault(agente, set()).update(modelos)
+    return out
+
+
+def docs_con_prosa():
+    """Documentos donde la prosa puede fijar un modelo (no solo las tablas)."""
+    for pat in ("plugins/*/skills/*/SKILL.md", "plugins/*/PIPELINE.md",
+                "plugins/*/skills/*/modes/*.md"):
+        for f in sorted(ROOT.glob(pat)):
+            yield f
+
+
+def check_prosa_modelos(declarado):
+    """AVISO: prosa que fija para un agente un modelo que ninguna tabla declara.
+
+    No bloquea. La prosa describe modos legitimos ("modo nucleo con sonnet") que
+    una tabla puede no publicar todavia, asi que un aviso no es necesariamente un
+    defecto. Pero si la tabla es el contrato, toda prosa que la contradiga es
+    candidata a deriva y tiene que verse: el invariante de tablas no la cubre.
+    """
+    n = 0
+    for doc in docs_con_prosa():
+        for i, linea in enumerate(doc.read_text(encoding="utf-8").splitlines(), 1):
+            if linea.lstrip().startswith("|"):
+                continue  # las filas de tabla las cubre check_tabla_modelos
+            modelos = set(re.findall(r"[a-z]+", linea.lower())) & MODELOS
+            if not modelos:
+                continue
+            for agente in sorted(set(re.findall(r"[`\[]([a-z][\w-]+)[`\]]", linea))):
+                if agente in declarado and not (modelos & declarado[agente]):
+                    warn(doc, "linea {}: la prosa fija {} para `{}`, y las tablas "
+                              "declaran {}".format(i, "/".join(sorted(modelos)), agente,
+                                                   "/".join(sorted(declarado[agente]))))
+                    n += 1
+    return n
+
+# `model: X` fija un modelo concreto. En un SKILL.md es correcto (la skill es el
+# orquestador: da la orden en la llamada Task). En un PIPELINE.md, que es diseno y
+# no se carga en runtime, es como nace una copia que despues deriva: fue
+# exactamente el caso de requirements-pipeline/PIPELINE.md, que quedo mandando el
+# lazo de correccion a sonnet cuando la tabla ya decia opus.
+MODELO_LITERAL = re.compile(r"`model:\s*(opus|sonnet|haiku)`")
+
+
+def check_modelo_fijado_en_diseno():
+    """AVISO: un PIPELINE.md que fija un modelo concreto en vez de citar la tabla."""
+    n = 0
+    for doc in sorted(ROOT.glob("plugins/*/PIPELINE.md")):
+        for i, linea in enumerate(doc.read_text(encoding="utf-8").splitlines(), 1):
+            m = MODELO_LITERAL.search(linea)
+            if m:
+                warn(doc, "linea {}: fija `model: {}` en el documento de diseno; "
+                          "cita la tabla de la skill en vez de copiar el modelo".format(
+                              i, m.group(1)))
+                n += 1
+    return n
+
 def prefijos_de_id(texto):
     """Prefijos de id que un prompt promete: `"id": "RF-001"` -> RF."""
     return set(re.findall(r'"id":\s*"([A-Z]+)-\d', texto))
@@ -305,13 +382,17 @@ def self_test():
           {"baseline-reconstruction": {"opus", "sonnet"}})
     check("fila sin modelo se ignora", tabla_de_modelos(
           "| `algo` | Rol | descripcion |"), {})
+    check("modelo fijado en prosa de diseno",
+          bool(MODELO_LITERAL.search("(invocado con `model: sonnet`), con tope de 3")), True)
+    check("mencion de modelo sin fijarlo no cuenta",
+          bool(MODELO_LITERAL.search("el lazo de correccion va en opus")), False)
     check("prefijos de id", prefijos_de_id('{"id": "LEL-001", "x": 1} y "id": "RF-007"'),
           {"LEL", "RF"})
 
     for f in fallos:
         print("SELF-TEST FALLO ({})".format(f))
     if not fallos:
-        print("self-test ok (8 casos: tabla de modelos y prefijos de id).")
+        print("self-test ok (10 casos: tablas, prosa de diseno y prefijos de id).")
     return 1 if fallos else 0
 
 
@@ -322,11 +403,19 @@ def main():
     n_files = check_frontmatters()
     check_bloques_agentes()
     n_filas = check_tabla_modelos()
+    n_prosa = check_prosa_modelos(mapa_declarado())
+    check_modelo_fijado_en_diseno()
     n_pref = check_prefijos_de_id()
     mode = "pyyaml" if HAVE_YAML else "reglas de escalar plano (sin pyyaml)"
     print(f"Validados {n_entries} plugins del marketplace y {n_files} frontmatters ({mode}).")
     print(f"Invariantes: bloques obligatorios, {n_filas} fila(s) de tabla de modelos, "
           f"{n_pref} prefijo(s) de id.")
+    if warnings:
+        print("")
+        print(f"{len(warnings)} aviso(s) — prosa que fija un modelo fuera de las "
+              f"tablas (no bloquea; revisa si es un modo legitimo o deriva):")
+        for w in warnings:
+            print(f"  ! {w}")
     if problems:
         print(f"\n{len(problems)} problema(s):")
         for p in problems:

@@ -1,7 +1,7 @@
 ---
 name: scenario-modeling
 model: opus
-description: Etapa de escenarios del pipeline de requisitos. Elabora en profundidad los escenarios de UNA feature del incremento a partir de su tajada de contexto, con el modelo de Leite y Hadad; corre en paralelo por feature escribiendo un delta. En modo correccion (aplicar defectos o cambios confirmados) se invoca con model opus. La invoca la skill requirements-pipeline.
+description: Etapa de escenarios del pipeline de requisitos. Elabora en profundidad los escenarios de UNA feature del incremento a partir de su tajada de contexto, con el modelo de Leite y Hadad; corre en paralelo por feature escribiendo un delta. En modo correccion (defectos ya diagnosticados) se invoca con model opus; en modo actualizacion (cambios ya confirmados por el usuario) con model sonnet. La invoca la skill requirements-pipeline.
 tools: Read, Write, Edit
 ---
 
@@ -25,8 +25,11 @@ completos**: si te falta un simbolo, citalo por el indice o registra una pregunt
 abierta.
 
 Modo correccion (`model: opus`): ademas, la lista textual de defectos (del script o
-del `requirements-inspection.json` / `lel-inspection.json` que te indiquen) o la lista
-exacta de cambios ya confirmados por el usuario. Aplicalos tal cual, preservando ids.
+del `requirements-inspection.json` / `lel-inspection.json` que te indiquen). Aplicalos
+tal cual, preservando ids.
+
+Modo actualizacion (`model: sonnet`): ademas, la lista exacta de cambios ya confirmados
+por el usuario. Es transcripcion guiada: aplicalos tal cual, preservando ids.
 
 ## Frontera de confianza
 
