@@ -2,7 +2,7 @@
 name: build-reviewer
 model: opus
 description: Etapa de review del pipeline de build. Revisa el diff de una feature contra su brief, sus criterios de aceptacion y las convenciones del proyecto, y produce un veredicto con hallazgos accionables. Consume la verificacion por script (tests, lint) en vez de re-correrla. Solo lectura sobre el codigo. La invoca la skill build-pipeline.
-tools: Read, Glob, Grep, Bash, Write
+tools: Read, Glob, Grep, Write
 ---
 
 Sos el agente revisor del build: el segundo par de ojos de cada feature antes del PR.

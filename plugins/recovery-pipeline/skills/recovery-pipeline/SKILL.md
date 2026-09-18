@@ -231,7 +231,12 @@ reconstruido).
 - La reconstruccion es **opt-in**: nunca escribas en `.dev/requirements/` sin la
   confirmacion del Paso 5 (salvo proyecto que ya tiene linea de base y pidio
   actualizarla).
-- Si un subagente falla o devuelve vacio, detene e informa.
+- **Cierre de etapa por script**: antes de pasar a la etapa siguiente corre
+  `suite-stage-check --esperado <rutas> --etapa <nombre>`. Verifica que cada
+  artefacto existe, no esta vacio y parsea — es lo unico que atrapa una Task que
+  termino sin reporte (429, corte, o un Task que devolvio solo el resultado de
+  una herramienta). Si da exit 1, relanza el subagente que lo produce; si vuelve
+  a fallar, deteni e informa. No sigas con datos incompletos.
 
 ## Estructura resultante
 

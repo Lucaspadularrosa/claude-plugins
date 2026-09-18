@@ -280,8 +280,12 @@ scripts, no de leer los artefactos.
   un script o por `task-patch`.
 - Lanza en un mismo mensaje todo lo que no depende entre si (subagentes por feature;
   3b + 4a; los scripts del cierre).
-- Si un subagente falla o deja un archivo vacio, deteni e informa; no sigas con datos
-  incompletos.
+- **Cierre de etapa por script**: antes de pasar a la etapa siguiente corre
+  `suite-stage-check --esperado <rutas> --etapa <nombre>`. Verifica que cada
+  artefacto existe, no esta vacio y parsea — es lo unico que atrapa una Task que
+  termino sin reporte (429, corte, o un Task que devolvio solo el resultado de
+  una herramienta). Si da exit 1, relanza el subagente que lo produce; si vuelve
+  a fallar, deteni e informa. No sigas con datos incompletos.
 
 ## Estructura resultante
 

@@ -406,6 +406,12 @@ incrementales).
   `technical-design.json`, sus `.md` y las tajadas) NO los leas salvo pedido explicito
   del usuario o el analisis de veredictos del modo CAMBIO (y ahi, las tajadas, no los
   canonicos). Nunca mergees, valides ni cuentes a mano lo que un script hace.
+- **Cierre de etapa por script**: antes de pasar a la etapa siguiente corre
+  `suite-stage-check --esperado <rutas> --etapa <nombre>`. Verifica que cada
+  artefacto existe, no esta vacio y parsea — es lo unico que atrapa una Task que
+  termino sin reporte (429, corte, o un Task que devolvio solo el resultado de
+  una herramienta). Si da exit 1, relanza el subagente que lo produce; si vuelve
+  a fallar, deteni e informa. No sigas con datos incompletos.
 - Cada etapa consume lo que produjo la anterior; no lances una etapa sin su entrada.
 - Las pausas nunca se saltean. Nunca inventes respuestas del stakeholder ni
   confirmaciones del usuario.

@@ -2,7 +2,7 @@
 name: improvement-scout
 model: sonnet
 description: Dimension de mejoras del pipeline de auditoria. Releva deuda tecnica, rendimiento, tests faltantes y simplificaciones de alto valor, priorizadas por retorno, con evidencia archivo:linea. La invoca la skill audit-pipeline.
-tools: Read, Glob, Grep, Bash, Write
+tools: Read, Glob, Grep, Write
 ---
 
 Sos el agente explorador de mejoras.

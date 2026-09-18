@@ -385,6 +385,43 @@ def check_rutas_cruzadas():
                                "marketplace de directorio local. Expone lo compartido "
                                "como ejecutable en bin/ del plugin que lo provee".format(i))
 
+# Señales de que un agente realmente ejecuta algo. Se chequea solo `Bash` porque
+# es la tool cuya ausencia los agentes declaran como parte de su contrato ("solo
+# lectura sobre el codigo"): declararla sin usarla convierte esa promesa en texto.
+# `Write` no entra: casi todos escriben su propio reporte, es el diseño.
+USA_BASH = re.compile(
+    r"```(bash|sh|console)"
+    r"|\bgit (log|diff|show|grep)\b"
+    r"|\b(npm|yarn|pnpm|composer|cargo|go|pip)[ -]audit\b"
+    r"|\bpip-audit\b"
+    r"|\bdependency_audit\b"
+    r"|corre(r|n|)? (el comando|los comandos|tests|las pruebas)"
+    r"|ejecuta(r|) (el comando|los comandos)"
+    r"|\bpython3? \"", re.IGNORECASE)
+
+
+def check_tools_declaradas():
+    """AVISO: un agente que declara Bash y nunca lo usa.
+
+    No bloquea: la deteccion es por evidencia textual y un uso legitimo podria
+    estar escrito de una forma que no matchea. Pero una tool de ejecucion
+    declarada de mas es superficie que nadie pidio, y la promesa de "solo
+    lectura" deja de estar respaldada por la configuracion.
+    """
+    n = 0
+    for f in sorted(ROOT.glob("plugins/*/agents/*.md")):
+        texto = f.read_text(encoding="utf-8")
+        data = parse_frontmatter(f) or {}
+        tools = str(data.get("tools", ""))
+        if "Bash" not in tools:
+            continue
+        cuerpo = texto.split("---", 2)[-1]
+        if not USA_BASH.search(cuerpo):
+            warn(f, "declara `Bash` y el prompt no muestra ningun uso: si lo usa, "
+                    "nombra el comando; si no, saca la tool")
+            n += 1
+    return n
+
 def prefijos_de_id(texto):
     """Prefijos de id que un prompt promete: `"id": "RF-001"` -> RF."""
     return set(re.findall(r'"id":\s*"([A-Z]+)-\d', texto))
@@ -478,6 +515,7 @@ def main():
     check_modelo_fijado_en_diseno()
     check_rutas_cruzadas()
     n_plug = check_nombres_de_plugin()
+    check_tools_declaradas()
     n_pref = check_prefijos_de_id()
     mode = "pyyaml" if HAVE_YAML else "reglas de escalar plano (sin pyyaml)"
     print(f"Validados {n_entries} plugins del marketplace y {n_files} frontmatters ({mode}).")
