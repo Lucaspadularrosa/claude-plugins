@@ -18,6 +18,7 @@ Solo stdlib, Python 3.8+. Solo escribe el README.
 
 Uso:
   python render_index.py [carpeta-dev] [--salida ARCHIVO]
+  python render_index.py --self-test
 
   carpeta-dev  por defecto .dev
   --salida     por defecto <carpeta-dev>/README.md
@@ -305,11 +306,77 @@ def project_name(dev):
     return ""
 
 
+# ------------------------------------------------------------------ self-test
+
+def self_test():
+    """Corre el render sobre un `.dev` embebido y verifica lo que promete el
+    docstring: indice generado, estado por feature (incluidos los stubs del
+    product-map), aviso de vista desincronizada, y determinismo."""
+    import shutil
+    import tempfile
+
+    fallos = 0
+
+    def check(nombre, ok, detalle=""):
+        nonlocal fallos
+        if ok:
+            print("self-test ok (%s)" % nombre)
+        else:
+            print("SELF-TEST FALLO (%s)%s" % (nombre, ": " + detalle if detalle else ""))
+            fallos += 1
+
+    tmp = Path(tempfile.mkdtemp(prefix="render-index-"))
+    try:
+        req = tmp / ".dev" / "requirements"
+        req.mkdir(parents=True)
+        (req / "product-map.json").write_text(json.dumps({
+            "version": 1,
+            "project": {"name": "demo"},
+            "features": [
+                {"id": "FG-01", "name": "Turnos", "status": "baselined"},
+                {"id": "FG-02", "name": "Recordatorios", "status": "stub"},
+            ],
+        }), encoding="utf-8")
+        (req / "lel.json").write_text(json.dumps({"version": 2, "symbols": []}), encoding="utf-8")
+        # vista derivada que quedo atras: el encabezado cita v1 y el json va en v2
+        (req / "lel.md").write_text(
+            "# LEL\n\n> Derivado de `lel.json` version 1 - no editar a mano.\n", encoding="utf-8")
+        (req / "changelog.json").write_text(json.dumps({
+            "version": 1, "entries": [{"id": "INC-001", "status": "in_progress"}],
+        }), encoding="utf-8")
+
+        dev = tmp / ".dev"
+        code = main([str(dev)])
+        readme = dev / "README.md"
+        check("genera el indice", code == 0 and readme.is_file(), "exit %s" % code)
+
+        texto = readme.read_text(encoding="utf-8") if readme.is_file() else ""
+        check("lleva el encabezado de generado", "no editar a mano" in texto)
+        check("lista la feature baselineada", "FG-01" in texto)
+        check("lista el stub (explica el hueco de numeracion)", "FG-02" in texto)
+        check("avisa la vista desincronizada", "DESINCRONIZADO" in texto,
+              "el aviso de lel.md v1 vs lel.json v2 no aparece")
+
+        # determinismo: mismo .dev -> mismo README, byte a byte
+        primero = readme.read_bytes()
+        main([str(dev)])
+        check("es determinista", readme.read_bytes() == primero)
+
+        check("carpeta inexistente da exit 1", main([str(tmp / "no-existe")]) == 1)
+    finally:
+        shutil.rmtree(str(tmp), ignore_errors=True)
+    return 1 if fallos else 0
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("carpeta", nargs="?", default=".dev", help="carpeta .dev del proyecto (default: .dev)")
     ap.add_argument("--salida", default=None, help="archivo de salida (default: <carpeta>/README.md)")
+    ap.add_argument("--self-test", action="store_true", help="corre el self-test sobre un .dev embebido y sale")
     args = ap.parse_args(argv)
+
+    if args.self_test:
+        return self_test()
 
     dev = Path(args.carpeta)
     if not dev.is_dir():

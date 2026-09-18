@@ -190,6 +190,56 @@ def check_marketplace():
 
 # ---------------------------------------------------- invariantes de contenido
 
+# El `name` del plugin no es cosmetico: es lo que se tipea en `/plugin install
+# <name>@<marketplace>`, el namespace de sus skills y comandos
+# (`requerimientos:descubrir`), y el directorio donde queda instalado
+# (`.../cache/<marketplace>/<name>/<version>/`). Cambiarlo rompe instalaciones
+# existentes.
+NOMBRE_PLUGIN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+
+
+def check_nombres_de_plugin():
+    """Nombres de plugin: formato, unicidad, registro y carpeta."""
+    mp_path = ROOT / ".claude-plugin" / "marketplace.json"
+    registrados = set()
+    try:
+        mp = json.loads(mp_path.read_text(encoding="utf-8"))
+        registrados = {e.get("name") for e in mp.get("plugins", [])}
+    except (OSError, json.JSONDecodeError):
+        return 0  # check_marketplace ya lo reporto
+
+    vistos = {}
+    carpetas = sorted(d for d in (ROOT / "plugins").glob("*") if d.is_dir())
+    for carpeta in carpetas:
+        pj = carpeta / ".claude-plugin" / "plugin.json"
+        if not pj.exists():
+            problem(carpeta, "carpeta de plugin sin .claude-plugin/plugin.json")
+            continue
+        try:
+            nombre = json.loads(pj.read_text(encoding="utf-8")).get("name")
+        except json.JSONDecodeError:
+            continue  # check_marketplace ya lo reporto
+        if not nombre:
+            problem(pj, "sin `name`")
+            continue
+        if not NOMBRE_PLUGIN.match(nombre):
+            problem(pj, "name {!r} no es kebab-case en minusculas: es lo que se tipea "
+                        "en /plugin install y el namespace de sus skills".format(nombre))
+        if nombre in vistos:
+            problem(pj, "name {!r} duplicado (ya lo usa {})".format(nombre, vistos[nombre]))
+        vistos[nombre] = carpeta.name
+        if nombre not in registrados:
+            problem(pj, "el plugin {!r} no figura en .claude-plugin/marketplace.json: "
+                        "no se instala".format(nombre))
+        if nombre != carpeta.name:
+            warn(pj, "la carpeta se llama {!r} y el plugin {!r}. Se instala en "
+                     "`.../cache/<marketplace>/{}/<version>/`, asi que nada puede "
+                     "referenciarlo por el nombre de la carpeta".format(
+                         carpeta.name, nombre, nombre))
+    for nombre in sorted(registrados - set(vistos)):
+        problem(mp_path, "la entrada {!r} no tiene carpeta con ese plugin".format(nombre))
+    return len(vistos)
+
 def modelos_de_fila(fila):
     """Modelos que una fila de tabla markdown nombra para un agente.
 
@@ -427,15 +477,15 @@ def main():
     n_prosa = check_prosa_modelos(mapa_declarado())
     check_modelo_fijado_en_diseno()
     check_rutas_cruzadas()
+    n_plug = check_nombres_de_plugin()
     n_pref = check_prefijos_de_id()
     mode = "pyyaml" if HAVE_YAML else "reglas de escalar plano (sin pyyaml)"
     print(f"Validados {n_entries} plugins del marketplace y {n_files} frontmatters ({mode}).")
     print(f"Invariantes: bloques obligatorios, {n_filas} fila(s) de tabla de modelos, "
-          f"{n_pref} prefijo(s) de id.")
+          f"{n_pref} prefijo(s) de id, {n_plug} nombre(s) de plugin.")
     if warnings:
         print("")
-        print(f"{len(warnings)} aviso(s) — prosa que fija un modelo fuera de las "
-              f"tablas (no bloquea; revisa si es un modo legitimo o deriva):")
+        print(f"{len(warnings)} aviso(s) (no bloquean; revisalos antes de mergear):")
         for w in warnings:
             print(f"  ! {w}")
     if problems:
