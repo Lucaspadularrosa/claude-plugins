@@ -18,6 +18,7 @@ Solo stdlib, Python 3.8+. Solo escribe el README.
 
 Uso:
   python render_index.py [carpeta-dev] [--salida ARCHIVO]
+  python render_index.py --self-test
 
   carpeta-dev  por defecto .dev
   --salida     por defecto <carpeta-dev>/README.md
@@ -220,29 +221,24 @@ NOTAS_MAPA = {
 }
 
 
-def render_fg(dev, out):
+def estado_features(dev):
+    """Estado de cada FG cruzando mapa, plan y build. Datos, sin formato.
+
+    Lo consume la tabla de este indice y tambien `suite_status.py`: es la misma
+    lectura de `product-map.json` x `tasks.json` x `progress.json`, y tenerla dos
+    veces seria justo la clase de duplicacion que la suite viene cerrando.
+    """
     pmap = load_json(dev / "requirements" / "product-map.json")
     tasks = load_json(dev / "plan" / "tasks.json")
     progress = load_json(dev / "plan" / "progress.json")
     if not any((pmap, tasks, progress)):
-        return
+        return []
     map_feats = {f.get("id"): f for f in (pmap or {}).get("features", []) or []}
     plan_feats = {f.get("id"): f for f in (tasks or {}).get("features", []) or []}
     build_state = {f.get("feature_id"): f.get("status") for f in (progress or {}).get("features", []) or []}
-    all_ids = sorted(set(map_feats) | set(plan_feats) | set(build_state), key=str)
-    if not all_ids:
-        return
-    out.append("## Estado por feature (FG)")
-    out.append("")
-    out.append("| FG | Feature | Mapa | Plan | Build | Nota |")
-    out.append("|---|---|---|---|---|---|")
-    for fid in all_ids:
-        mf = map_feats.get(fid)
-        pf = plan_feats.get(fid)
-        name = (mf or pf or {}).get("name", "")
-        map_status = mf.get("status", "?") if mf else "—"
-        plan_status = "planificada" if pf else "—"
-        build_status = build_state.get(fid, "—")
+    filas = []
+    for fid in sorted(set(map_feats) | set(plan_feats) | set(build_state), key=str):
+        mf, pf = map_feats.get(fid), plan_feats.get(fid)
         nota = ""
         if mf and not pf:
             nota = NOTAS_MAPA.get(mf.get("status"), "sin tareas en el plan")
@@ -252,45 +248,77 @@ def render_fg(dev, out):
             nota = "feature sintetica del plan (bootstrap)"
         elif pf and not mf:
             nota = "en el plan pero no en el mapa: revisar"
-        out.append("| %s | %s | %s | %s | %s | %s |" % (fid, name.replace("|", "\\|"), map_status, plan_status, build_status, nota))
+        filas.append({
+            "id": fid,
+            "name": (mf or pf or {}).get("name", ""),
+            "mapa": mf.get("status", "?") if mf else None,
+            "plan": bool(pf),
+            "build": build_state.get(fid),
+            "nota": nota,
+        })
+    return filas
+
+
+def render_fg(dev, out):
+    filas = estado_features(dev)
+    if not filas:
+        return
+    out.append("## Estado por feature (FG)")
+    out.append("")
+    out.append("| FG | Feature | Mapa | Plan | Build | Nota |")
+    out.append("|---|---|---|---|---|---|")
+    for f in filas:
+        out.append("| %s | %s | %s | %s | %s | %s |" % (
+            f["id"], (f["name"] or "").replace("|", "\\|"),
+            f["mapa"] or "—", "planificada" if f["plan"] else "—",
+            f["build"] or "—", f["nota"]))
     out.append("")
 
 
-def render_changelog(dev, out):
+def estado_changelog(dev):
+    """INC/CR pendientes, aplicados sin absorber y postergados. Datos, sin formato."""
     changelog = load_json(dev / "requirements" / "changelog.json")
     if not changelog:
-        return
+        return None
     entries = changelog.get("entries", []) or []
     tasks = load_json(dev / "plan" / "tasks.json") or {}
     meta = tasks.get("metadata", {}) or {}
     absorbed = set(meta.get("applied_changelog_ids") or []) | set(meta.get("deferred_changelog_ids") or [])
+    aplicados = [e for e in entries
+                 if e.get("status") == "applied"
+                 and e.get("kind") in ("increment", "change_request", "recovery")]
+    return {
+        "pendientes": [e for e in entries if e.get("status") not in ("applied", "rejected")],
+        "no_absorbidos": [e for e in aplicados if e.get("id") not in absorbed] if tasks else [],
+        "postergados": list(meta.get("deferred_changelog_ids") or []),
+    }
+
+
+def render_changelog(dev, out):
+    est = estado_changelog(dev)
+    if est is None:
+        return
     out.append("## INC / CR")
     out.append("")
-    pending = [e for e in entries if e.get("status") not in ("applied", "rejected")]
-    if pending:
+    if est["pendientes"]:
         out.append("Pendientes (no aplicados a la linea de base):")
         out.append("")
-        for e in pending:
-            note = (e.get("notes") or "").split("\n")[0].strip()
-            out.append("- `%s` (%s, **%s**, %s)%s" % (e.get("id", "?"), e.get("kind", "?"), e.get("status", "?"), e.get("date", "?"), ": %s" % note if note else ""))
+        for e in est["pendientes"]:
+            note = ((e.get("notes") or "").splitlines() or [""])[0].strip()
+            out.append("- `%s` (%s, **%s**, %s)%s" % (
+                e.get("id", "?"), e.get("kind", "?"), e.get("status", "?"),
+                e.get("date", "?"), ": %s" % note if note else ""))
         out.append("")
-    # Solo INC/CR/REC alimentan el plan; los DSC no se "absorben".
-    applied = [
-        e for e in entries
-        if e.get("status") == "applied" and e.get("kind") in ("increment", "change_request", "recovery")
-    ]
-    not_absorbed = [e for e in applied if e.get("id") not in absorbed] if tasks else []
-    if not_absorbed:
+    if est["no_absorbidos"]:
         out.append("Aplicados a los requisitos pero NO absorbidos por el plan (correr `/replanificar`):")
         out.append("")
-        for e in not_absorbed:
+        for e in est["no_absorbidos"]:
             out.append("- `%s` (%s, %s)" % (e.get("id", "?"), e.get("kind", "?"), e.get("date", "?")))
         out.append("")
-    deferred = meta.get("deferred_changelog_ids") or []
-    if deferred:
-        out.append("Postergados a proposito en la replanificacion: %s." % ", ".join(deferred))
+    if est["postergados"]:
+        out.append("Postergados a proposito en la replanificacion: %s." % ", ".join(est["postergados"]))
         out.append("")
-    if not pending and not not_absorbed and not deferred:
+    if not any((est["pendientes"], est["no_absorbidos"], est["postergados"])):
         out.append("Nada pendiente: todo lo aplicado esta absorbido por el plan (o no hay plan aun).")
         out.append("")
 
@@ -305,11 +333,77 @@ def project_name(dev):
     return ""
 
 
+# ------------------------------------------------------------------ self-test
+
+def self_test():
+    """Corre el render sobre un `.dev` embebido y verifica lo que promete el
+    docstring: indice generado, estado por feature (incluidos los stubs del
+    product-map), aviso de vista desincronizada, y determinismo."""
+    import shutil
+    import tempfile
+
+    fallos = 0
+
+    def check(nombre, ok, detalle=""):
+        nonlocal fallos
+        if ok:
+            print("self-test ok (%s)" % nombre)
+        else:
+            print("SELF-TEST FALLO (%s)%s" % (nombre, ": " + detalle if detalle else ""))
+            fallos += 1
+
+    tmp = Path(tempfile.mkdtemp(prefix="render-index-"))
+    try:
+        req = tmp / ".dev" / "requirements"
+        req.mkdir(parents=True)
+        (req / "product-map.json").write_text(json.dumps({
+            "version": 1,
+            "project": {"name": "demo"},
+            "features": [
+                {"id": "FG-01", "name": "Turnos", "status": "baselined"},
+                {"id": "FG-02", "name": "Recordatorios", "status": "stub"},
+            ],
+        }), encoding="utf-8")
+        (req / "lel.json").write_text(json.dumps({"version": 2, "symbols": []}), encoding="utf-8")
+        # vista derivada que quedo atras: el encabezado cita v1 y el json va en v2
+        (req / "lel.md").write_text(
+            "# LEL\n\n> Derivado de `lel.json` version 1 - no editar a mano.\n", encoding="utf-8")
+        (req / "changelog.json").write_text(json.dumps({
+            "version": 1, "entries": [{"id": "INC-001", "status": "in_progress"}],
+        }), encoding="utf-8")
+
+        dev = tmp / ".dev"
+        code = main([str(dev)])
+        readme = dev / "README.md"
+        check("genera el indice", code == 0 and readme.is_file(), "exit %s" % code)
+
+        texto = readme.read_text(encoding="utf-8") if readme.is_file() else ""
+        check("lleva el encabezado de generado", "no editar a mano" in texto)
+        check("lista la feature baselineada", "FG-01" in texto)
+        check("lista el stub (explica el hueco de numeracion)", "FG-02" in texto)
+        check("avisa la vista desincronizada", "DESINCRONIZADO" in texto,
+              "el aviso de lel.md v1 vs lel.json v2 no aparece")
+
+        # determinismo: mismo .dev -> mismo README, byte a byte
+        primero = readme.read_bytes()
+        main([str(dev)])
+        check("es determinista", readme.read_bytes() == primero)
+
+        check("carpeta inexistente da exit 1", main([str(tmp / "no-existe")]) == 1)
+    finally:
+        shutil.rmtree(str(tmp), ignore_errors=True)
+    return 1 if fallos else 0
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("carpeta", nargs="?", default=".dev", help="carpeta .dev del proyecto (default: .dev)")
     ap.add_argument("--salida", default=None, help="archivo de salida (default: <carpeta>/README.md)")
+    ap.add_argument("--self-test", action="store_true", help="corre el self-test sobre un .dev embebido y sale")
     args = ap.parse_args(argv)
+
+    if args.self_test:
+        return self_test()
 
     dev = Path(args.carpeta)
     if not dev.is_dir():

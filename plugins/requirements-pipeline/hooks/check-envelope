@@ -1,0 +1,26 @@
+#!/bin/sh
+# Wrapper del hook SubagentStop que verifica el sobre de retorno.
+#
+# A diferencia de los ejecutables de `bin/`, este NO falla ruidosamente: corre en
+# CADA cierre de subagente, en cualquier proyecto donde el plugin este habilitado.
+# Si no puede verificar (no hay Python, falta el script), se calla y sale 0. Un
+# hook advisory que no puede opinar no tiene nada que decir, y un error por
+# subagente seria peor que el problema que viene a reportar.
+#
+# Tambien consume stdin siempre: si saliera sin leerlo, quien lo invoca podria
+# recibir un EPIPE.
+raiz=$(CDPATH= cd -- "$(dirname -- "$0")/.." 2>/dev/null && pwd) || { cat >/dev/null; exit 0; }
+script="$raiz/hooks/check_envelope.py"
+[ -f "$script" ] || { cat >/dev/null; exit 0; }
+
+for py in python3 python py; do
+  if command -v "$py" >/dev/null 2>&1; then
+    if [ "$py" = py ]; then
+      exec "$py" -3 "$script" "$@"
+    fi
+    exec "$py" "$script" "$@"
+  fi
+done
+
+cat >/dev/null
+exit 0

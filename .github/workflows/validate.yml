@@ -6,22 +6,57 @@ on:
   pull_request:
 
 jobs:
+  # Los scripts declaran "solo stdlib, Python 3.8+" y validate.py trae un parser de
+  # frontmatter de reserva para cuando pyyaml no esta. Las dos cosas hay que correrlas
+  # de verdad: si el CI corre siempre la ultima version con pyyaml instalado, el piso
+  # declarado y la mitad del validador no se prueban nunca.
   validate:
-    runs-on: ubuntu-latest
+    name: py${{ matrix.python }} ${{ matrix.pyyaml == 'si' && 'con pyyaml' || 'sin pyyaml' }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { python: "3.8", os: ubuntu-22.04, pyyaml: "si" }
+          - { python: "3.8", os: ubuntu-22.04, pyyaml: "no" }
+          - { python: "3.x", os: ubuntu-latest, pyyaml: "si" }
+          - { python: "3.x", os: ubuntu-latest, pyyaml: "no" }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
+          python-version: ${{ matrix.python }}
       - name: Instalar pyyaml (parser YAML real)
+        if: matrix.pyyaml == 'si'
         run: pip install pyyaml
       - name: Validar plugins y frontmatters
         run: python scripts/validate.py
       - name: Self-test del verificador de artefactos
         run: python scripts/check-artifacts.py --self-test
+      - name: Self-test de los scripts del repo
+        run: |
+          set -e
+          for s in scripts/validate.py scripts/check-version-bump.py; do
+            echo "== $s"; python "$s" --self-test
+          done
       - name: Self-test de los scripts de la suite
         run: |
           set -e
-          for s in $(grep -l -- '--self-test' plugins/*/skills/*/scripts/*.py | sort); do
+          for s in $(grep -l -- '--self-test' plugins/*/skills/*/scripts/*.py plugins/*/hooks/*.py | sort); do
             echo "== $s"; python "$s" --self-test
           done
+
+  # Corre una sola vez: no depende de la version de Python y necesita la historia
+  # completa para el merge-base.
+  release:
+    name: Un plugin que cambia sube su version
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # el check de bump compara contra el merge-base
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - run: python scripts/check-version-bump.py --base "origin/${{ github.base_ref }}"

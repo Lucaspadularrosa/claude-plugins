@@ -19,23 +19,31 @@ veredictos chicos y salidas de script.
 
 ## Subagentes y modelo por modo
 
-El `model` del frontmatter de cada agente es su modo de **generacion**. Los modos de
-**correccion y actualizacion** (aplicar defectos ya diagnosticados, respuestas ya
-redactadas, propuestas ya confirmadas) son transcripcion guiada: invocalos pasando
-`model: sonnet` en la llamada Task. La tabla es el contrato:
+El `model` del frontmatter de cada agente es su modo de **generacion**. Los otros dos
+modos no comparten modelo, asi que pasa siempre el `model` explicito en la llamada
+Task:
 
-| Subagente | Rol | Generacion | Correccion / actualizacion |
-|---|---|---|---|
-| `requirements-intake` | Clasifica una fuente en inventario, candidatos LEL y contexto | sonnet | sonnet |
-| `lel-authoring` | Construye o actualiza el LEL | opus | opus |
-| `lel-inspection` | Juicio sobre el LEL (lo mecanico lo hace el script) | haiku | haiku |
-| `stakeholder-questionnaire` | Preguntas al stakeholder; elicitacion | sonnet | sonnet |
-| `product-mapping` | Mapa del producto: features, stubs, valor y prioridad | **opus** | opus |
-| `scenario-modeling` | Elabora los escenarios de UNA feature | opus | opus |
-| `requirements-specification` | Especifica los requisitos de UNA feature | opus | opus |
-| `requirements-inspection` | Juicio sobre la especificacion | sonnet | sonnet |
-| `technical-design` | Extiende modelo de datos y diseno | opus | opus |
-| `design-inspection` | Juicio sobre el diseno y la normalizacion | sonnet | sonnet |
+- **Correccion** (aplicar defectos ya diagnosticados por el script o por una
+  inspeccion): el modelo de la columna `Correccion`. Exige releer el artefacto y
+  razonar sobre el defecto, no es transcripcion.
+- **Actualizacion** (respuestas del stakeholder ya redactadas, propuestas o cambios
+  ya confirmados): el de la columna `Actualizacion`. Es transcripcion guiada y va en
+  `sonnet`; `—` marca los agentes que no tienen ese modo.
+
+La tabla es el contrato:
+
+| Subagente | Rol | Generacion | Correccion | Actualizacion |
+|---|---|---|---|---|
+| `requirements-intake` | Clasifica una fuente en inventario, candidatos LEL y contexto | sonnet | sonnet | sonnet |
+| `lel-authoring` | Construye o actualiza el LEL | opus | opus | sonnet |
+| `lel-inspection` | Juicio sobre el LEL (lo mecanico lo hace el script) | haiku | haiku | — |
+| `stakeholder-questionnaire` | Preguntas al stakeholder; elicitacion | sonnet | sonnet | — |
+| `product-mapping` | Mapa del producto: features, stubs, valor y prioridad | **opus** | opus | sonnet |
+| `scenario-modeling` | Elabora los escenarios de UNA feature | opus | opus | sonnet |
+| `requirements-specification` | Especifica los requisitos de UNA feature | opus | opus | sonnet |
+| `requirements-inspection` | Juicio sobre la especificacion | sonnet | sonnet | — |
+| `technical-design` | Extiende modelo de datos y diseno | opus | opus | sonnet |
+| `design-inspection` | Juicio sobre el diseno y la normalizacion | sonnet | sonnet | — |
 
 > Correccion en opus por evidencia del benchmark SIGEC (2026-08): con sonnet cada
 > lazo de correccion de spec y diseno necesito 2 pasadas (fue el mayor costo del
@@ -398,6 +406,12 @@ incrementales).
   `technical-design.json`, sus `.md` y las tajadas) NO los leas salvo pedido explicito
   del usuario o el analisis de veredictos del modo CAMBIO (y ahi, las tajadas, no los
   canonicos). Nunca mergees, valides ni cuentes a mano lo que un script hace.
+- **Cierre de etapa por script**: antes de pasar a la etapa siguiente corre
+  `suite-stage-check --esperado <rutas> --etapa <nombre>`. Verifica que cada
+  artefacto existe, no esta vacio y parsea — es lo unico que atrapa una Task que
+  termino sin reporte (429, corte, o un Task que devolvio solo el resultado de
+  una herramienta). Si da exit 1, relanza el subagente que lo produce; si vuelve
+  a fallar, deteni e informa. No sigas con datos incompletos.
 - Cada etapa consume lo que produjo la anterior; no lances una etapa sin su entrada.
 - Las pausas nunca se saltean. Nunca inventes respuestas del stakeholder ni
   confirmaciones del usuario.

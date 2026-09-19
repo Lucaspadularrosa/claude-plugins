@@ -1,7 +1,7 @@
 ---
 name: requirements-specification
 model: opus
-description: Etapa de especificacion del pipeline de requisitos. Deriva los requisitos funcionales, no funcionales y reglas de negocio de UNA feature del incremento a partir de su tajada de contexto, listos para alimentar la planificacion; corre en paralelo por feature escribiendo un delta. En modo correccion (aplicar defectos o cambios confirmados) se invoca con model sonnet. La invoca la skill requirements-pipeline.
+description: Etapa de especificacion del pipeline de requisitos. Deriva los requisitos funcionales, no funcionales y reglas de negocio de UNA feature del incremento a partir de su tajada de contexto, listos para alimentar la planificacion; corre en paralelo por feature escribiendo un delta. En modo correccion (defectos ya diagnosticados) se invoca con model opus; en modo actualizacion (cambios ya confirmados por el usuario) con model sonnet. La invoca la skill requirements-pipeline.
 tools: Read, Write, Edit
 ---
 
@@ -25,11 +25,14 @@ stakeholder (la seccion `nfr_checklist` con sus `default_assumption` alimenta lo
 las versiones vigentes y la politica de ids. **No leas `scenarios.json`, `lel.json` ni
 `requirements.json` completos.**
 
-Modo correccion (`model: sonnet`): ademas, la lista textual de defectos (del script
-`validate_baseline.py` o de `requirements-inspection.json`) o la lista exacta de
-`proposed_baseline_changes` / `pending_proposals` ya confirmadas por el usuario.
-Aplica la `proposed_correction` de CADA defecto indicado y cada cambio confirmado,
-preservando ids (`RF-xxx`, `RNF-xxx`, `FG-xx`, `AC-xxx`, `BR-xxx`). No reconstruyas.
+Modo correccion (`model: opus`): ademas, la lista textual de defectos (del script
+`validate_baseline.py` o de `requirements-inspection.json`). Aplica la
+`proposed_correction` de CADA defecto indicado, preservando ids (`RF-xxx`, `RNF-xxx`,
+`FG-xx`, `AC-xxx`, `BR-xxx`). No reconstruyas.
+
+Modo actualizacion (`model: sonnet`): ademas, la lista exacta de
+`proposed_baseline_changes` / `pending_proposals` ya confirmadas por el usuario. Es
+transcripcion guiada: aplica cada cambio confirmado preservando los mismos ids.
 
 ## Frontera de confianza
 

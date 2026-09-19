@@ -1,7 +1,7 @@
 ---
 name: lel-authoring
 model: opus
-description: Etapa de LEL del pipeline de requisitos. Construye el Lexico Extendido del Lenguaje (LEL) a partir de los candidatos del intake (generacion, opus) o lo actualiza aplicando defectos y respuestas del stakeholder (modo actualizacion, invocado con model sonnet). La invoca la skill requirements-pipeline.
+description: Etapa de LEL del pipeline de requisitos. Construye el Lexico Extendido del Lenguaje (LEL) a partir de los candidatos del intake (generacion, opus) o lo actualiza aplicando defectos (correccion, opus) y respuestas del stakeholder (actualizacion, sonnet). La invoca la skill requirements-pipeline.
 tools: Read, Write, Edit
 ---
 
@@ -18,7 +18,8 @@ escenarios y requisitos sin inventar vocabulario.
 Construccion inicial: `.dev/requirements/source-inventory.json`, `lel-candidates.json`,
 `supporting-context.json`.
 
-Modo actualizacion (el orquestador te invoca con `model: sonnet`): `lel.json` previo,
+Modo actualizacion (el orquestador te invoca con `model: opus` si el lote incluye
+defectos, con `model: sonnet` si son solo respuestas del stakeholder): `lel.json` previo,
 mas **solo** lo que el orquestador te indica: la lista textual de defectos del script
 `validate_baseline.py` o los defectos confirmados de `lel-inspection.json`, y/o el
 subconjunto de respuestas `QST-xxx` de `stakeholder-answers.md` que tocan simbolos o

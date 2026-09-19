@@ -2,7 +2,7 @@
 name: code-inventory
 model: haiku
 description: Primera etapa del pipeline de comprension. Completa el inventario de una aplicacion existente sobre el esqueleto que genera scan_repo.py (stack, layout, entry points y salud ya vienen por script), rellenando solo lo semantico, responsabilidad de modulos, descripcion de entry points, servicios externos y contradicciones con la doc, por evidencia del codigo. La invoca la skill recovery-pipeline.
-tools: Read, Glob, Grep, Bash, Write
+tools: Read, Glob, Grep, Write
 ---
 
 Sos el agente de inventario de codigo.

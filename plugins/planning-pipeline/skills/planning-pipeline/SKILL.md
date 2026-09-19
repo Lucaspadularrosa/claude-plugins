@@ -37,7 +37,7 @@ el OK.
 ## Paso 0 - Version del pipeline (script)
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/check_pipeline_version.py" --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/plan/tasks.json
+suite-pipeline-version --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/plan/tasks.json
 ```
 
 (vive en el plugin hermano `requirements-pipeline`; si no esta instalado, lee la
@@ -196,7 +196,7 @@ incompleto.
 ### Paso 5 - Cierre (scripts en una sola tanda)
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/render_index.py" .dev; python3 "$S/slice_brief_context.py" . --limpiar; python3 "$S/slice_requirements_context.py" . --limpiar
+suite-render-index .dev; python3 "$S/slice_brief_context.py" . --limpiar; python3 "$S/slice_requirements_context.py" . --limpiar
 ```
 
 (si `render_index.py` no esta, saltea el indice y avisalo). Las carpetas
@@ -280,8 +280,12 @@ scripts, no de leer los artefactos.
   un script o por `task-patch`.
 - Lanza en un mismo mensaje todo lo que no depende entre si (subagentes por feature;
   3b + 4a; los scripts del cierre).
-- Si un subagente falla o deja un archivo vacio, deteni e informa; no sigas con datos
-  incompletos.
+- **Cierre de etapa por script**: antes de pasar a la etapa siguiente corre
+  `suite-stage-check --esperado <rutas> --etapa <nombre>`. Verifica que cada
+  artefacto existe, no esta vacio y parsea — es lo unico que atrapa una Task que
+  termino sin reporte (429, corte, o un Task que devolvio solo el resultado de
+  una herramienta). Si da exit 1, relanza el subagente que lo produce; si vuelve
+  a fallar, deteni e informa. No sigas con datos incompletos.
 
 ## Estructura resultante
 

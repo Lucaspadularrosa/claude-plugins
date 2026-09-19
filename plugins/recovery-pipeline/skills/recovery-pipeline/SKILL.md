@@ -53,7 +53,7 @@ plugin desactualizado lo da el script de la suite (plugin hermano
 `requirements-pipeline`); correlo y mostra su salida si dice algo:
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/check_pipeline_version.py" --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/recovery/code-inventory.json
+suite-pipeline-version --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/recovery/code-inventory.json
 ```
 
 Retomes de corridas anteriores, en este orden:
@@ -186,8 +186,8 @@ Si acepta:
 5. Regenera las vistas `.md` de la linea de base y el indice `.dev/README.md`:
 
    ```bash
-   python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/render_baseline_docs.py" .dev/requirements
-   python3 "${CLAUDE_PLUGIN_ROOT}/../requirements-pipeline/skills/requirements-pipeline/scripts/render_index.py" .dev
+   suite-render-baseline-docs .dev/requirements
+   suite-render-index .dev
    ```
 
 6. Cierra la entrada `REC-xxx` (`applied`, con versiones de artefactos y features
@@ -231,7 +231,12 @@ reconstruido).
 - La reconstruccion es **opt-in**: nunca escribas en `.dev/requirements/` sin la
   confirmacion del Paso 5 (salvo proyecto que ya tiene linea de base y pidio
   actualizarla).
-- Si un subagente falla o devuelve vacio, detene e informa.
+- **Cierre de etapa por script**: antes de pasar a la etapa siguiente corre
+  `suite-stage-check --esperado <rutas> --etapa <nombre>`. Verifica que cada
+  artefacto existe, no esta vacio y parsea — es lo unico que atrapa una Task que
+  termino sin reporte (429, corte, o un Task que devolvio solo el resultado de
+  una herramienta). Si da exit 1, relanza el subagente que lo produce; si vuelve
+  a fallar, deteni e informa. No sigas con datos incompletos.
 
 ## Estructura resultante
 

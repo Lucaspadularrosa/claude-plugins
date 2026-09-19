@@ -1,0 +1,16 @@
+{
+  "description": "Avisa cuando un subagente de la suite cierra sin su sobre de retorno (status, artifact_paths, summary). No bloquea: SubagentStop corre despues de que el subagente termino.",
+  "hooks": {
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-envelope",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

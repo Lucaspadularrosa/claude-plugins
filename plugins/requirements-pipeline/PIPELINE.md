@@ -116,8 +116,11 @@ La orquestacion vive en la skill `skills/requirements-pipeline/SKILL.md` del plu
   vez, `focused` en las re-pasadas). Los `.md` se renderizan por script ANTES de
   inspeccionar.
 - Los defectos `high`/`medium` rebotan al agente que corresponda en modo correccion
-  (invocado con `model: sonnet`), con tope de 3 pasadas de juicio: los remanentes los
-  decide el usuario, no el lazo.
+  (invocado con el modelo de la columna `Correccion` de la tabla de la skill: opus
+  para los agentes de contenido, por el benchmark SIGEC), con tope de 3 pasadas de
+  juicio: los remanentes los decide el usuario, no el lazo. Distinto del modo
+  *actualizacion* (aplicar respuestas del stakeholder o propuestas ya confirmadas),
+  que es transcripcion guiada y va en `sonnet`.
 
 ### Paralelismo y deltas
 - Intake por fuente, escenarios y requisitos por feature: agentes en paralelo que

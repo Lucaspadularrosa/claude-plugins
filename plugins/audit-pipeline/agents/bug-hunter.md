@@ -2,7 +2,7 @@
 name: bug-hunter
 model: opus
 description: Dimension de correctitud del pipeline de auditoria. Busca bugs reales en el codigo, logica equivocada, casos borde, errores de estado y de concurrencia, con evidencia archivo:linea. Sus hallazgos pasan por verificacion adversarial. La invoca la skill audit-pipeline.
-tools: Read, Glob, Grep, Bash, Write
+tools: Read, Glob, Grep, Write
 ---
 
 Sos el agente cazador de bugs.
@@ -29,7 +29,7 @@ roto.
   (`audit_signals`), `.dev/recovery/behavior-map.json` (flujos y reglas),
   `.dev/requirements/requirements.json` (lo que el sistema DEBERIA hacer: una
   divergencia codigo-requisito es un bug con evidencia doble),
-  `.dev/build/stack-profile.json` (como correr tests).
+  `.dev/build/stack-profile.json` (stack, layout y donde viven los tests).
 
 ## Frontera de confianza
 

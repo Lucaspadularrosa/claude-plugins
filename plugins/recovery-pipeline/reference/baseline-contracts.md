@@ -16,7 +16,7 @@ Convenciones transversales de la suite (aplican a todos los archivos):
   referenciado, como string (ej. `"3"`).
 - Ids estables, nunca renumerar ni borrar (lo eliminado se deprecia). Formatos:
   `FG-01` features, `SCN-001` escenarios, `EP/ACT/RES/EXC-001` partes del escenario,
-  `SYM/NOT/IMP-001` LEL, `RF/RNF-001` requisitos, `AC-001` criterios (numerados POR
+  `LEL/NOT/IMP-001` LEL, `RF/RNF-001` requisitos, `AC-001` criterios (numerados POR
   requisito; cita compuesta `RF-007/AC-002`), `BR-001` reglas de negocio,
   `ENT/REL-001` modelo de datos,
   `MOD/API/SCR/ADR-001` diseno, `Q-001` preguntas abiertas.
@@ -29,6 +29,9 @@ Convenciones transversales de la suite (aplican a todos los archivos):
   escenarios y requisitos citan **ids de la suite** (`LEL-xxx`, `SCN-xxx`,
   `OWN-xxx`); el `archivo:linea` va en `code_refs` y en los `evidence_refs` del LEL
   (que son strings libres).
+- `metadata.pipeline_version`: la version de pipeline que te indica el orquestador;
+  si no te la pasa, `null` — nunca la inventes. La lee `check_pipeline_version.py`
+  para avisar si la linea de base quedo atras del plugin.
 - Todos los valores legibles por humanos en espanol.
 
 ## 1. `product-map.json`
@@ -37,7 +40,7 @@ Convenciones transversales de la suite (aplican a todos los archivos):
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "lel_version_ref": "string", "source_artifacts": ["string"]},
+  "metadata": {"created_at": "string", "updated_at": "string", "pipeline_version": "string", "lel_version_ref": "string", "source_artifacts": ["string"]},
   "summary": {
     "feature_count": 0,
     "stub_count": 0, "elaborated_count": 0, "baselined_count": 0, "deprecated_count": 0,
@@ -75,7 +78,7 @@ citan simbolos del LEL (`LEL-xxx`); la traza al codigo va en `code_refs`.
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"]},
+  "metadata": {"created_at": "string", "updated_at": "string", "pipeline_version": "string", "source_artifacts": ["string"]},
   "symbols": [
     {
       "id": "LEL-001",
@@ -106,7 +109,7 @@ citan simbolos del LEL (`LEL-xxx`); la traza al codigo va en `code_refs`.
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "lel_version_ref": "string"},
+  "metadata": {"created_at": "string", "updated_at": "string", "pipeline_version": "string", "source_artifacts": ["string"], "lel_version_ref": "string"},
   "summary": {
     "total_scenarios": 0, "current_scenarios": 0, "future_scenarios": 0,
     "total_episodes": 0, "total_exceptions": 0,
@@ -142,7 +145,7 @@ Los `evidence_refs` de escenarios apuntan a simbolos/impactos del LEL existentes
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "lel_version_ref": "string", "scenario_version_ref": "string"},
+  "metadata": {"created_at": "string", "updated_at": "string", "pipeline_version": "string", "source_artifacts": ["string"], "lel_version_ref": "string", "scenario_version_ref": "string"},
   "summary": {
     "total_requirements": 0, "functional_count": 0, "non_functional_count": 0,
     "high_priority": 0, "medium_priority": 0, "low_priority": 0,
@@ -220,7 +223,7 @@ invariantes que el codigo no demuestra.
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "lel_version_ref": "string", "requirements_version_ref": "string"},
+  "metadata": {"created_at": "string", "updated_at": "string", "pipeline_version": "string", "source_artifacts": ["string"], "lel_version_ref": "string", "requirements_version_ref": "string"},
   "summary": {"entity_count": 0, "relationship_count": 0, "covered_symbol_ids": ["LEL-001"], "uncovered_symbol_ids": ["LEL-002"]},
   "entities": [
     {
@@ -254,7 +257,7 @@ invariantes que el codigo no demuestra.
 {
   "version": 1,
   "project": {"name": "string", "domain_summary": "string", "source_language": "es"},
-  "metadata": {"created_at": "string", "updated_at": "string", "source_artifacts": ["string"], "requirements_version_ref": "string", "data_model_version_ref": "string"},
+  "metadata": {"created_at": "string", "updated_at": "string", "pipeline_version": "string", "source_artifacts": ["string"], "requirements_version_ref": "string", "data_model_version_ref": "string"},
   "summary": {"module_count": 0, "api_contract_count": 0, "screen_count": 0, "decision_count": 0},
   "stack": [
     {"layer": "string", "technology": "string", "rationale": "string", "evidence_refs": ["string"]}

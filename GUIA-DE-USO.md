@@ -26,7 +26,9 @@ Una sola vez por usuario:
 /plugin install planning-pipeline@lpadularrosa-dev-plugins
 /plugin install build-pipeline@lpadularrosa-dev-plugins
 /plugin install recovery-pipeline@lpadularrosa-dev-plugins
+/plugin install manual-usuario@lpadularrosa-dev-plugins
 /plugin install audit-pipeline@lpadularrosa-dev-plugins
+/plugin install metrics-pipeline@lpadularrosa-dev-plugins
 ```
 
 (`lpadularrosa-dev-plugins` es el nombre del marketplace declarado en
@@ -75,6 +77,9 @@ deprecia) y **nada baselineado se modifica sin tu confirmación**.
 | `/construir-lote [BATCH-n]` | build | Construye un lote completo en paralelo (un agente por feature, en worktrees), sin pausas. |
 | `/comprender [ruta]` | recovery | Comprende una app existente: qué hace, en qué estado está, qué falta — con reporte compartible en HTML. Opt-in: reconstruye la línea de base con evidencia al código. |
 | `/auditar [alcance]` | audit | Bugs, seguridad y mejoras, con verificación adversarial de cada hallazgo. Funciona en cualquier repo. |
+| `/documentar` | build | Genera retroactivamente las guías de usuario de features ya construidas que quedaron sin documentar. Un PR con todas. |
+| `/publicar-manual` | manual-usuario | Publica `.dev/manual/` como sitio HTML estático navegable en `docs/manual/`. |
+| `/estado` | requirements | En qué estado está la suite en este proyecto: qué corrió, qué falta, qué bloquea y qué conviene hacer. Solo lectura, cero tokens de modelo. |
 | `/metricas [solo-datos]` | metrics | Cosecha las métricas de proceso de la suite (script, cero tokens) y opcionalmente las analiza para saber qué mejorar de los pipelines. |
 
 Todos funcionan también en lenguaje natural ("genera los requisitos a partir de estos

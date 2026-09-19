@@ -15,10 +15,26 @@ externas (usa pyyaml si esta instalado, si no aplica las reglas del escalar plan
    espacio) ni ` #`, ni empezar con un caracter especial de YAML — eso invalida el
    frontmatter completo y el comando/agente no se registra (o pierde sus tools).
 
+3. Todo agente lleva los bloques que el contrato de la suite da por sentados:
+   "Frontera de confianza" y "Respuesta al orquestador".
+4. Donde un documento publica modelo por subagente (el `SKILL.md` de la skill o el
+   `PIPELINE.md` de diseno), el `model` del frontmatter esta entre los que nombra.
+   PIPELINE.md no lo carga ningun comando, pero declara modelos igual: si queda
+   atras, el orquestador termina con dos fuentes en conflicto.
+   Como AVISO (no bloquea), la prosa de esos documentos y de `modes/` que fije
+   para un agente un modelo que ninguna tabla declara: es el hueco que dejaba el
+   punto anterior, que solo lee filas de tabla.
+5. Todo prefijo de id que los prompts prometen (`"id": "XXX-001"`) lo acepta alguna
+   expresion de `scripts/check-artifacts.py`, o esta declarado como no verificado.
+   Sin esto, renombrar un id en los prompts deja al verificador atras en silencio
+   (fue el caso de SYM-nnn -> LEL-nnn).
+
 `archive/` se ignora. Salida: lista de problemas y exit code 1 si hay alguno.
 Uso: python scripts/validate.py [raiz-del-repo]
+     python scripts/validate.py --self-test
 """
 
+import ast
 import json
 import re
 import sys
@@ -31,7 +47,8 @@ try:
 except ImportError:
     HAVE_YAML = False
 
-ROOT = Path(sys.argv[1] if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent).resolve()
+_args = [a for a in sys.argv[1:] if not a.startswith("--")]
+ROOT = Path(_args[0] if _args else Path(__file__).resolve().parent.parent).resolve()
 
 REQUIRED_KEYS = {
     "agents": {"name", "description", "tools", "model"},
@@ -39,7 +56,34 @@ REQUIRED_KEYS = {
     "skills": {"name", "description"},
 }
 
+# Bloques que el resto de la suite da por sentados en CADA agente.
+BLOQUES_AGENTE = ("frontera de confianza", "respuesta al orquestador")
+
+MODELOS = {"opus", "sonnet", "haiku"}
+
+# Prefijos de id que los prompts usan y que check-artifacts.py NO verifica (a
+# proposito: no cruzan plugins o no viven en los artefactos que revisa). Agregar
+# uno aca es una decision consciente; el chequeo existe para que renombrar un id
+# no pase inadvertido.
+PREFIJOS_NO_VERIFICADOS = {
+    "ACT", "ADR", "API", "BUG", "CAP", "CHK", "CTX", "DEF", "DESVIO", "ENT",
+    "ENTRY", "EP", "EXC", "GAP", "IMP", "K", "L", "MOD", "NOT", "OWN", "PBC",
+    "PROP", "Q", "QST", "REL", "RENT", "RES", "RMOD", "SCR", "SEC", "SPQ", "SRC",
+}
+
 problems = []
+warnings = []
+
+
+def _rel(path):
+    try:
+        return path.relative_to(ROOT)
+    except ValueError:
+        return path
+
+
+def warn(path, msg):
+    warnings.append(f"{_rel(path)}: {msg}")
 
 
 def problem(path, msg):
@@ -145,11 +189,384 @@ def check_marketplace():
     return len(entries)
 
 
+# ---------------------------------------------------- invariantes de contenido
+
+# El `name` del plugin no es cosmetico: es lo que se tipea en `/plugin install
+# <name>@<marketplace>`, el namespace de sus skills y comandos
+# (`requerimientos:descubrir`), y el directorio donde queda instalado
+# (`.../cache/<marketplace>/<name>/<version>/`). Cambiarlo rompe instalaciones
+# existentes.
+NOMBRE_PLUGIN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+
+
+def check_nombres_de_plugin():
+    """Nombres de plugin: formato, unicidad, registro y carpeta."""
+    mp_path = ROOT / ".claude-plugin" / "marketplace.json"
+    registrados = set()
+    try:
+        mp = json.loads(mp_path.read_text(encoding="utf-8"))
+        registrados = {e.get("name") for e in mp.get("plugins", [])}
+    except (OSError, json.JSONDecodeError):
+        return 0  # check_marketplace ya lo reporto
+
+    vistos = {}
+    carpetas = sorted(d for d in (ROOT / "plugins").glob("*") if d.is_dir())
+    for carpeta in carpetas:
+        pj = carpeta / ".claude-plugin" / "plugin.json"
+        if not pj.exists():
+            problem(carpeta, "carpeta de plugin sin .claude-plugin/plugin.json")
+            continue
+        try:
+            nombre = json.loads(pj.read_text(encoding="utf-8")).get("name")
+        except json.JSONDecodeError:
+            continue  # check_marketplace ya lo reporto
+        if not nombre:
+            problem(pj, "sin `name`")
+            continue
+        if not NOMBRE_PLUGIN.match(nombre):
+            problem(pj, "name {!r} no es kebab-case en minusculas: es lo que se tipea "
+                        "en /plugin install y el namespace de sus skills".format(nombre))
+        if nombre in vistos:
+            problem(pj, "name {!r} duplicado (ya lo usa {})".format(nombre, vistos[nombre]))
+        vistos[nombre] = carpeta.name
+        if nombre not in registrados:
+            problem(pj, "el plugin {!r} no figura en .claude-plugin/marketplace.json: "
+                        "no se instala".format(nombre))
+        if nombre != carpeta.name:
+            warn(pj, "la carpeta se llama {!r} y el plugin {!r}. Se instala en "
+                     "`.../cache/<marketplace>/{}/<version>/`, asi que nada puede "
+                     "referenciarlo por el nombre de la carpeta".format(
+                         carpeta.name, nombre, nombre))
+    for nombre in sorted(registrados - set(vistos)):
+        problem(mp_path, "la entrada {!r} no tiene carpeta con ese plugin".format(nombre))
+    return len(vistos)
+
+def modelos_de_fila(fila):
+    """Modelos que una fila de tabla markdown nombra para un agente.
+
+    Las declaraciones calificadas son legitimas y frecuentes: `agente (opus)`,
+    `opus (plan: sonnet)`, `sonnet (opus si A01/A02/A07)`,
+    `(sonnet/opus/sonnet por modo)`. No se intenta adivinar cual es el primario:
+    el invariante es que el `model` del frontmatter este ENTRE los que el
+    documento nombra. Una fila que nombra solo 'sonnet' para un agente cuyo
+    frontmatter dice 'opus' es la deriva que se quiere atrapar.
+    """
+    return set(re.findall(r"[a-z]+", fila.lower())) & MODELOS
+
+
+def tabla_de_modelos(texto):
+    """{agente: {modelos}} segun las filas `| `agente` ... |` de una tabla.
+
+    Se mira la fila entera, no solo lo que sigue al nombre: hay tablas que meten
+    el modelo en la misma celda del agente
+    (`| `baseline-reconstruction` (sonnet/opus/sonnet por modo) | ...`).
+    """
+    out = {}
+    for linea in texto.splitlines():
+        m = re.match(r"^\|\s*`([a-z][\w-]+)`", linea)
+        if not m:
+            continue
+        resto = linea[:m.start(1)] + linea[m.end():]
+        modelos = modelos_de_fila(resto)
+        if modelos:
+            out[m.group(1)] = modelos
+    return out
+
+
+def docs_con_tabla():
+    """(documento, carpeta del plugin) de todo lo que puede declarar modelos.
+
+    PIPELINE.md no lo carga ningun comando, pero es el documento de diseno del
+    pipeline y declara modelo por agente: si queda atras, el orquestador termina
+    con dos fuentes en conflicto igual.
+    """
+    for skill in sorted(ROOT.glob("plugins/*/skills/*/SKILL.md")):
+        yield skill, skill.parent.parent.parent
+    for pl in sorted(ROOT.glob("plugins/*/PIPELINE.md")):
+        yield pl, pl.parent
+
+
+def check_tabla_modelos():
+    """El `model` del frontmatter tiene que estar entre los que el doc nombra."""
+    filas = 0
+    for doc, plugin_dir in docs_con_tabla():
+        for agente, modelos in sorted(tabla_de_modelos(doc.read_text(encoding="utf-8")).items()):
+            agente_md = plugin_dir / "agents" / (agente + ".md")
+            if not agente_md.exists():
+                continue  # la fila nombra algo que no es un agente de este plugin
+            filas += 1
+            real = str((parse_frontmatter(agente_md) or {}).get("model", "")).strip().lower()
+            if real and real not in modelos:
+                problem(doc, "nombra {} para `{}` y su frontmatter dice '{}'".format(
+                    " y ".join("'%s'" % m for m in sorted(modelos)), agente, real))
+    return filas
+
+
+def mapa_declarado():
+    """{agente: {modelos}} segun todas las tablas verificables de la suite."""
+    out = {}
+    for doc, plugin_dir in docs_con_tabla():
+        for agente, modelos in tabla_de_modelos(doc.read_text(encoding="utf-8")).items():
+            if (plugin_dir / "agents" / (agente + ".md")).exists():
+                out.setdefault(agente, set()).update(modelos)
+    return out
+
+
+def docs_con_prosa():
+    """Documentos donde la prosa puede fijar un modelo (no solo las tablas)."""
+    for pat in ("plugins/*/skills/*/SKILL.md", "plugins/*/PIPELINE.md",
+                "plugins/*/skills/*/modes/*.md"):
+        for f in sorted(ROOT.glob(pat)):
+            yield f
+
+
+def check_prosa_modelos(declarado):
+    """AVISO: prosa que fija para un agente un modelo que ninguna tabla declara.
+
+    No bloquea. La prosa describe modos legitimos ("modo nucleo con sonnet") que
+    una tabla puede no publicar todavia, asi que un aviso no es necesariamente un
+    defecto. Pero si la tabla es el contrato, toda prosa que la contradiga es
+    candidata a deriva y tiene que verse: el invariante de tablas no la cubre.
+    """
+    n = 0
+    for doc in docs_con_prosa():
+        for i, linea in enumerate(doc.read_text(encoding="utf-8").splitlines(), 1):
+            if linea.lstrip().startswith("|"):
+                continue  # las filas de tabla las cubre check_tabla_modelos
+            modelos = set(re.findall(r"[a-z]+", linea.lower())) & MODELOS
+            if not modelos:
+                continue
+            for agente in sorted(set(re.findall(r"[`\[]([a-z][\w-]+)[`\]]", linea))):
+                if agente in declarado and not (modelos & declarado[agente]):
+                    warn(doc, "linea {}: la prosa fija {} para `{}`, y las tablas "
+                              "declaran {}".format(i, "/".join(sorted(modelos)), agente,
+                                                   "/".join(sorted(declarado[agente]))))
+                    n += 1
+    return n
+
+# `model: X` fija un modelo concreto. En un SKILL.md es correcto (la skill es el
+# orquestador: da la orden en la llamada Task). En un PIPELINE.md, que es diseno y
+# no se carga en runtime, es como nace una copia que despues deriva: fue
+# exactamente el caso de requirements-pipeline/PIPELINE.md, que quedo mandando el
+# lazo de correccion a sonnet cuando la tabla ya decia opus.
+MODELO_LITERAL = re.compile(r"`model:\s*(opus|sonnet|haiku)`")
+
+
+def check_modelo_fijado_en_diseno():
+    """AVISO: un PIPELINE.md que fija un modelo concreto en vez de citar la tabla."""
+    n = 0
+    for doc in sorted(ROOT.glob("plugins/*/PIPELINE.md")):
+        for i, linea in enumerate(doc.read_text(encoding="utf-8").splitlines(), 1):
+            m = MODELO_LITERAL.search(linea)
+            if m:
+                warn(doc, "linea {}: fija `model: {}` en el documento de diseno; "
+                          "cita la tabla de la skill en vez de copiar el modelo".format(
+                              i, m.group(1)))
+                n += 1
+    return n
+
+# Un plugin no alcanza los archivos de otro por ruta relativa: en una instalacion
+# normal cada plugin vive en `.../cache/<marketplace>/<nombre>/<version>/`, asi que
+# `${CLAUDE_PLUGIN_ROOT}/../<otro>` no resuelve (falta el nivel de version y el
+# directorio se llama por el NOMBRE del plugin, no por la carpeta del repo). Solo
+# funciona cuando el marketplace es un directorio local, que es como lo ve quien
+# desarrolla la suite: falla justo para todos los demas. Lo compartido se expone
+# como ejecutable en `bin/`, que Claude Code pone en el PATH.
+RUTA_CRUZADA = re.compile(r"\$\{CLAUDE_PLUGIN_ROOT\}/\.\./")
+
+
+def check_rutas_cruzadas():
+    for pat in ("plugins/*/skills/*/SKILL.md", "plugins/*/skills/*/modes/*.md",
+                "plugins/*/agents/*.md", "plugins/*/commands/*.md"):
+        for f in sorted(ROOT.glob(pat)):
+            for i, linea in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+                if RUTA_CRUZADA.search(linea):
+                    problem(f, "linea {}: alcanza otro plugin por ruta relativa "
+                               "(${{CLAUDE_PLUGIN_ROOT}}/../); solo resuelve con un "
+                               "marketplace de directorio local. Expone lo compartido "
+                               "como ejecutable en bin/ del plugin que lo provee".format(i))
+
+# Señales de que un agente realmente ejecuta algo. Se chequea solo `Bash` porque
+# es la tool cuya ausencia los agentes declaran como parte de su contrato ("solo
+# lectura sobre el codigo"): declararla sin usarla convierte esa promesa en texto.
+# `Write` no entra: casi todos escriben su propio reporte, es el diseño.
+USA_BASH = re.compile(
+    r"```(bash|sh|console)"
+    r"|\bgit (log|diff|show|grep)\b"
+    r"|\b(npm|yarn|pnpm|composer|cargo|go|pip)[ -]audit\b"
+    r"|\bpip-audit\b"
+    r"|\bdependency_audit\b"
+    r"|corre(r|n|)? (el comando|los comandos|tests|las pruebas)"
+    r"|ejecuta(r|) (el comando|los comandos)"
+    r"|\bpython3? \"", re.IGNORECASE)
+
+
+def check_tools_declaradas():
+    """AVISO: un agente que declara Bash y nunca lo usa.
+
+    No bloquea: la deteccion es por evidencia textual y un uso legitimo podria
+    estar escrito de una forma que no matchea. Pero una tool de ejecucion
+    declarada de mas es superficie que nadie pidio, y la promesa de "solo
+    lectura" deja de estar respaldada por la configuracion.
+    """
+    n = 0
+    for f in sorted(ROOT.glob("plugins/*/agents/*.md")):
+        texto = f.read_text(encoding="utf-8")
+        data = parse_frontmatter(f) or {}
+        tools = str(data.get("tools", ""))
+        if "Bash" not in tools:
+            continue
+        cuerpo = texto.split("---", 2)[-1]
+        if not USA_BASH.search(cuerpo):
+            warn(f, "declara `Bash` y el prompt no muestra ningun uso: si lo usa, "
+                    "nombra el comando; si no, saca la tool")
+            n += 1
+    return n
+
+def check_lista_de_plugins_del_hook():
+    """El hook del sobre filtra por prefijo de plugin: esa lista no puede derivar.
+
+    Si se agrega un plugin y no entra en `PLUGINS`, sus agentes dejan de
+    verificarse sin que nadie se entere — exactamente el modo de falla silenciosa
+    que el hook viene a cerrar.
+    """
+    ruta = ROOT / "plugins" / "requirements-pipeline" / "hooks" / "check_envelope.py"
+    if not ruta.exists():
+        return
+    try:
+        arbol = ast.parse(ruta.read_text(encoding="utf-8"))
+    except SyntaxError as e:
+        problem(ruta, "no parsea: {}".format(e))
+        return
+    declarados = None
+    for nodo in arbol.body:
+        if isinstance(nodo, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "PLUGINS" for t in nodo.targets):
+            try:
+                declarados = set(ast.literal_eval(nodo.value))
+            except ValueError:
+                problem(ruta, "PLUGINS no es una tupla de literales")
+                return
+    if declarados is None:
+        problem(ruta, "no declara PLUGINS")
+        return
+    try:
+        mp = json.loads((ROOT / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    reales = {e.get("name") for e in mp.get("plugins", [])}
+    faltan, sobran = reales - declarados, declarados - reales
+    if faltan:
+        problem(ruta, "PLUGINS no incluye {}: los agentes de ese plugin no se "
+                      "verifican".format(", ".join(sorted(faltan))))
+    if sobran:
+        problem(ruta, "PLUGINS nombra plugins que no existen: {}".format(", ".join(sorted(sobran))))
+
+def prefijos_de_id(texto):
+    """Prefijos de id que un prompt promete: `"id": "RF-001"` -> RF."""
+    return set(re.findall(r'"id":\s*"([A-Z]+)-\d', texto))
+
+
+def id_regexes():
+    """ID_RE de scripts/check-artifacts.py, sin duplicar la fuente."""
+    import importlib.util
+    ruta = ROOT / "scripts" / "check-artifacts.py"
+    if not ruta.exists():
+        return None
+    spec = importlib.util.spec_from_file_location("check_artifacts", ruta)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return list(getattr(mod, "ID_RE", {}).values())
+
+
+def check_bloques_agentes():
+    for f in sorted(ROOT.glob("plugins/*/agents/*.md")):
+        bajo = f.read_text(encoding="utf-8").lower()
+        faltan = [b for b in BLOQUES_AGENTE if b not in bajo]
+        if faltan:
+            problem(f, "al agente le falta el bloque obligatorio: {}".format(
+                ", ".join('"{}"'.format(b) for b in faltan)))
+
+
+def check_prefijos_de_id():
+    """Todo prefijo prometido en los prompts lo acepta el verificador, o esta declarado."""
+    regexes = id_regexes()
+    if regexes is None:
+        problem(ROOT / "scripts" / "check-artifacts.py", "no existe: no pude verificar los prefijos de id")
+        return 0
+    vistos = set()
+    for f in sorted(list(ROOT.glob("plugins/*/agents/*.md"))
+                    + list(ROOT.glob("plugins/*/reference/*.md"))):
+        vistos |= prefijos_de_id(f.read_text(encoding="utf-8"))
+    for prefijo in sorted(vistos - PREFIJOS_NO_VERIFICADOS):
+        muestra = "{}-001".format(prefijo)
+        if not any(rx.match(muestra) for rx in regexes):
+            problem(ROOT / "scripts" / "check-artifacts.py",
+                    "los prompts producen ids '{}' y ninguna expresion de ID_RE los acepta "
+                    "(agregala, o declara el prefijo en PREFIJOS_NO_VERIFICADOS)".format(muestra))
+    return len(vistos)
+
+
+def self_test():
+    fallos = []
+
+    def check(nombre, got, want):
+        if got != want:
+            fallos.append("{}: {!r} != {!r}".format(nombre, got, want))
+
+    check("columna de correccion", tabla_de_modelos(
+          "| `scenario-modeling` | Elabora | opus | opus |"), {"scenario-modeling": {"opus"}})
+    check("modelo en negrita", tabla_de_modelos(
+          "| `product-mapping` | Mapa | **opus** | opus |"), {"product-mapping": {"opus"}})
+    check("modelo suelto en una celda", tabla_de_modelos(
+          "| `stack-profiler` | sonnet | Perfil |"), {"stack-profiler": {"sonnet"}})
+    check("declaracion calificada", tabla_de_modelos(
+          "| `feature-implementer` | opus (plan: sonnet) | Construye |"),
+          {"feature-implementer": {"opus", "sonnet"}})
+    check("modelo entre parentesis tras una palabra", tabla_de_modelos(
+          "| `bug-hunter` | agente (opus) | correctitud |"), {"bug-hunter": {"opus"}})
+    check("multi-modo en la celda del nombre", tabla_de_modelos(
+          "| `baseline-reconstruction` (sonnet/opus/sonnet por modo) | Emite |"),
+          {"baseline-reconstruction": {"opus", "sonnet"}})
+    check("fila sin modelo se ignora", tabla_de_modelos(
+          "| `algo` | Rol | descripcion |"), {})
+    check("modelo fijado en prosa de diseno",
+          bool(MODELO_LITERAL.search("(invocado con `model: sonnet`), con tope de 3")), True)
+    check("mencion de modelo sin fijarlo no cuenta",
+          bool(MODELO_LITERAL.search("el lazo de correccion va en opus")), False)
+    check("prefijos de id", prefijos_de_id('{"id": "LEL-001", "x": 1} y "id": "RF-007"'),
+          {"LEL", "RF"})
+
+    for f in fallos:
+        print("SELF-TEST FALLO ({})".format(f))
+    if not fallos:
+        print("self-test ok (10 casos: tablas, prosa de diseno y prefijos de id).")
+    return 1 if fallos else 0
+
+
 def main():
+    if "--self-test" in sys.argv[1:]:
+        return self_test()
     n_entries = check_marketplace()
     n_files = check_frontmatters()
+    check_bloques_agentes()
+    n_filas = check_tabla_modelos()
+    n_prosa = check_prosa_modelos(mapa_declarado())
+    check_modelo_fijado_en_diseno()
+    check_rutas_cruzadas()
+    n_plug = check_nombres_de_plugin()
+    check_tools_declaradas()
+    check_lista_de_plugins_del_hook()
+    n_pref = check_prefijos_de_id()
     mode = "pyyaml" if HAVE_YAML else "reglas de escalar plano (sin pyyaml)"
     print(f"Validados {n_entries} plugins del marketplace y {n_files} frontmatters ({mode}).")
+    print(f"Invariantes: bloques obligatorios, {n_filas} fila(s) de tabla de modelos, "
+          f"{n_pref} prefijo(s) de id, {n_plug} nombre(s) de plugin.")
+    if warnings:
+        print("")
+        print(f"{len(warnings)} aviso(s) (no bloquean; revisalos antes de mergear):")
+        for w in warnings:
+            print(f"  ! {w}")
     if problems:
         print(f"\n{len(problems)} problema(s):")
         for p in problems:
