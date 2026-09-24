@@ -82,6 +82,9 @@ KNOWN = {
         "README.md": "indice del manual de usuario (derivado)",
     },
     "features": {},
+    "cards": {
+        "index.json": "contador de ids de tarjeta cuando no hay product-map",
+    },
 }
 
 # .md derivados por script: gemelo legible de su .json canonico.
@@ -109,9 +112,10 @@ SUBDIRS = {
     ("build", "reviews"): "veredictos de review por feature (unica fuente de verdad)",
     ("build", "security"): "veredictos de seguridad (piso OWASP) por feature",
     ("audit", "history"): "corridas de auditoria anteriores archivadas",
+    ("cards", "sources"): "fuente archivada de cada tarjeta del camino rapido",
 }
 
-DIR_ORDER = ["requirements", "plan", "features", "build", "manual", "recovery", "audit"]
+DIR_ORDER = ["requirements", "plan", "cards", "features", "build", "manual", "recovery", "audit"]
 
 _HEADER_RE = re.compile(r"Derivado de `?([\w.\-]+\.json)`? version (\S+)")
 
@@ -137,6 +141,15 @@ def json_version(path, cache):
     return cache[path]
 
 
+def card_status(path):
+    """`status` de una tarjeta del camino rapido (drafted|built|promoted)."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (ValueError, OSError):
+        return "ilegible"
+    return data.get("status") or "drafted" if isinstance(data, dict) else "ilegible"
+
+
 def md_header_version(path):
     """Version declarada en el encabezado 'Derivado de <json> version N' (o None)."""
     try:
@@ -158,6 +171,12 @@ def describe(dirname, path, vcache):
             return desc, None
     if dirname == "features" and path.suffix == ".md":
         return "brief de feature para el pipeline de build", None
+    if dirname == "cards" and path.suffix == ".json":
+        estado = card_status(path)
+        pendiente = estado in ("drafted", "built")
+        return ("tarjeta del camino rapido (%s)" % estado,
+                "PENDIENTE DE PROMOVER: construida sin linea de base — /requerimientos:promover"
+                if pendiente else None)
     if dirname == "manual" and path.suffix == ".md":
         return "guia de usuario final (Markdown)", None
     if path.suffix == ".md" and stem in DERIVED_MD.get(dirname, []):
@@ -371,6 +390,10 @@ def self_test():
         (req / "changelog.json").write_text(json.dumps({
             "version": 1, "entries": [{"id": "INC-001", "status": "in_progress"}],
         }), encoding="utf-8")
+        cards = tmp / ".dev" / "cards"
+        cards.mkdir(parents=True)
+        (cards / "FG-07-alta.json").write_text(json.dumps({
+            "id": "FG-07", "slug": "alta", "status": "built"}), encoding="utf-8")
 
         dev = tmp / ".dev"
         code = main([str(dev)])
@@ -379,6 +402,8 @@ def self_test():
 
         texto = readme.read_text(encoding="utf-8") if readme.is_file() else ""
         check("lleva el encabezado de generado", "no editar a mano" in texto)
+        check("la tarjeta sin promover se ve como deuda en el indice",
+              "PENDIENTE DE PROMOVER" in texto)
         check("lista la feature baselineada", "FG-01" in texto)
         check("lista el stub (explica el hueco de numeracion)", "FG-02" in texto)
         check("avisa la vista desincronizada", "DESINCRONIZADO" in texto,

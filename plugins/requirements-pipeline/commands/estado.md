@@ -1,15 +1,25 @@
 ---
-description: "Dice en que estado esta la suite en este proyecto: que pipelines corrieron, que features estan en cada etapa, que bloquea y que conviene hacer. Solo lectura, cero tokens de modelo."
-argument-hint: "[opcional: ruta al proyecto]"
+description: "Dice en que estado esta la suite en este proyecto: que pipelines corrieron, que features estan en cada etapa, que bloquea y que conviene hacer. Tambien enruta: contale que queres hacer y te dice por donde. Solo lectura."
+argument-hint: "[ruta al proyecto] [o contame que queres hacer, entre comillas]"
 ---
 
 Estado de la suite para: `$ARGUMENTS`
 
-Corre el script y mostra su salida tal cual:
+Corre el script y mostra su salida tal cual (si `$ARGUMENTS` es una intencion en
+texto y no una ruta, corre el script sobre `.`):
 
 ```bash
 suite-status "${ARGUMENTS:-.}/.dev"
 ```
+
+**Si ademas te dije que quiero hacer** ("necesito sacar el alta de proveedores
+hoy", "quiero documentar lo que construimos la semana pasada"), cruza eso con la
+salida del script y recomendame un comando, con una linea de por que. El `Sugerido`
+del script sale solo del estado de los artefactos: no sabe lo que quiero. Para
+enrutar usa la tabla de triage de la skill `requirements-pipeline` (seccion "Por
+donde empezar"), incluidas sus contraindicaciones: si lo que pido es urgente pero
+toca el modelo de datos central o son varias features, decimelo y recomendame el
+ciclo formal igual.
 
 Reglas:
 

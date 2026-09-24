@@ -41,6 +41,27 @@ def _contar(items, clave, valores):
     return out
 
 
+def estado_tarjetas(dev):
+    """Tarjetas del camino rapido (.dev/cards/): la deuda de documentacion, visible.
+
+    Una feature construida por tarjeta y nunca promovida es documentacion que se
+    posterga sola. Si nadie la cuenta, el atajo se vuelve el camino por defecto.
+    """
+    carpeta = dev / "cards"
+    tarjetas = []
+    if carpeta.is_dir():
+        for path in sorted(carpeta.glob("FG-*.json")):
+            doc = load_json(path) or {}
+            if not doc.get("id"):
+                continue
+            tarjetas.append({"id": doc["id"], "slug": doc.get("slug") or path.stem,
+                             "status": doc.get("status") or "drafted",
+                             "archivo": path.name})
+    por_estado = _contar(tarjetas, "status", ("drafted", "built", "promoted"))
+    return {"presente": bool(tarjetas), "tarjetas": tarjetas, "por_estado": por_estado,
+            "sin_promover": [t["id"] for t in tarjetas if t["status"] in ("drafted", "built")]}
+
+
 def estado(dev):
     """El estado completo, como datos."""
     req, plan = dev / "requirements", dev / "plan"
@@ -70,6 +91,7 @@ def estado(dev):
         },
         "recovery": {"presente": (dev / "recovery" / "behavior-map.json").is_file()},
         "audit": {"presente": (dev / "audit" / "audit-report.json").is_file()},
+        "fast_track": estado_tarjetas(dev),
     }
 
     bloqueos = []
@@ -154,6 +176,11 @@ def sugerencia(pipelines, features, changelog):
         return {"comando": "/requerimientos:incremento",
                 "porque": "lo planificado esta construido; quedan %d feature(s) sin baselinear"
                           % (f["stub"] + f["elaborated"])}
+    sin_promover = pipelines["fast_track"]["sin_promover"]
+    if sin_promover:
+        return {"comando": "/requerimientos:promover %s" % " ".join(sin_promover),
+                "porque": "%d feature(s) del camino rapido siguen sin linea de base"
+                          % len(sin_promover)}
     return {"comando": "/auditar",
             "porque": "no hay trabajo pendiente en el plan: auditar o documentar"}
 
@@ -171,7 +198,16 @@ def texto(est):
         ", ".join("%s %d" % (k, v) for k, v in p["build"]["features"].items() if v) or "-"))
     out.append("  recovery    %s" % ("si" if p["recovery"]["presente"] else "no"))
     out.append("  audit       %s" % ("si" if p["audit"]["presente"] else "no"))
+    ft = p.get("fast_track") or {"presente": False}
+    if ft["presente"]:
+        out.append("  tarjetas    si  %s" % (
+            ", ".join("%s %d" % (k, v) for k, v in ft["por_estado"].items() if v) or "-"))
     out.append("")
+    if ft.get("sin_promover"):
+        out.append("Deuda del camino rapido: %d feature(s) construida(s) sin linea de base (%s)"
+                   % (len(ft["sin_promover"]), ", ".join(ft["sin_promover"])))
+        out.append("  se salda con /requerimientos:promover")
+        out.append("")
     if est["bloqueos"]:
         out.append("Bloqueos:")
         for b in est["bloqueos"]:
@@ -292,6 +328,22 @@ def self_test():
         })
         est = estado(dev)
         check("todo construido sugiere auditar", est["siguiente_sugerido"]["comando"], "/auditar")
+
+        # 6. camino rapido: una tarjeta construida y nunca promovida es deuda visible
+        dev = escenario(tmp / "f", **{
+            "requirements/product-map.json": {"version": 1, "features": [{"id": "FG-01", "status": "baselined"}]},
+            "plan/tasks.json": {"version": 1, "features": [{"id": "FG-01"}], "tasks": [{"id": "T-001"}]},
+            "plan/progress.json": {"version": 1, "features": [{"feature_id": "FG-01", "status": "done"}]},
+            "cards/FG-07-alta.json": {"id": "FG-07", "slug": "alta", "status": "built"},
+            "cards/FG-08-baja.json": {"id": "FG-08", "slug": "baja", "status": "promoted"},
+        })
+        est = estado(dev)
+        check("tarjeta sin promover sugiere promoverla",
+              est["siguiente_sugerido"]["comando"], "/requerimientos:promover FG-07")
+        check("cuenta las tarjetas por estado",
+              est["pipelines"]["fast_track"]["por_estado"], {"drafted": 0, "built": 1, "promoted": 1})
+        check("la deuda aparece en el texto",
+              "Deuda del camino rapido" in texto(est), True)
         check("sin bloqueos", est["bloqueos"], [])
         check("el contrato lleva schema", est["schema"], SCHEMA)
 
