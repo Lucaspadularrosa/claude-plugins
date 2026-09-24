@@ -11,7 +11,9 @@ del subagente `plan-inspection`, que recibe estos resultados como pre-verificado
 
 Checks mecanicos que cubre (mismos ids del checklist de plan-inspection):
   PLAN-CHECK-001 cobertura de requisitos active
-  PLAN-CHECK-002 tareas huerfanas y contratos que citan dos features
+  PLAN-CHECK-002 tareas huerfanas y contratos que citan dos features (un id
+                 provisional `RF-FT07#1` de una tarjeta del camino rapido no es
+                 un requisito inexistente: es deuda de promocion, y sale `low`)
   PLAN-CHECK-003 dependencias: formato objeto, existencia, kinds, ciclos
   PLAN-CHECK-004 (parte mecanica) complexity valida; requisito xl en una sola tarea
   PLAN-CHECK-005 features validas; regla de la sintetica FG-00
@@ -59,6 +61,9 @@ from pathlib import Path
 
 ID_T = re.compile(r"^T-\d+$")
 ID_FG = re.compile(r"^FG-\d+$")
+# Id provisional de una tarjeta del camino rapido (`RF-FT07#1`), en la misma forma que
+# renumera apply_delta.py al promoverla. No es un requisito inexistente: todavia no existe.
+ID_PROVISIONAL = re.compile(r"^(?:[A-Z]+-)*[A-Z]+-[A-Za-z0-9]+#\d+$")
 COMPLEXITIES = {"low", "medium", "high"}
 DEP_KINDS = {"hard", "contract"}
 DERIVED_HEADER = re.compile(r"Derivado de `(?P<json>[\w.-]+)` version (?P<version>\d+)")
@@ -135,13 +140,17 @@ def check_tasks(tasks_doc, reqs_doc, changelog_doc):
                    "task-derivation")
 
     # PLAN-CHECK-002 huerfanas y contratos
+    pendientes = {}
     for t in tasks:
         rids = t.get("requirement_ids") or []
         if not rids:
             defect("PLAN-CHECK-002", "high", t.get("id"), "tarea sin requirement_ids: huerfana", "task-derivation")
             continue
         if reqs_doc is not None:
-            unknown = [r for r in rids if r not in req_feature]
+            provisionales = [r for r in rids if ID_PROVISIONAL.match(str(r))]
+            if provisionales:
+                pendientes.setdefault(t.get("feature_group"), set()).update(provisionales)
+            unknown = [r for r in rids if r not in req_feature and r not in provisionales]
             for r in unknown:
                 defect("PLAN-CHECK-002", "high", t.get("id"), "cita requisito inexistente %s" % r, "task-derivation")
             if t.get("type") == "contract":
@@ -149,6 +158,12 @@ def check_tasks(tasks_doc, reqs_doc, changelog_doc):
                 if len(feats) < 2:
                     defect("PLAN-CHECK-002", "medium", t.get("id"),
                            "tarea-contrato que no cita requisitos de dos features distintas", "task-derivation")
+    for fid in sorted(pendientes):
+        defect("PLAN-CHECK-002", "low", fid,
+               "%d requisito(s) provisional(es) de una tarjeta sin promover (%s): correr /promover %s "
+               "para que pasen a la linea de base"
+               % (len(pendientes[fid]), ", ".join(sorted(pendientes[fid])), fid),
+               "orquestador")
 
     # PLAN-CHECK-003 dependencias
     for t in tasks:
@@ -588,6 +603,32 @@ def self_test():
                     print("self-test ok (checks detectados: %s)" % ", ".join(sorted(got_checks)))
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
+
+    # camino rapido: con linea de base presente, una tarea que solo cita ids
+    # provisionales de una tarjeta no es huerfana ni cita "requisitos inexistentes":
+    # es deuda de promocion y tiene que salir `low` sin voltear el exit code.
+    tmp = Path(tempfile.mkdtemp(prefix="validate-plan-ft-"))
+    try:
+        fixture(tmp, False)
+        req_path = tmp / ".dev" / "requirements" / "requirements.json"
+        reqs = json.loads(req_path.read_text(encoding="utf-8"))
+        reqs["functional_requirements"][0]["status"] = "deprecated"
+        req_path.write_text(json.dumps(reqs), encoding="utf-8")
+        tasks_path = tmp / ".dev" / "plan" / "tasks.json"
+        doc = json.loads(tasks_path.read_text(encoding="utf-8"))
+        doc["tasks"][0]["requirement_ids"] = ["RF-FT01#1"]
+        tasks_path.write_text(json.dumps(doc), encoding="utf-8")
+        code, found = run_checks(tmp, briefs=False, previa=None, afectadas=None, as_json=False, quiet=True)
+        pendientes = [d for d in found if d["check_id"] == "PLAN-CHECK-002" and d["severity"] == "low"]
+        altos = [d for d in found if d["severity"] in ("high", "medium")]
+        if code != 0 or not pendientes or altos:
+            print("SELF-TEST FALLO (camino rapido): exit=%d defectos=%s" % (code, found))
+            failures += 1
+        else:
+            print("self-test ok (camino rapido): id provisional -> 1 low, exit 0")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
     print("SELF-TEST: %d fallo(s)" % failures)
     return 1 if failures else 0
 

@@ -46,6 +46,12 @@ Las convenciones, los scripts y las reglas son las de `SKILL.md`; `{b}` es el
    {slug}`) o `--note "SIN GUIA: <motivo>"`; `render_cr_input.py {raiz} --brief {b}`
    (cr-input y tech-debt); `render_manual_index.py {raiz}` si es la primera rama de
    la corrida.
+   **Si la feature vino del camino rapido** (existe `.dev/cards/FG-xx-*.json`), con
+   **Edit** sobre esa tarjeta: `status` a `"built"` y `build_refs` con la rama, los
+   commits `[T-xxx]` de la feature y los archivos tocados del diff (`code_refs`). Es
+   lo unico que el build le debe a la tarjeta, y es de lo que vive `/promover`
+   despues para escribir los requisitos sin releer el codigo. No toques ningun otro
+   campo: la tarjeta es la fuente de lo que se decidio, no un log del build.
 9. **Compuerta dura pre-PR**: `validate_verdict.py {raiz} --compuerta --brief {b}`.
    Si esta CERRADA, el PR no se abre: mostra la salida del script y volve al paso 7.
    Con la compuerta ABIERTA, crea el PR contra la rama de integracion,
