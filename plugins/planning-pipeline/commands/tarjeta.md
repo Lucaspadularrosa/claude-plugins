@@ -6,10 +6,15 @@ argument-hint: "<ruta a un documento corto, o el pedido en texto>"
 Ejecuta el modo TARJETA de la skill `planning-pipeline` para: `$ARGUMENTS`
 
 Segui la skill tal cual (version del pipeline por script, reserva del `FG-xx`, archivo
-de la fuente, `card-authoring`, `validate_card.py` hasta verde, PAUSA UNICA con la
-tarjeta, proyeccion por script con `card_to_partial.py` + `merge_tasks.py` +
+de la fuente, `card-authoring`, `validate_card.py` hasta verde, `card-inspection`
+contra la fuente, PAUSA UNICA con la tarjeta y los defectos de la inspeccion,
+proyeccion por script con `card_to_partial.py` + `merge_tasks.py` +
 `compute_execution_plan.py`, brief y `validate_plan.py --briefs`, y registro de la
 deuda en el changelog).
+
+En la pausa mostrame por separado lo que necesita una decision mia de lo que quedo
+anotado, y las preguntas abiertas con el supuesto con el que va a seguir el build si no
+las contesto.
 
 Antes de arrancar, decime si esto **no** deberia ir por el atajo: mas de una feature,
 cambios en el modelo de datos central, requisitos que hay que acordar con un tercero, o

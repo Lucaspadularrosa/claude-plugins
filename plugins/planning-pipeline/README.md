@@ -32,6 +32,9 @@ planning-pipeline/
     plan-inspection.md       sonnet: solo juicio (lo mecanico lo valida un script)
     feature-brief.md         haiku: completa resumen y superficie OWASP del brief
     execution-planning.md    sonnet: solo conflictos de replanificacion
+    card-authoring.md        opus: del documento a la tarjeta (camino rapido)
+    card-inspection.md       sonnet: contrasta la tarjeta contra su fuente antes de
+                             la pausa (procedencia, silencios, criterios, alcance)
   skills/
     planning-pipeline/
       SKILL.md               orquestacion del pipeline

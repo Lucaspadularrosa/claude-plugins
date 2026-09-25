@@ -21,7 +21,10 @@ Checks (todos `high` salvo donde se aclara):
   CARD-CHECK-005  tareas: toda regla en >=1 tarea, toda tarea con regla y criterio,
                   complexity/priority validas, depends_on resoluble y sin ciclos
   CARD-CHECK-006  enums cerrados (status, kind, security_surface) y unicidad de ids
-  CARD-CHECK-007  `medium`: intent.done_when medible y preguntas abiertas con texto
+  CARD-CHECK-007  `medium`: intent.done_when medible
+  CARD-CHECK-008  preguntas abiertas con contrato: id, texto, `default_assumption`
+                  (con que sigue el build), `impact` y `blocks` resoluble. Las de
+                  impacto en modelo o seguridad salen `medium`: son contraindicacion
 
 Solo stdlib, Python 3.8+. No escribe nada.
 
@@ -54,6 +57,7 @@ VOCAB_KINDS = {"objeto", "sujeto", "verbo", "estado"}
 COMPLEXITIES = {"low", "medium", "high"}
 PRIORITIES = {"high", "medium", "low"}
 SOURCE_KINDS = {"document", "prompt"}
+QUESTION_IMPACTS = {"alcance", "modelo", "seguridad", "ux"}
 
 
 def die(msg):
@@ -69,7 +73,8 @@ def load(path):
 
 
 def find_card(folder, feature):
-    hits = sorted(Path(folder).glob("%s-*.json" % feature))
+    # solo archivos sueltos de la carpeta: las inspecciones viven en inspections/
+    hits = sorted(p for p in Path(folder).glob("%s-*.json" % feature) if p.parent.name != "inspections")
     if not hits:
         die("no hay tarjeta de %s en %s" % (feature, folder))
     if len(hits) > 1:
@@ -257,15 +262,42 @@ def validate(card):
     if _has_cycle(tasks):
         defect("CARD-CHECK-005", "high", "tasks", "ciclo en depends_on")
 
-    # --------------------------------------------------------- 007 avisos
+    # ------------------------------------------------- 007 avisos de redaccion
     done_when = str(intent.get("done_when") or "")
     if done_when and len(done_when.split()) < 4:
         defect("CARD-CHECK-007", "medium", "intent.done_when",
                "done_when demasiado corto para ser verificable: %r" % done_when)
+
+    # -------------------------------------------- 008 contrato de las preguntas
+    # Una pregunta abierta sin supuesto por defecto no es una pregunta: es un
+    # silencio. El build igual va a tener que decidir, y la decision queda
+    # implicita en el codigo en vez de escrita en la tarjeta.
+    task_ids_set = set(task_ids)
     for q in card.get("open_questions") or []:
-        text = q if isinstance(q, str) else str(q.get("question") or "")
-        if not text.strip():
-            defect("CARD-CHECK-007", "medium", "open_questions", "pregunta abierta vacia")
+        if isinstance(q, str):
+            defect("CARD-CHECK-008", "high", "open_questions",
+                   "pregunta en texto plano (%r): se espera "
+                   "{id, question, default_assumption, blocks, impact}" % q[:60])
+            continue
+        where = "open_questions[%s]" % q.get("id")
+        check_id(q.get("id"), where, "Q")
+        if not str(q.get("question") or "").strip():
+            defect("CARD-CHECK-008", "high", where, "pregunta sin texto")
+        if not str(q.get("default_assumption") or "").strip():
+            defect("CARD-CHECK-008", "high", where,
+                   "sin default_assumption: con que sigue el build mientras no haya respuesta")
+        impact = q.get("impact")
+        if impact not in QUESTION_IMPACTS:
+            defect("CARD-CHECK-008", "high", where,
+                   "impact invalido %r: %s" % (impact, "|".join(sorted(QUESTION_IMPACTS))))
+        for ref in q.get("blocks") or []:
+            if ref not in rule_ids and ref not in crit_ids and ref not in task_ids_set:
+                defect("CARD-CHECK-008", "high", where,
+                       "blocks apunta a algo que no existe en la tarjeta: %s" % ref)
+        if impact in ("modelo", "seguridad"):
+            defect("CARD-CHECK-008", "medium", where,
+                   "pregunta de impacto %s sin responder: es contraindicacion del camino "
+                   "rapido, mostrasela al usuario en la pausa" % impact)
     return defects
 
 
@@ -308,8 +340,32 @@ def self_test():
                    "priority": "high", "covers": ["RF-FT07#1"], "criteria": ["AC-FT07#1"],
                    "depends_on": []}],
         "security_surface": ["A01"],
+        "open_questions": [{"id": "Q-FT07#1", "question": "Se puede reusar el CUIT de un proveedor dado de baja?",
+                            "default_assumption": "no se reusa: el CUIT queda ocupado para siempre",
+                            "blocks": ["RF-FT07#1"], "impact": "alcance"}],
     }
     check(validate(base) == [], "tarjeta minima valida no tiene defectos")
+
+    bad = json.loads(json.dumps(base))
+    bad["open_questions"] = ["y si el CUIT se repite?"]
+    check(any(d["check"] == "CARD-CHECK-008" and d["severity"] == "high" for d in validate(bad)),
+          "pregunta en texto plano: rechazada")
+
+    bad = json.loads(json.dumps(base))
+    bad["open_questions"][0]["default_assumption"] = ""
+    check(any("default_assumption" in d["message"] for d in validate(bad)),
+          "pregunta sin supuesto por defecto: es un silencio, no una pregunta")
+
+    bad = json.loads(json.dumps(base))
+    bad["open_questions"][0]["blocks"] = ["RF-FT07#9"]
+    check(any("blocks apunta" in d["message"] for d in validate(bad)),
+          "blocks colgado se reporta")
+
+    bad = json.loads(json.dumps(base))
+    bad["open_questions"][0]["impact"] = "seguridad"
+    ds = [d for d in validate(bad) if d["check"] == "CARD-CHECK-008"]
+    check(ds and ds[0]["severity"] == "medium" and "contraindicacion" in ds[0]["message"],
+          "pregunta de seguridad sin responder avisa contraindicacion, sin bloquear")
 
     bad = json.loads(json.dumps(base))
     del bad["vocabulary"][0]["id"]

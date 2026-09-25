@@ -315,11 +315,25 @@ arriba: si hay contraindicaciones, decilas y esperá la decision del usuario.
    ```
    Los defectos `high` vuelven al agente con la lista textual; los `medium` los
    mostras en la pausa. Tres correcciones sin verde: presentaselos al usuario.
-6. **PAUSA UNICA**. Mostra la tarjeta (intencion, reglas, criterios, tareas, supuestos,
-   preguntas abiertas y **que queda afuera**) y espera el OK. Es el unico control antes
-   del PR: lo que no se corrige aca se corrige en codigo. Si el agente devolvio
-   `blocking_items`, leelos primero.
-7. **Proyeccion al plan** (scripts, cero tokens):
+6. **Inspeccion de la tarjeta** (`card-inspection`, `model: sonnet`), con la tarjeta y
+   **la fuente archivada**. Escribe `.dev/cards/inspections/FG-xx.json`. Es el unico
+   juicio entre la fuente y el codigo: el camino rapido no tiene cuestionario al
+   stakeholder ni inspeccion de requisitos. Sus seis checks cubren lo que el script no
+   puede ver — si cada regla esta en la fuente, que decision forzada quedo en silencio
+   (identidad, unicidad, estados, autorizacion, casos de borde, persistencia), si los
+   criterios son verificables, si las preguntas sirven, el alcance y el vocabulario.
+   - `high` -> volves a `card-authoring` con la lista de defectos y re-corres
+     `validate_card.py`. **Tope: 2 pasadas**; despues, a la pausa con lo que quedo.
+   - `medium` -> no rebotan, se muestran en la pausa.
+   - Vos leas solo el veredicto (`passed`, `summary`, `defects`), nunca la tarjeta
+     entera.
+7. **PAUSA UNICA**. Mostra la tarjeta (intencion, reglas, criterios, tareas, supuestos,
+   preguntas abiertas con su supuesto por defecto, y **que queda afuera**) **mas los
+   defectos de la inspeccion**, separando los que rebotan al usuario (necesitan una
+   decision que la fuente no tiene) de los que quedaron anotados. Espera el OK. Es el
+   unico control antes del PR: lo que no se corrige aca se corrige en codigo. Si
+   `card-authoring` devolvio `blocking_items`, leelos primero.
+8. **Proyeccion al plan** (scripts, cero tokens):
    ```bash
    python3 "$S/card_to_partial.py" . --card FG-xx
    ```
@@ -329,20 +343,20 @@ arriba: si hay contraindicaciones, decilas y esperá la decision del usuario.
    `compute_execution_plan.py .dev/plan --replan`. Sin `--replan` sobre un plan con
    build en curso, `compute_execution_plan.py` falla duro (y hace bien).
    Despues `render_plan_docs.py .dev/plan`.
-8. **Brief**, igual que el Paso 4 del camino formal: `slice_brief_context.py`,
+9. **Brief**, igual que el Paso 4 del camino formal: `slice_brief_context.py`,
    `render_brief.py`, `feature-brief` (haiku) y `validate_plan.py . --briefs` hasta
    verde. La tajada sale con avisos de fuentes ausentes (no hay requisitos ni diseno):
    es esperado, no lo arregles.
    `PLAN-CHECK-002` va a reportar un `low` por los requisitos provisionales sin
    promover. **Ese low es el recordatorio de la deuda: no lo silencies.**
-9. **Registro de la deuda**. Si existe `.dev/requirements/changelog.json`, agrega una
+10. **Registro de la deuda**. Si existe `.dev/requirements/changelog.json`, agrega una
    entrada `CR-xxx` con `kind: "change_request"`, `status: "deferred"`,
    `feature_ids: ["FG-xx"]`, `sources` con la fuente archivada y
    `notes: "camino rapido: construida sin linea de base; promover con /requerimientos:promover FG-xx"`.
    `deferred` es deliberado: `PLAN-CHECK-007` solo marca `high` las entradas `applied`
    que el plan no absorbio, y `/replanificar` no toma las diferidas. Si no hay
    changelog, la tarjeta misma es el registro.
-10. **Cierre**: `suite-render-index .dev`, `slice_brief_context.py . --limpiar`,
+11. **Cierre**: `suite-render-index .dev`, `slice_brief_context.py . --limpiar`,
     y `progress.json` (inicializalo si no existia; si existia, suma las tareas nuevas
     como `pending` sin tocar el resto). Informa en pocas lineas: tarjeta, tareas,
     `/construir FG-xx` como paso siguiente, y que la feature **queda pendiente de
@@ -390,6 +404,7 @@ Construir la tarjeta va con `/construir FG-xx` (feature suelta). No relances
 .dev/cards/                         solo camino rapido (modo TARJETA)
   FG-xx-{slug}.json                 la tarjeta: semilla de la feature y de su promocion
   sources/                          la fuente archivada de cada tarjeta
+  inspections/FG-xx.json            veredicto de card-inspection sobre esa tarjeta
   index.json                        contador de ids cuando no hay product-map
 ```
 

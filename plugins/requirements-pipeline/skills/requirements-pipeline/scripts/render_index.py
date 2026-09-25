@@ -113,6 +113,7 @@ SUBDIRS = {
     ("build", "security"): "veredictos de seguridad (piso OWASP) por feature",
     ("audit", "history"): "corridas de auditoria anteriores archivadas",
     ("cards", "sources"): "fuente archivada de cada tarjeta del camino rapido",
+    ("cards", "inspections"): "veredicto de card-inspection por tarjeta (contraste contra la fuente)",
 }
 
 DIR_ORDER = ["requirements", "plan", "cards", "features", "build", "manual", "recovery", "audit"]

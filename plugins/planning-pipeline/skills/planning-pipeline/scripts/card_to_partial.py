@@ -100,6 +100,51 @@ def project_tasks(card):
     return out
 
 
+def card_questions(card, tasks):
+    """Preguntas abiertas de la tarjeta -> preguntas del plan, apuntadas y con supuesto.
+
+    Dos cosas que el brief necesita y que se pierden si no se hacen aca:
+
+    - **A que tarea apuntan.** El brief filtra las preguntas por tarea relacionada: una
+      pregunta sin relacionar se escribe y se descarta en silencio. Si la pregunta
+      declara `blocks` (reglas, criterios o tareas), se resuelve a las tareas que
+      cubren eso; si no declara nada, afecta a toda la feature.
+    - **El supuesto por defecto.** Es con lo que sigue el build mientras no haya
+      respuesta. Va pegado al texto porque el brief no renderiza otro campo, y sin el
+      la decision queda implicita en el codigo en vez de escrita.
+    """
+    fid = card["id"]
+    by_rule = {}
+    for t in tasks:
+        for rid in t["requirement_ids"]:
+            by_rule.setdefault(rid, []).append(t["id"])
+        for ac in t["acceptance_criteria"]:
+            by_rule.setdefault(ac["id"], []).append(t["id"])
+    todas = [t["id"] for t in tasks]
+    out = []
+    for q in card.get("open_questions") or []:
+        if isinstance(q, str):  # tarjeta vieja, sin contrato
+            q = {"question": q}
+        destinos = []
+        for ref in q.get("blocks") or []:
+            for tid in by_rule.get(ref, [ref] if ref in todas else []):
+                if tid not in destinos:
+                    destinos.append(tid)
+        supuesto = str(q.get("default_assumption") or "").strip()
+        texto = str(q.get("question") or "")
+        if supuesto:
+            texto = "%s — mientras no haya respuesta: %s" % (texto, supuesto)
+        out.append({
+            "question": texto,
+            "blocking": False,
+            "target_role": "stakeholder",
+            "reason": "pregunta abierta de la tarjeta %s (impacto: %s); no bloquea el build, "
+                      "se resuelve al promover" % (fid, q.get("impact") or "sin declarar"),
+            "related_task_ids": destinos or todas,
+        })
+    return out
+
+
 def build(card, replan):
     """Devuelve (skeleton, partial) listos para escribir."""
     fid = card["id"]
@@ -118,19 +163,7 @@ def build(card, replan):
     partial = {
         "feature": feature_block(card),
         "tasks": tasks,
-        # `related_task_ids` con TODAS las tareas de la feature: el brief filtra las
-        # preguntas por tarea relacionada, asi que una pregunta sin relacionar se
-        # escribe y despues se descarta en silencio. En el camino rapido no hay
-        # cuestionario al stakeholder todavia: estas preguntas son lo unico que le
-        # avisa al implementador que algo no esta decidido.
-        "open_questions": [
-            {"question": q if isinstance(q, str) else q.get("question", ""),
-             "blocking": False,
-             "target_role": "stakeholder",
-             "reason": "pregunta abierta de la tarjeta %s: no bloquea el build, se resuelve al promover" % fid,
-             "related_task_ids": [t["id"] for t in tasks]}
-            for q in card.get("open_questions") or []
-        ],
+        "open_questions": card_questions(card, tasks),
         "traceability_links": [
             {"source": {"kind": "task", "id": t["id"]},
              "target": {"kind": "requirement", "id": rid},
@@ -164,6 +197,30 @@ def write(plan_dir, fid, skeleton, partial):
     return paths
 
 
+def aviso_inspeccion(cards_dir, feature):
+    """Avisa si la tarjeta se proyecta sin inspeccion, o con defectos altos abiertos.
+
+    No bloquea: el usuario puede aceptar defectos anotados en la pausa, como en el
+    resto de la suite. Pero saltear la inspeccion tiene que verse, porque en el camino
+    rapido es el unico juicio entre la fuente y el codigo.
+    """
+    path = cards_dir / "inspections" / ("%s.json" % feature)
+    if not path.is_file():
+        print("aviso: no hay %s — se proyecta sin la inspeccion de la tarjeta, "
+              "que es el unico control entre la fuente y el codigo" % path.name)
+        return
+    try:
+        doc = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (ValueError, OSError) as exc:
+        print("aviso: %s ilegible (%s): se proyecta sin veredicto" % (path.name, exc))
+        return
+    highs = [d for d in doc.get("defects") or [] if d.get("severity") == "high"]
+    if highs:
+        print("aviso: la inspeccion dejo %d defecto(s) high sin resolver (%s): "
+              "se proyectan igual, pero quedan construidos asi"
+              % (len(highs), ", ".join(str(d.get("check_id")) for d in highs[:3])))
+
+
 def run(root, feature, cards_dir, forced_mode):
     root = Path(root).resolve()
     cards = Path(cards_dir) if cards_dir else root / ".dev" / "cards"
@@ -180,6 +237,8 @@ def run(root, feature, cards_dir, forced_mode):
         for d in defects[:5]:
             print("  %s %s: %s" % (d["check"], d["where"], d["message"]))
         return 1
+
+    aviso_inspeccion(cards, feature)
 
     plan_dir = root / ".dev" / "plan"
     existing = (plan_dir / "tasks.json").is_file()
@@ -230,7 +289,12 @@ def self_test():
                    "covers": ["RF-FT07#1"], "criteria": ["AC-FT07#1"], "depends_on": []},
                   {"id": "L-002", "title": "baja", "complexity": "low", "priority": "medium",
                    "covers": ["RF-FT07#2"], "criteria": ["AC-FT07#2"], "depends_on": ["L-001"]}],
-        "open_questions": ["quien aprueba el alta?"],
+        "open_questions": [
+            {"id": "Q-FT07#1", "question": "quien aprueba el alta?",
+             "default_assumption": "cualquiera del sector puede dar de alta sin aprobacion",
+             "blocks": ["RF-FT07#1"], "impact": "seguridad"},
+            {"id": "Q-FT07#2", "question": "se reusa el CUIT de un proveedor dado de baja?",
+             "default_assumption": "no se reusa", "blocks": [], "impact": "modelo"}],
         "assumptions": ["el CUIT se valida contra AFIP en otra feature"],
     }
 
@@ -250,6 +314,13 @@ def self_test():
     check(len(partial["traceability_links"]) == 2, "trazabilidad tarea -> requisito")
     check(partial["open_questions"][0]["blocking"] is False,
           "las preguntas abiertas de la tarjeta no bloquean el build")
+    check(partial["open_questions"][0]["related_task_ids"] == ["L-001"],
+          "la pregunta apunta a la tarea que construye la regla que bloquea (%s)"
+          % partial["open_questions"][0]["related_task_ids"])
+    check(partial["open_questions"][1]["related_task_ids"] == ["L-001", "L-002"],
+          "sin blocks, la pregunta afecta a toda la feature")
+    check("mientras no haya respuesta: no se reusa" in partial["open_questions"][1]["question"],
+          "el supuesto por defecto viaja al brief pegado a la pregunta")
 
     tmp = Path(tempfile.mkdtemp())
     try:
@@ -257,6 +328,14 @@ def self_test():
         cards.mkdir(parents=True)
         (cards / "FG-07-alta-proveedores.json").write_text(json.dumps(card), encoding="utf-8")
         check(run(tmp, "FG-07", None, None) == 0, "corrida completa sobre una tarjeta valida")
+        (cards / "inspections").mkdir(exist_ok=True)
+        (cards / "inspections" / "FG-07.json").write_text(json.dumps({
+            "version": 1, "card": "FG-07", "passed": False,
+            "defects": [{"check_id": "CARD-INSP-001", "severity": "high",
+                         "target_id": "RF-FT07#1", "description": "la fuente no lo dice"}]}),
+            encoding="utf-8")
+        check(run(tmp, "FG-07", None, None) == 0,
+              "una inspeccion con defectos high avisa pero no bloquea (la decision es del usuario)")
         ctx = tmp / ".dev" / "plan" / CONTEXT_DIR
         check((ctx / "skeleton.json").is_file() and (ctx / "tasks.FG-07.json").is_file(),
               "escribe skeleton y parcial donde merge_tasks los busca")
