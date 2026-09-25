@@ -146,10 +146,12 @@ def check_tasks(tasks_doc, reqs_doc, changelog_doc):
         if not rids:
             defect("PLAN-CHECK-002", "high", t.get("id"), "tarea sin requirement_ids: huerfana", "task-derivation")
             continue
+        # La deuda de promocion se reporta haya o no linea de base: en un proyecto
+        # greenfield el plan es el unico lugar donde se ve.
+        provisionales = [r for r in rids if ID_PROVISIONAL.match(str(r))]
+        if provisionales:
+            pendientes.setdefault(t.get("feature_group"), set()).update(provisionales)
         if reqs_doc is not None:
-            provisionales = [r for r in rids if ID_PROVISIONAL.match(str(r))]
-            if provisionales:
-                pendientes.setdefault(t.get("feature_group"), set()).update(provisionales)
             unknown = [r for r in rids if r not in req_feature and r not in provisionales]
             for r in unknown:
                 defect("PLAN-CHECK-002", "high", t.get("id"), "cita requisito inexistente %s" % r, "task-derivation")

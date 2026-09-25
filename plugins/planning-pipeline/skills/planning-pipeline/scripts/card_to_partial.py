@@ -118,12 +118,17 @@ def build(card, replan):
     partial = {
         "feature": feature_block(card),
         "tasks": tasks,
+        # `related_task_ids` con TODAS las tareas de la feature: el brief filtra las
+        # preguntas por tarea relacionada, asi que una pregunta sin relacionar se
+        # escribe y despues se descarta en silencio. En el camino rapido no hay
+        # cuestionario al stakeholder todavia: estas preguntas son lo unico que le
+        # avisa al implementador que algo no esta decidido.
         "open_questions": [
             {"question": q if isinstance(q, str) else q.get("question", ""),
              "blocking": False,
              "target_role": "stakeholder",
              "reason": "pregunta abierta de la tarjeta %s: no bloquea el build, se resuelve al promover" % fid,
-             "related_task_ids": []}
+             "related_task_ids": [t["id"] for t in tasks]}
             for q in card.get("open_questions") or []
         ],
         "traceability_links": [
@@ -320,7 +325,11 @@ def _integration_test(card, check):
         sub(code == 0, "A: compute_execution_plan arma los lotes")
         _run_script("render_plan_docs.py", tmp / ".dev" / "plan")
         code, doc = _validate_plan(tmp)
-        sub(code == 0 and doc.get("defects") == [], "A: plan valido sin defectos (%s)" % doc.get("defects"))
+        bloqueantes = [d for d in doc.get("defects") or [] if d.get("severity") in ("high", "medium")]
+        pendientes = [d for d in doc.get("defects") or []
+                      if d.get("check_id") == "PLAN-CHECK-002" and d.get("severity") == "low"]
+        sub(code == 0 and not bloqueantes, "A: plan valido sin defectos bloqueantes (%s)" % bloqueantes)
+        sub(len(pendientes) == 1, "A: sin linea de base la deuda tambien se reporta como low")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
