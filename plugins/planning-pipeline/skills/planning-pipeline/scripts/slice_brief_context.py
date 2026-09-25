@@ -107,7 +107,7 @@ def card_symbols(card_dir, fid):
         if not (v.get("term") or "").strip():
             continue
         out.append({
-            "id": "LEL-%s#%d" % (tag, n),
+            "id": v.get("id") or "LEL-%s#%d" % (tag, n),
             "canonical_name": v.get("term"),
             "type": v.get("kind") or "objeto",
             "notions": [v.get("gloss") or ""],

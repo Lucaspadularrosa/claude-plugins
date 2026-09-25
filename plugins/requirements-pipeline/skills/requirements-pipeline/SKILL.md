@@ -426,16 +426,32 @@ Si el usuario no nombra features, lista las tarjetas `.dev/cards/*.json` con
    sobre su rama; pasales la lista de archivos y los hunks acotados, no el diff
    entero). **El diff es para verificar, no para redactar**: lo que se documenta es lo
    que la tarjeta decidio, corregido por lo que el codigo realmente hace.
-3. **[paralelo] Cuatro Tasks en modo actualizacion (`model: sonnet`)**, todas
+3. **Cuatro Tasks en modo actualizacion (`model: sonnet`), EN ORDEN**, todas
    escribiendo deltas y **reusando los ids provisionales de la tarjeta** (`RF-FT07#1`,
-   `AC-FT07#2`), que es lo que despues permite renumerar todo de una:
-   - `lel-authoring` <- `vocabulary` de la tarjeta;
-   - `scenario-modeling` <- `acceptance` (mas los escenarios que el diff revele y la
-     tarjeta no tenga);
-   - `requirements-specification` <- `rules`, `acceptance` y `security_surface`;
-   - `technical-design` <- `design_notes` y las entidades y modulos que muestre el diff.
+   `AC-FT07#2`, `LEL-FT07#3`), que es lo que despues permite renumerar todo de una:
+   1. `lel-authoring` <- `vocabulary` de la tarjeta (que ya trae sus ids);
+   2. `scenario-modeling` <- `acceptance` (mas los escenarios que el diff revele y la
+      tarjeta no tenga), citando los simbolos del LEL;
+   3. `requirements-specification` <- `rules`, `acceptance` y `security_surface`,
+      citando escenarios y simbolos;
+   4. `technical-design` <- `design_notes` y las entidades y modulos que muestre el
+      diff. **Este si puede ir en paralelo con el 3**, como en el incremento.
    Cada requisito nace con `origin: "fast_track"` y `code_refs: ["archivo:linea"]`,
    la misma convencion que usa `recovery-pipeline`.
+
+   > **Por que en orden y no los cuatro juntos**, si la regla de la casa es
+   > paralelizar: la regla vale para etapas que *no dependen entre si*, y estas
+   > dependen de los ids de la anterior (un requisito cita sus escenarios y sus
+   > simbolos). Lanzados juntos, cada agente adivina los ids del otro o deja la
+   > trazabilidad vacia. Como el merge es uno solo al final, cada agente lee los
+   > deltas ya escritos por los anteriores para tomar sus ids.
+   >
+   > **Tags distintos por agente para lo que cada uno inventa.** El tag de la tarjeta
+   > (`FT07`) es de los ids que la tarjeta ya definio. Todo id nuevo que mintea un
+   > agente va con su propio tag — `Q-FT07lel#1`, `Q-FT07scn#1`, `Q-FT07req#1`,
+   > `Q-FT07td#1` — porque `apply_delta.py` mapea por (prefijo, tag, numero): dos
+   > agentes que escriban `Q-FT07#1` en deltas distintos no colisionan con un error,
+   > **se fusionan en la misma pregunta**, y se pierde una.
 4. **Un solo merge**, que renumera todo a la secuencia global:
    ```bash
    python3 ".../scripts/apply_delta.py" .dev/requirements --mapa-salida .dev/cards/.map.json

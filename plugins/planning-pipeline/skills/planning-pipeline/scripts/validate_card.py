@@ -170,6 +170,9 @@ def validate(card):
             defect("CARD-CHECK-006", "high", where, "id repetido %s (ya usado en %s)" % (value, seen[value]))
         seen[value] = where
 
+    for v in card.get("vocabulary") or []:
+        check_id(v.get("id"), "vocabulary[%s]" % v.get("term"), "LEL")
+
     rules = card.get("rules") or []
     for r in rules:
         check_id(r.get("id"), "rules[%s]" % r.get("id"), "RF")
@@ -296,7 +299,8 @@ def self_test():
         "intent": {"problem": "no hay alta de proveedores", "who": "compras",
                    "value": "cargar sin pasar por sistemas",
                    "done_when": "compras da de alta un proveedor sin pedir ayuda"},
-        "vocabulary": [{"term": "Proveedor", "gloss": "quien provee insumos", "kind": "objeto"}],
+        "vocabulary": [{"id": "LEL-FT07#1", "term": "Proveedor",
+                        "gloss": "quien provee insumos", "kind": "objeto"}],
         "rules": [{"id": "RF-FT07#1", "text": "alta con CUIT unico", "kind": "functional"}],
         "acceptance": [{"id": "AC-FT07#1", "given": "un CUIT libre", "when": "se da de alta",
                         "then": "el proveedor queda activo", "covers": ["RF-FT07#1"]}],
@@ -306,6 +310,11 @@ def self_test():
         "security_surface": ["A01"],
     }
     check(validate(base) == [], "tarjeta minima valida no tiene defectos")
+
+    bad = json.loads(json.dumps(base))
+    del bad["vocabulary"][0]["id"]
+    check(any(d["check"] == "CARD-CHECK-002" for d in validate(bad)),
+          "vocabulario sin id: los agentes de la promocion tendrian que adivinarlo")
 
     bad = json.loads(json.dumps(base))
     bad["rules"][0]["id"] = "RF-007"

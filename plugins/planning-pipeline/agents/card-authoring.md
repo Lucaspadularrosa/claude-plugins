@@ -37,7 +37,8 @@ Un unico archivo, `.dev/cards/FG-xx-<slug>.json`, con este contrato:
   "pipeline_version": "X.Y.Z",
   "source": {"path": ".dev/cards/sources/pedido.txt", "kind": "document|prompt"},
   "intent": {"problem": "", "who": "", "value": "", "done_when": ""},
-  "vocabulary": [{"term": "", "gloss": "", "kind": "objeto|sujeto|verbo|estado"}],
+  "vocabulary": [{"id": "LEL-FT07#1", "term": "", "gloss": "",
+                  "kind": "objeto|sujeto|verbo|estado"}],
   "rules": [{"id": "RF-FT07#1", "text": "", "kind": "functional|business_rule|nfr"}],
   "acceptance": [{"id": "AC-FT07#1", "given": "", "when": "", "then": "",
                   "covers": ["RF-FT07#1"]}],
@@ -55,7 +56,9 @@ Un unico archivo, `.dev/cards/FG-xx-<slug>.json`, con este contrato:
 
 ## Las reglas que no se negocian
 
-1. **Ids provisionales, siempre con el tag de la tarjeta.** `RF-FT07#1`, `AC-FT07#3`.
+1. **Ids provisionales, siempre con el tag de la tarjeta.** `LEL-FT07#1`, `RF-FT07#1`,
+   `AC-FT07#3`. Tambien los del vocabulario: al promover, cuatro agentes distintos citan
+   esos simbolos, y si la tarjeta no les pone id, cada uno lo adivina.
    Nunca ids globales (`RF-007`): esos son del flujo formal y no se renumeran. El dia
    de la promocion `apply_delta.py` convierte los tuyos a la secuencia global, y por eso
    **cada id se cita igual en todo el archivo**.
