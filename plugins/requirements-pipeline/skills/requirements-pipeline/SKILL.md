@@ -22,8 +22,9 @@ hay:
 | Una feature acotada, sin urgencia, ya en el mapa | `/requerimientos:incremento` |
 | Un cambio puntual sobre algo ya baselineado | `/requerimientos:cambio` |
 | Una feature acotada y **urgente** ("hay que sacarlo ya") | `/tarjeta` (planning-pipeline): este no es el pipeline |
-| Hay features construidas por tarjeta, sin documentar | `/requerimientos:promover` |
+| Hay features construidas por tarjeta, sin documentar | `/requerimientos:promover` (si no hay tarjeta en `.dev/cards/`, no se construyo por el atajo: es `/comprender`, o descubrir + incremento) |
 | Una app heredada sin documentacion | `/comprender` (recovery-pipeline) |
+| No sabes en que estado esta el proyecto | `/requerimientos:estado` primero: cuesta cero tokens y evita asumir |
 
 El camino rapido existe justamente para no hacer pasar una urgencia por el ciclo
 completo. Pero tiene contraindicaciones, y si se dan conviene el ciclo formal aunque

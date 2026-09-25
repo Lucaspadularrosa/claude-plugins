@@ -35,6 +35,7 @@ hay. Los dos caminos a construir no son intercambiables:
 | Requisitos ya baselineados, sin plan todavia | `/planificar` |
 | El changelog tiene incrementos o CRs que el plan no absorbio | `/replanificar` |
 | Una app heredada sin documentacion | `/comprender` (este no es el pipeline) |
+| No sabes en que estado esta el proyecto | `/requerimientos:estado` primero: cuesta cero tokens y evita asumir |
 
 **Contraindicaciones del camino rapido** — con cualquiera de estas, recomenda el
 ciclo formal aunque el pedido venga con urgencia, y deja que el usuario decida:
