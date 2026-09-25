@@ -1,5 +1,5 @@
 ---
-description: Registra y aplica un cambio puntual sobre requisitos ya baselineados (un pedido del stakeholder, un mail, un documento corto), con veredictos, confirmacion previa y trazabilidad completa.
+description: "Para cuando llega un pedido que cambia algo ya acordado (un mail, un mensaje del cliente, un ajuste de alcance). Te muestra que se modifica, que se da de baja y que ya estaba cubierto, y no toca nada sin tu OK explicito."
 argument-hint: <descripcion del cambio o ruta a un documento corto>
 ---
 

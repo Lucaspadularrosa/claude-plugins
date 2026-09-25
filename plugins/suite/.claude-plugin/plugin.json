@@ -1,0 +1,19 @@
+{
+  "name": "suite",
+  "version": "1.0.0",
+  "displayName": "Suite (por donde empezar)",
+  "description": "El enrutador de la suite: cuando alguien llega con una situacion en vez de un comando (heredé un repo, me pasaron un documento, hay que sacar algo ya, esto tiene bugs), decide que pipeline corresponde, lo explica en una linea y ofrece la alternativa. Cruza el estado real del proyecto (por script, cero tokens) con lo que la persona pide. No hace trabajo: enruta.",
+  "keywords": [
+    "ayuda",
+    "empezar",
+    "enrutado",
+    "que comando",
+    "suite",
+    "onboarding"
+  ],
+  "author": {
+    "name": "Lucas Micheli",
+    "email": "lucas.t.micheli@gmail.com"
+  },
+  "license": "MIT"
+}

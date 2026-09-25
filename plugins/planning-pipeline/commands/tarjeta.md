@@ -1,5 +1,5 @@
 ---
-description: "Camino rapido: convierte un documento corto o un pedido urgente en UNA feature lista para construir, sin pasar por el ciclo completo de requisitos. Para cuando hay que sacarlo ya. Los documentos formales se generan despues con /promover."
+description: "El camino rapido, para cuando hay que sacar UNA feature acotada y urgente y no hay tiempo de escribir requisitos. De un documento corto o un pedido suelto a una feature lista para construir, con una sola pausa de aprobacion. La documentacion se genera despues con /requerimientos:promover."
 argument-hint: "<ruta a un documento corto, o el pedido en texto>"
 ---
 

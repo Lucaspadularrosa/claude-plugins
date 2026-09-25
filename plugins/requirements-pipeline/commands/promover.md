@@ -1,13 +1,14 @@
 ---
-description: "Promueve a linea de base formal una feature que se construyo por el camino rapido: convierte su tarjeta y el codigo ya escrito en LEL, escenarios, requisitos y diseno, y salda la deuda de documentacion."
+description: "Documenta lo que ya se construyo por el camino rapido, convirtiendo la tarjeta y el codigo escrito en requisitos formales. Es como se salda la deuda que deja /tarjeta."
 argument-hint: <FG-01 FG-02 ... o vacio para ver que hay pendiente de promover>
 ---
 
 Ejecuta el modo PROMOVER de la skill `requirements-pipeline` para: `$ARGUMENTS`
 
 Segui la skill tal cual (entrada del changelog, tajada de la tarjeta mas el diff de
-sus commits, los cuatro agentes en modo actualizacion en paralelo escribiendo deltas
-con los ids provisionales de la tarjeta, `apply_delta.py --mapa-salida`,
+sus commits, los cuatro agentes en modo actualizacion EN ORDEN (LEL, escenarios,
+requisitos, con el diseno en paralelo con los requisitos) escribiendo deltas con los
+ids provisionales de la tarjeta, `apply_delta.py --mapa-salida`,
 `promote_card.py`, inspecciones de requisitos y diseno, cierre por script).
 
 Si no nombre features, mostrame las tarjetas en estado `built` sin promover, de la

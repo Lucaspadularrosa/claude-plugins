@@ -22,6 +22,7 @@ Una sola vez por usuario:
 
 ```bash
 /plugin marketplace add Lucaspadularrosa/claude-plugins
+/plugin install suite@lpadularrosa-dev-plugins
 /plugin install requerimientos@lpadularrosa-dev-plugins
 /plugin install planning-pipeline@lpadularrosa-dev-plugins
 /plugin install build-pipeline@lpadularrosa-dev-plugins
@@ -30,6 +31,10 @@ Una sola vez por usuario:
 /plugin install audit-pipeline@lpadularrosa-dev-plugins
 /plugin install metrics-pipeline@lpadularrosa-dev-plugins
 ```
+
+`suite` es el más chico y el único que no hace trabajo: es la puerta de entrada, la que
+traduce tu situación en el comando que corresponde. Si instalás uno solo para probar,
+instalá ese y el que vayas a usar.
 
 (`lpadularrosa-dev-plugins` es el nombre del marketplace declarado en
 `.claude-plugin/marketplace.json`; verificalo con `/plugin` si los comandos varían en
@@ -67,6 +72,7 @@ deprecia) y **nada baselineado se modifica sin tu confirmación**.
 
 | Comando | Plugin | Para qué |
 |---|---|---|
+| `/por-donde-empiezo ["qué necesitás"]` | suite | **Si no sabés cuál usar, empezá acá.** Mira en qué estado está el proyecto, escucha qué necesitás y te recomienda el comando, con su alternativa. |
 | `/requerimientos:descubrir [rutas]` | requirements | Pasada panorámica: LEL + mapa del producto. Acepta documentos, carpetas o nada. Re-ejecutable cada vez que llega material. |
 | `/requerimientos:incremento <features>` | requirements | Elabora y baselinea las features elegidas. |
 | `/requerimientos:cambio <texto o doc>` | requirements | Cambio puntual sobre lo baselineado, con confirmación previa. |
@@ -86,6 +92,11 @@ deprecia) y **nada baselineado se modifica sin tu confirmación**.
 
 Todos funcionan también en lenguaje natural ("genera los requisitos a partir de estos
 documentos", "los requisitos cambiaron, actualiza el plan").
+
+Y no hace falta que te los aprendas: contale tu situación en tus palabras —"heredé este
+repo", "me pasaron el documento del cliente", "hay que sacar esto para el viernes"— y
+Claude elige, te dice por qué eligió eso y cuál es la alternativa por si lo entendió al
+revés.
 
 ---
 

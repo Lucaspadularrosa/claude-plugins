@@ -1,5 +1,5 @@
 ---
-description: "Cosecha las metricas de proceso de la suite sobre este proyecto (script, cero tokens) y opcionalmente las analiza para saber que mejorar de los pipelines."
+description: "Cuanto costo y como funciono la suite en este proyecto, cosechado por script sin tokens, y opcionalmente analizado para saber que ajustar de los pipelines."
 argument-hint: "[opcional: ruta al proyecto] [solo-datos] [export [ruta.jsonl]]"
 ---
 

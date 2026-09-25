@@ -544,6 +544,34 @@ def self_test():
     return 1 if fallos else 0
 
 
+def check_enrutador():
+    """Todo comando del marketplace tiene que estar en la tabla del enrutador.
+
+    La tabla de `plugins/suite/skills/suite/SKILL.md` es lo que Claude usa para
+    elegir el comando cuando la persona describe su situacion en vez de pedir uno.
+    Un comando que no figura ahi es un comando que nadie va a encontrar sin saber
+    su nombre de memoria, que es justo lo que el enrutador viene a evitar.
+    """
+    router = ROOT / "plugins" / "suite" / "skills" / "suite" / "SKILL.md"
+    if not router.is_file():
+        return 0
+    tabla = router.read_text(encoding="utf-8")
+    faltan = []
+    for cmd in sorted(ROOT.glob("plugins/*/commands/*.md")):
+        plugin = cmd.parts[-3]
+        if plugin == "suite":
+            continue  # el enrutador no se enruta a si mismo
+        nombre = cmd.stem
+        # el comando puede citarse como /nombre o como /plugin:nombre
+        if not re.search(r"[/:]" + re.escape(nombre) + r"(?![\w-])", tabla):
+            faltan.append("%s (%s)" % (nombre, plugin))
+    if faltan:
+        problem(_rel(router), "la tabla de enrutado no menciona %d comando(s): %s. "
+                "Sin eso, Claude no los va a ofrecer a quien no los sepa de memoria"
+                % (len(faltan), ", ".join(faltan)))
+    return len(list(ROOT.glob("plugins/*/commands/*.md")))
+
+
 def main():
     if "--self-test" in sys.argv[1:]:
         return self_test()
@@ -557,11 +585,13 @@ def main():
     n_plug = check_nombres_de_plugin()
     check_tools_declaradas()
     check_lista_de_plugins_del_hook()
+    n_cmd = check_enrutador()
     n_pref = check_prefijos_de_id()
     mode = "pyyaml" if HAVE_YAML else "reglas de escalar plano (sin pyyaml)"
     print(f"Validados {n_entries} plugins del marketplace y {n_files} frontmatters ({mode}).")
     print(f"Invariantes: bloques obligatorios, {n_filas} fila(s) de tabla de modelos, "
-          f"{n_pref} prefijo(s) de id, {n_plug} nombre(s) de plugin.")
+          f"{n_pref} prefijo(s) de id, {n_plug} nombre(s) de plugin, "
+          f"{n_cmd} comando(s) en la tabla de enrutado.")
     if warnings:
         print("")
         print(f"{len(warnings)} aviso(s) (no bloquean; revisalos antes de mergear):")

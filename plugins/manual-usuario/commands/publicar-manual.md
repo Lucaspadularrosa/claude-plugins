@@ -1,5 +1,5 @@
 ---
-description: Publica el manual de usuario (.dev/manual/*.md) como sitio HTML estatico en docs/manual/.
+description: "Publica las guias de usuario como un sitio HTML navegable y offline, listo para compartir con alguien que no entra al repo."
 argument-hint: "[opcional: nombre del producto para el titulo del sitio]"
 ---
 

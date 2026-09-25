@@ -1,6 +1,6 @@
 ---
 name: recovery-pipeline
-description: Comprende una aplicacion ya desarrollada (con documentacion baja o nula, tipica de vibe-coding) en dos entregas. Primero el diagnostico con evidencia archivo:linea (reporte de estado real + cuestionario al dueño, con vista HTML compartible) y despues, si el usuario quiere engancharla con la suite, reconstruye la linea de base de requisitos en formato .dev/requirements/. Usar cuando el usuario quiere entender una app existente, saber en que estado esta, que falta, o incorporar un codebase heredado a la suite de requisitos/planificacion/build.
+description: Para cuando heredaste codigo que nadie documento, o vos mismo lo vibecodeaste y ya no te acordas como funciona. Te dice que hace la aplicacion, que esta terminado, que quedo a medias, que esta muerto y que hay que decidir, con evidencia archivo por linea y un reporte HTML que le podes pasar a otro. Despues, si queres, reconstruye los requisitos que nunca se escribieron para engancharla con el resto de la suite. Usar cuando alguien dice que no entiende una app, que la heredo, que el que la hizo se fue, o que quiere saber en que estado esta antes de tocarla. No busca bugs ni vulnerabilidades, eso es audit-pipeline.
 ---
 
 # Pipeline de Comprension (recovery de apps existentes)

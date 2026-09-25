@@ -1,5 +1,5 @@
 ---
-description: "Dice en que estado esta la suite en este proyecto: que pipelines corrieron, que features estan en cada etapa, que bloquea y que conviene hacer. Tambien enruta: contale que queres hacer y te dice por donde. Solo lectura."
+description: "En que anda este proyecto. Que corrio, que falta, que bloquea y que conviene hacer ahora. Si ademas le contas que queres hacer, te dice por donde ir. Solo lectura."
 argument-hint: "[ruta al proyecto] [o contame que queres hacer, entre comillas]"
 ---
 

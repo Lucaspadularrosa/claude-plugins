@@ -1,5 +1,5 @@
 ---
-description: "Elabora y baselinea las features elegidas del mapa del producto: escenarios completos, requisitos con su inspeccion y diseno tecnico delta. La unidad del incremento es la feature."
+description: "Profundiza las features que elijas del mapa hasta dejarlas listas para planificar y construir, con sus escenarios, sus requisitos y el diseño tecnico. Se hace de a pocas features por vez, cuando ya sabes cuales vas a construir. Antes necesita /requerimientos:descubrir."
 argument-hint: <FG-01 FG-02 ... o nombres de features del mapa>
 ---
 

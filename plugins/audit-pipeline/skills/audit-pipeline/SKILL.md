@@ -1,6 +1,6 @@
 ---
 name: audit-pipeline
-description: Audita una aplicacion existente en tres dimensiones, bugs de correctitud, seguridad (defensiva) y mejoras de alto retorno, con verificacion adversarial de cada hallazgo antes de reportarlo. Funciona solo o sobre la linea de base reconstruida por recovery-pipeline. Usar cuando el usuario quiere encontrar bugs, revisar seguridad o relevar mejoras en un codebase.
+description: Para cuando sospechas que el codigo tiene problemas y queres saber cuales, con evidencia. Revisa en tres dimensiones, bugs de correctitud, seguridad defensiva y mejoras que valen la pena, y cada hallazgo pasa por un verificador que intenta refutarlo antes de mostrartelo, asi el reporte tiene señal y no ruido. Funciona en cualquier repo, con o sin el resto de la suite. Usar cuando alguien pide buscar bugs, revisar la seguridad, ver que se puede mejorar, o revisar codigo heredado antes de meterle mano. No explica que hace la aplicacion ni en que estado esta, eso es recovery-pipeline.
 ---
 
 # Pipeline de Auditoria (bugs, seguridad y mejoras, con verificacion)

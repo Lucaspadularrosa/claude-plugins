@@ -1,5 +1,5 @@
 ---
-description: "Comprende una aplicacion existente (aunque no tenga documentacion): que hace, en que estado esta, que falta y que hay que decidir. Entrega el diagnostico con un reporte compartible y, si queres, reconstruye la linea de base de requisitos para engancharla con la suite."
+description: "Para cuando heredaste una app, o la vibecodeaste vos y ya no te acordas como funciona. Te dice que hace, que esta terminado, que quedo a medias y que hay que decidir, con evidencia en el codigo y un reporte que le podes pasar a otro. Si buscas bugs y no entender el sistema, es /auditar."
 argument-hint: "[opcional: ruta al repo; por defecto, el proyecto actual]"
 ---
 

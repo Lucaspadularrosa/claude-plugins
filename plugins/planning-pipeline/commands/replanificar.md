@@ -1,5 +1,5 @@
 ---
-description: Actualiza el plan de ejecucion cuando los requisitos cambiaron (incrementos o CRs nuevos en el changelog), re-derivando solo las features afectadas y sin tocar lo ya construido.
+description: "Actualiza el plan cuando los requisitos cambiaron, re-derivando solo lo afectado y sin tocar lo que ya esta construido. Es la via correcta cuando ya hay un plan, en vez de volver a planificar de cero."
 argument-hint: "[opcional: ids de changelog a aplicar, ej. INC-002 CR-001]"
 ---
 
