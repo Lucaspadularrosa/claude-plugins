@@ -94,6 +94,3 @@ plugin para el detalle técnico.
 - Un hook `SubagentStop` avisa cuando un subagente de la suite cierra sin su sobre de
   retorno (`status`, `artifact_paths`, `summary`) — el caso de la Task que termina sin
   reporte, que antes pasaba inadvertido.
-- [`tests/golden/`](tests/golden/README.md) — todo **funciona**: el test dorado, una
-  corrida completa de la suite sobre una visión fija, con checklist por etapa. Se
-  corre a mano antes de mergear cambios de comportamiento en los prompts.

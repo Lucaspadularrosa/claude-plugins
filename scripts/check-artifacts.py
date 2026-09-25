@@ -4,8 +4,8 @@
 Comprueba que los artefactos que la suite genero en un proyecto respetan sus
 contratos: JSON valido, formatos de id, enums de estado y referencias cruzadas
 (requisitos que citan escenarios existentes, lotes que citan tareas existentes,
-etc.). Es la mitad automatizable del test dorado (tests/golden/): los prompts
-prometen estos contratos; esto verifica que una corrida real los cumplio.
+etc.). Los prompts prometen estos contratos; esto verifica que una corrida real
+los cumplio, sobre el `.dev/` de cualquier proyecto que haya usado la suite.
 
 Solo stdlib, Python 3.8+. No modifica nada.
 
