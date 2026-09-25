@@ -90,7 +90,7 @@ skill. **Sin ningun Python disponible**: cada paso indica su fallback.
 | `validate_baseline.py` | Checks mecanicos de LEL/requisitos/diseno, con exit code | 3a de cada inspeccion, iterar hasta verde |
 | `check_closure.py` | Compuerta de cierre: layout, inspecciones en verde, versiones, vistas | Antes de cerrar la entrada del changelog |
 | `render_index.py` | El indice `.dev/README.md` | En el cierre |
-| `promote_card.py` | Aplica la tabla de renumeracion al plan, a los desvios del build y a la tarjeta | Modo PROMOVER, despues de `apply_delta.py --mapa-salida` |
+| `promote_card.py` | Aplica la tabla de renumeracion al plan, a los desvios del build y a la tarjeta | Modo PROMOVER, en el cierre: despues de `apply_delta.py --mapa-salida` y de que las inspecciones cierren |
 
 ## Version del pipeline (precondicion)
 
@@ -456,16 +456,22 @@ Si el usuario no nombra features, lista las tarjetas `.dev/cards/*.json` con
    ```bash
    python3 ".../scripts/apply_delta.py" .dev/requirements --mapa-salida .dev/cards/.map.json
    ```
-5. **Cierre mecanico fuera de requisitos** (el plan y los desvios del build siguen
+5. **Inspecciones** como siempre: render, 3a `--solo requirements` (y `design` si el
+   diseno cambio) hasta verde, 3b de juicio con su lazo. Las `open_questions` de la
+   tarjeta van al cuestionario del stakeholder: **no las respondas vos**.
+6. **Cierre mecanico fuera de requisitos** (el plan y los desvios del build siguen
    citando los ids provisionales; ningun agente los toca):
    ```bash
    python3 ".../scripts/promote_card.py" . --card FG-xx --mapa .dev/cards/.map.json --changelog-id CR-xxx
    ```
+   **Va aca, despues de las inspecciones, no antes**: el script estampa en el plan la
+   version de `requirements.json`, y cada correccion de la inspeccion la sube. Si lo
+   corres antes, el plan queda citando una version vieja y `PLAN-CHECK-007` te manda a
+   `/replanificar` sin que haya cambiado nada del plan.
    Si frena porque quedaron ids sin renumerar, falta el delta de alguno de los cuatro
    agentes: re-invocalo con los ids que el script nombra. No lo saltees.
-6. **Inspecciones** como siempre: render, 3a `--solo requirements` (y `design` si el
-   diseno cambio) hasta verde, 3b de juicio con su lazo. Las `open_questions` de la
-   tarjeta van al cuestionario del stakeholder: **no las respondas vos**.
+   Despues, `render_plan_docs.py .dev/plan` (el `tasks.json` cambio de version y su
+   vista queda atras).
 7. **Cierre**: `apply_delta.py`, `--limpiar`, `render_baseline_docs.py`,
    `render_index.py`, `check_closure.py --inspecciones requirements [design] --corrida
    CR-xxx`; la feature pasa a `baselined` en el mapa (y pierde el `origin: fast_track`
