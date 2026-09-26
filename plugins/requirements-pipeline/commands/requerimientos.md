@@ -1,5 +1,5 @@
 ---
-description: Flujo completo de requisitos en una corrida (descubrir + elaborar todas las features). Util para proyectos chicos o documentos cerrados; para trabajo iterativo usa /requerimientos:descubrir e /requerimientos:incremento.
+description: "Todo el ciclo de requisitos en una sola corrida, para proyectos chicos o cuando el documento ya esta cerrado y no va a cambiar. Si el trabajo es iterativo, conviene /requerimientos:descubrir y despues /requerimientos:incremento."
 argument-hint: <rutas a documentos o carpetas>
 ---
 

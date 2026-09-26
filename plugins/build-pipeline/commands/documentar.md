@@ -1,5 +1,5 @@
 ---
-description: Genera retroactivamente las guias de usuario (.dev/manual/) de features ya construidas que quedaron sin documentar, reconstruyendo desde sus commits [T-xxx] y el codigo actual. Un PR con todas las guias.
+description: "Escribe las guias de usuario de las features que ya se construyeron y quedaron sin documentar, reconstruyendolas desde sus commits y el codigo actual. Un PR con todas."
 argument-hint: "[opcional: slug de una feature puntual; por defecto, todas las done sin guia]"
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: manual-usuario
-description: Publica el manual de usuario (.dev/manual/*.md del build-pipeline) como sitio HTML estatico offline en docs/manual/, con render determinista por script. Usar cuando el usuario quiere publicar, exportar o regenerar el manual de usuario en HTML.
+description: Para cuando ya hay guias de usuario escritas y hace falta poder mostrarselas a alguien que no abre el repo. Convierte los Markdown de .dev/manual/ en un sitio HTML navegable y offline, sin dependencias ni pedidos a internet, con render determinista por script. Usar cuando alguien quiere publicar, exportar, compartir o regenerar el manual de usuario. No escribe las guias, las escribe build-pipeline mientras construye.
 ---
 
 # Manual de usuario — publicacion HTML

@@ -34,6 +34,7 @@ PLUGINS = (
     "planning-pipeline",
     "recovery-pipeline",
     "requerimientos",
+    "suite",  # enrutador: hoy no tiene agentes, pero si los tuviera se verifican igual
 )
 
 # `blocking_items` es opcional por contrato ("si los hay"): no se exige.

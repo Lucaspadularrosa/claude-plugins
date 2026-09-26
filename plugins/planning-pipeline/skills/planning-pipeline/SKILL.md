@@ -1,6 +1,6 @@
 ---
 name: planning-pipeline
-description: Convierte una linea de base de requisitos en un plan de ejecucion para agentes IA. Deriva tareas trazables a los requisitos dimensionadas para una pasada de agente, calcula los lotes de features que pueden construirse en paralelo, inspecciona el plan y emite un brief por feature. Tambien replanifica, absorbe incrementos y cambios de requisitos del changelog sin tocar lo construido. Usar cuando el usuario quiere planificar la construccion a partir de requisitos ya generados, o actualizar el plan porque los requisitos cambiaron.
+description: Para cuando los requisitos ya estan y hay que convertirlos en trabajo que los agentes puedan ejecutar. Corta las tareas al tamaño de una pasada de agente, calcula cuales features se pueden construir en paralelo sin pisarse, y escribe un brief por feature con todo lo que el que construye necesita saber. Absorbe cambios de requisitos sin tocar lo ya construido. Y tiene el camino rapido, /tarjeta, para cuando hay que sacar UNA feature ya, urgente, desde un documento corto o un pedido suelto, sin pasar por el ciclo de requisitos, tipo prototipo, spike o salir del paso y documentar despues. Usar cuando alguien quiere armar el plan, actualizarlo porque cambio algo, o sacar rapido una feature acotada. No escribe codigo, eso es build-pipeline.
 ---
 
 # Pipeline de Planificacion (tareas, lotes paralelos y briefs de feature)
@@ -21,11 +21,39 @@ scripts.
 `S=${CLAUDE_PLUGIN_ROOT}/skills/planning-pipeline/scripts` en todos los comandos de
 abajo. `X.Y.Z` es la version del plugin (Paso 0).
 
-## Precondicion
+## Por donde empezar (triage)
+
+Antes de correr nada, mira **que esta pidiendo el usuario**, no solo que artefactos
+hay. Los dos caminos a construir no son intercambiables:
+
+| Señal en el pedido | Camino |
+|---|---|
+| Un producto entero, o varias features | `/requerimientos:descubrir` (este no es el pipeline) |
+| Una feature acotada, sin urgencia, con linea de base | `/requerimientos:incremento` y despues `/planificar` |
+| Una feature acotada y urgente ("hay que sacarlo ya") | **Modo TARJETA** (`/tarjeta`), aca abajo |
+| Hay features construidas por tarjeta, sin documentar | `/requerimientos:promover` |
+| Requisitos ya baselineados, sin plan todavia | `/planificar` |
+| El changelog tiene incrementos o CRs que el plan no absorbio | `/replanificar` |
+| Una app heredada sin documentacion | `/comprender` (este no es el pipeline) |
+| No sabes en que estado esta el proyecto | `/requerimientos:estado` primero: cuesta cero tokens y evita asumir |
+
+**Contraindicaciones del camino rapido** — con cualquiera de estas, recomenda el
+ciclo formal aunque el pedido venga con urgencia, y deja que el usuario decida:
+mas de una feature en el mismo pedido, cambios en el modelo de datos central,
+requisitos que hay que acordar con un tercero, o dominio sin vocabulario comun
+todavia. El atajo se paga al promover: si el alcance es grande, sale mas caro que
+haber hecho el ciclo formal desde el principio.
+
+Sugeri, no lances: el usuario decide el camino.
+
+## Precondicion (modos `/planificar` y `/replanificar`)
 
 Deben existir y parsear `.dev/requirements/requirements.json` (con al menos un
 requisito `active`), `technical-design.json` y `data-model.json`. Si no, deteni e
 indica correr primero el pipeline de requisitos (`requerimientos`).
+
+El **modo TARJETA no tiene esta precondicion**: es justamente el camino para cuando
+no hay linea de base, o cuando hay pero no se quiere esperar a elaborarla.
 
 **Guard de re-ejecucion**: si ya existe `.dev/plan/tasks.json`, `/planificar` no es
 la via por defecto (los ids no son estables entre derivaciones completas). Con
@@ -261,6 +289,82 @@ scripts, no de leer los artefactos.
    que se agrego/modifico/cancelo, los lotes restantes, el paralelismo y los
    `applied_changelog_ids`.
 
+## Modo TARJETA (`/tarjeta <documento|pedido>`) — el camino rapido
+
+Para UNA feature urgente y acotada. Invierte el orden del metodo: tarjeta, codigo y
+despues los documentos. **No** reemplaza al ciclo formal; lo posterga, y deja la deuda
+registrada para `/requerimientos:promover`. Antes de arrancar, corre el triage de
+arriba: si hay contraindicaciones, decilas y esperá la decision del usuario.
+
+1. **Version del pipeline** (Paso 0, igual que los demas modos).
+2. **Id de feature**. Si existe `.dev/requirements/product-map.json`, reserva ahi el
+   `FG-xx` con **Edit** sobre el campo (`status: "stub"`, `origin: "fast_track"`),
+   nunca reescribiendo el archivo. Si no hay mapa, el contador vive en
+   `.dev/cards/index.json` (`{"next": 1, "cards": []}`), que creas si no esta. El tag
+   de los ids provisionales sale del id: `FG-07` -> `FT07`.
+3. **Fuente**. Copia el documento a `.dev/cards/sources/`; si es binario, extraelo con
+   `suite-extract-document` (plugin `requerimientos`). Si el pedido vino por chat,
+   transcribilo tal cual a `.dev/cards/sources/pedido-NNN.txt`: sin fuente archivada no
+   hay trazabilidad, y la promocion despues no tiene de donde agarrarse.
+4. **`card-authoring`** (una sola Task, `model: opus`): la fuente, el `FG-xx` y su tag,
+   la `pipeline_version` y, si hay linea de base, la ruta del indice compacto. Escribe
+   `.dev/cards/FG-xx-{slug}.json`.
+5. **Validacion mecanica**, iterar hasta verde (no consume pasadas):
+   ```bash
+   python3 "$S/validate_card.py" .dev/cards --card FG-xx --json
+   ```
+   Los defectos `high` vuelven al agente con la lista textual; los `medium` los
+   mostras en la pausa. Tres correcciones sin verde: presentaselos al usuario.
+6. **Inspeccion de la tarjeta** (`card-inspection`, `model: sonnet`), con la tarjeta y
+   **la fuente archivada**. Escribe `.dev/cards/inspections/FG-xx.json`. Es el unico
+   juicio entre la fuente y el codigo: el camino rapido no tiene cuestionario al
+   stakeholder ni inspeccion de requisitos. Sus seis checks cubren lo que el script no
+   puede ver — si cada regla esta en la fuente, que decision forzada quedo en silencio
+   (identidad, unicidad, estados, autorizacion, casos de borde, persistencia), si los
+   criterios son verificables, si las preguntas sirven, el alcance y el vocabulario.
+   - `high` -> volves a `card-authoring` con la lista de defectos y re-corres
+     `validate_card.py`. **Tope: 2 pasadas**; despues, a la pausa con lo que quedo.
+   - `medium` -> no rebotan, se muestran en la pausa.
+   - Vos leas solo el veredicto (`passed`, `summary`, `defects`), nunca la tarjeta
+     entera.
+7. **PAUSA UNICA**. Mostra la tarjeta (intencion, reglas, criterios, tareas, supuestos,
+   preguntas abiertas con su supuesto por defecto, y **que queda afuera**) **mas los
+   defectos de la inspeccion**, separando los que rebotan al usuario (necesitan una
+   decision que la fuente no tiene) de los que quedaron anotados. Espera el OK. Es el
+   unico control antes del PR: lo que no se corrige aca se corrige en codigo. Si
+   `card-authoring` devolvio `blocking_items`, leelos primero.
+8. **Proyeccion al plan** (scripts, cero tokens):
+   ```bash
+   python3 "$S/card_to_partial.py" . --card FG-xx
+   ```
+   Detecta solo si hay que replanificar (ya existe `tasks.json`) o derivar fresco, e
+   **imprime los comandos siguientes con sus banderas**. Corrilos tal cual: con plan
+   existente va `merge_tasks.py . --replan --features FG-xx` y
+   `compute_execution_plan.py .dev/plan --replan`. Sin `--replan` sobre un plan con
+   build en curso, `compute_execution_plan.py` falla duro (y hace bien).
+   Despues `render_plan_docs.py .dev/plan`.
+9. **Brief**, igual que el Paso 4 del camino formal: `slice_brief_context.py`,
+   `render_brief.py`, `feature-brief` (haiku) y `validate_plan.py . --briefs` hasta
+   verde. La tajada sale con avisos de fuentes ausentes (no hay requisitos ni diseno):
+   es esperado, no lo arregles.
+   `PLAN-CHECK-002` va a reportar un `low` por los requisitos provisionales sin
+   promover. **Ese low es el recordatorio de la deuda: no lo silencies.**
+10. **Registro de la deuda**. Si existe `.dev/requirements/changelog.json`, agrega una
+   entrada `CR-xxx` con `kind: "change_request"`, `status: "deferred"`,
+   `feature_ids: ["FG-xx"]`, `sources` con la fuente archivada y
+   `notes: "camino rapido: construida sin linea de base; promover con /requerimientos:promover FG-xx"`.
+   `deferred` es deliberado: `PLAN-CHECK-007` solo marca `high` las entradas `applied`
+   que el plan no absorbio, y `/replanificar` no toma las diferidas. Si no hay
+   changelog, la tarjeta misma es el registro.
+11. **Cierre**: `suite-render-index .dev`, `slice_brief_context.py . --limpiar`,
+    y `progress.json` (inicializalo si no existia; si existia, suma las tareas nuevas
+    como `pending` sin tocar el resto). Informa en pocas lineas: tarjeta, tareas,
+    `/construir FG-xx` como paso siguiente, y que la feature **queda pendiente de
+    promover**.
+
+Construir la tarjeta va con `/construir FG-xx` (feature suelta). No relances
+`/construir-lote` para meterla en un lote en vuelo.
+
 ## Reglas de orquestacion
 
 - **Run-log de costos**: al terminar cada Task anota una linea JSON en
@@ -297,6 +401,11 @@ scripts, no de leer los artefactos.
   progress.json                     estado de ejecucion (lo actualiza el build)
 .dev/features/
   FG-xx-{slug}.md                   un brief por feature para el pipeline de build
+.dev/cards/                         solo camino rapido (modo TARJETA)
+  FG-xx-{slug}.json                 la tarjeta: semilla de la feature y de su promocion
+  sources/                          la fuente archivada de cada tarjeta
+  inspections/FG-xx.json            veredicto de card-inspection sobre esa tarjeta
+  index.json                        contador de ids cuando no hay product-map
 ```
 
 Los tres `.md` son vistas derivadas por script (`render_plan_docs.py`); los briefs los

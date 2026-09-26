@@ -1,6 +1,6 @@
 ---
 name: metrics-pipeline
-description: Cosecha por script (cero tokens) las metricas de proceso de la suite sobre un proyecto que la uso y, a pedido, las analiza con un agente. Usar cuando el usuario quiere ver metricas de la suite, evaluar como funcionaron los pipelines o comparar versiones del plugin entre proyectos.
+description: Para cuando queres saber como funciono la suite en un proyecto y que conviene mejorar de los pipelines. Cosecha por script, sin tokens y sin haber instrumentado nada, los artefactos que los pipelines ya dejaron, y si lo pedis un agente los analiza y te dice donde se fue el costo. Sirve retroactivamente sobre cualquier proyecto que uso la suite. Usar cuando alguien pregunta cuanto costo, cuantas pasadas de correccion hubo, si una version del plugin anda mejor que otra, o que ajustar del proceso.
 ---
 
 # Pipeline de Metricas (mejora continua de la suite)

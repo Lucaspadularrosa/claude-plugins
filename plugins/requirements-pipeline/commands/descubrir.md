@@ -1,5 +1,5 @@
 ---
-description: Pasada panoramica de requisitos. Incorpora documentos, carpetas o una vision sin documento, y construye o actualiza el mapa del producto (features y escenarios stub priorizados). Re-ejecutable cada vez que llega material nuevo.
+description: "Arranca aca si tenes documentos del cliente, una carpeta de material, o solo la idea. Lee lo que le des (o te entrevista si no hay nada escrito) y arma el mapa de lo que el producto tiene que hacer, con las features priorizadas por valor. Barato y a lo ancho, sin meterse en detalle. Re-ejecutable cada vez que llega material nuevo."
 argument-hint: "[rutas a documentos o carpetas; vacio para arrancar sin documento]"
 ---
 

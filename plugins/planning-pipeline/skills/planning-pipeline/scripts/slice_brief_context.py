@@ -84,7 +84,41 @@ def batch_of(plan_doc, fid):
     return None
 
 
-def slice_feature(fid, tasks_doc, plan_doc, reqs_doc, design_doc, data_doc, lel_doc, pipeline_version):
+def card_symbols(card_dir, fid):
+    """Vocabulario de la tarjeta del camino rapido, con la forma de los simbolos del LEL.
+
+    Sin linea de base no hay `lel.json`, y el brief se quedaria sin la seccion que le
+    dice al implementador con que palabras nombrar el codigo. La tarjeta la tiene: es
+    el vocabulario que despues `/promover` convierte en simbolos del LEL. Los ids son
+    los provisionales de la tarjeta, con el mismo tag.
+    """
+    if card_dir is None or not card_dir.is_dir():
+        return []
+    hits = sorted(card_dir.glob("%s-*.json" % fid))
+    if not hits:
+        return []
+    try:
+        card = json.loads(hits[0].read_text(encoding="utf-8-sig"))
+    except (ValueError, OSError):
+        return []
+    tag = "FT%s" % str(fid).split("-")[-1]
+    out = []
+    for n, v in enumerate(card.get("vocabulary") or [], 1):
+        if not (v.get("term") or "").strip():
+            continue
+        out.append({
+            "id": v.get("id") or "LEL-%s#%d" % (tag, n),
+            "canonical_name": v.get("term"),
+            "type": v.get("kind") or "objeto",
+            "notions": [v.get("gloss") or ""],
+            "aliases": [],
+            "origin": "fast_track",
+        })
+    return out
+
+
+def slice_feature(fid, tasks_doc, plan_doc, reqs_doc, design_doc, data_doc, lel_doc, pipeline_version,
+                  card_dir=None):
     feature = next((f for f in tasks_doc.get("features") or [] if f.get("id") == fid), None)
     ftasks = [t for t in tasks_doc.get("tasks") or [] if t.get("feature_group") == fid]
     ftask_ids = {t.get("id") for t in ftasks}
@@ -153,6 +187,8 @@ def slice_feature(fid, tasks_doc, plan_doc, reqs_doc, design_doc, data_doc, lel_
                     "notions": [n.get("statement") for n in s.get("notions") or []],
                     "aliases": s.get("aliases") or [],
                 })
+    if not symbols:
+        symbols = card_symbols(card_dir, fid)
 
     produces = [t for t in ftasks if t.get("type") == "contract"]
     consumed_ids = set()
@@ -291,6 +327,19 @@ def self_test():
               "FG-02: consume el contrato T-001 de FG-01")
         check(s1["contracts"]["produces"][0]["id"] == "T-001", "FG-01: produce el contrato T-001")
         check(s2["open_questions"] and s2["open_questions"][0]["id"] == "Q-001", "FG-02: su pregunta abierta")
+
+        # camino rapido: sin lel.json, el vocabulario sale de la tarjeta
+        cards = tmp / ".dev" / "cards"
+        cards.mkdir(parents=True, exist_ok=True)
+        (cards / "FG-02-demo.json").write_text(json.dumps({
+            "id": "FG-02", "slug": "demo", "status": "drafted",
+            "vocabulary": [{"term": "Socio", "gloss": "quien pertenece al club", "kind": "objeto"}]}),
+            encoding="utf-8")
+        syms = card_symbols(cards, "FG-02")
+        check(len(syms) == 1 and syms[0]["canonical_name"] == "Socio"
+              and syms[0]["id"] == "LEL-FT02#1" and syms[0]["notions"] == ["quien pertenece al club"],
+              "camino rapido: el vocabulario de la tarjeta llega al brief (%s)" % syms)
+        check(card_symbols(cards, "FG-09") == [], "feature sin tarjeta no inventa vocabulario")
         check(s1["batch"]["parallel_feature_ids"] == ["FG-02"], "FG-01: sabe con quien corre en paralelo")
         check(s1["pipeline_version"] == "9.9.9", "pipeline_version estampada")
 
@@ -330,7 +379,8 @@ def run(root, only_features, pipeline_version):
     ctx_dir = plan_dir / CONTEXT_DIR
     ctx_dir.mkdir(parents=True, exist_ok=True)
     for fid in targets:
-        data = slice_feature(fid, tasks_doc, plan_doc, reqs_doc, design_doc, data_doc, lel_doc, pipeline_version)
+        data = slice_feature(fid, tasks_doc, plan_doc, reqs_doc, design_doc, data_doc, lel_doc, pipeline_version,
+                             card_dir=root / ".dev" / "cards")
         dest = ctx_dir / ("%s.json" % fid)
         dest.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print("tajada: %s (%d tareas, %d requisitos)" % (dest, len(data["tasks"]), len(data["requirements"])))

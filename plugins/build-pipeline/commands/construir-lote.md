@@ -1,5 +1,5 @@
 ---
-description: Construye un lote completo del plan en paralelo, un subagente por feature en su propio git worktree, sin pausas de aprobacion. El control queda en los PRs.
+description: "Construye en paralelo todas las features que no dependen entre si, un agente por feature en su propio worktree, sin pausas. El control queda en los PRs. Para cuando queres avanzar rapido con varias features a la vez."
 argument-hint: "[opcional: BATCH-n; por defecto, el proximo lote desbloqueado]"
 ---
 

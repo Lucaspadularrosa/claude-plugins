@@ -1,5 +1,5 @@
 ---
-description: Convierte la linea de base de requisitos en un plan de ejecucion para agentes IA (tareas, lotes paralelos y briefs de feature).
+description: "Convierte los requisitos ya elaborados en el plan de trabajo de los agentes, con las tareas cortadas al tamaño de una pasada, los grupos que se pueden construir en paralelo y un brief por feature. Es el paso entre tener los requisitos y empezar a construir."
 ---
 
 Genera el plan de ejecucion a partir de la linea de base de requisitos del proyecto,

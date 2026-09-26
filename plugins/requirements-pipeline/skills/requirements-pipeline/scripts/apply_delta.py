@@ -37,7 +37,13 @@ Solo stdlib, Python 3.8+.
 
 Uso:
   python apply_delta.py [carpeta] [--solo scenarios requirements] [--dry-run]
+  python apply_delta.py [carpeta] --mapa-salida .dev/cards/.map.json
   python apply_delta.py --self-test
+
+Con `--mapa-salida` ademas vuelca a un JSON la tabla de renumeracion completa
+({"RF-FT07#1": "RF-012", ...}). La consume `promote_card.py` al promover una feature
+del camino rapido: los ids provisionales tambien viven en `tasks.json` y en los
+desvios del build, y sin la tabla habria que adivinarlos.
 
 Exit 0 si no habia deltas o se mergearon todos; exit 1 ante cualquier error (nada
 se escribe a medias: cada canonico se mergea completo o no se toca).
@@ -453,6 +459,16 @@ def self_test():
         check(code == 0 and [s["id"] for s in inv["sections"]] == ["SRC-SEC-001", "SRC-SEC-002", "SRC-SEC-003"],
               "creacion inicial desde deltas paralelos con prefijo compuesto")
         check(inv["version"] == 1 and inv["summary"]["section_count"] == 3, "version 1 y summary en la creacion")
+
+        # --mapa-salida: la tabla de renumeracion que consume promote_card.py
+        (tmp / "source-inventory.c.delta.json").write_text(json.dumps({
+            "base_version": 1,
+            "adds": {"sections": [{"id": "SRC-SEC-c#1", "source": "sources/c.txt"}]}}), encoding="utf-8")
+        mapa = tmp / "sub" / "mapa.json"
+        code = main([str(tmp), "--mapa-salida", str(mapa)])
+        tabla = json.loads(mapa.read_text(encoding="utf-8"))
+        check(code == 0 and tabla == {"SRC-SEC-c#1": "SRC-SEC-004"},
+              "--mapa-salida vuelca {provisional: global} (%s)" % tabla)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     print("SELF-TEST: %d fallo(s)" % failures)
@@ -466,12 +482,23 @@ def main(argv):
     ap.add_argument("carpeta", nargs="?", default=".dev/requirements")
     ap.add_argument("--solo", nargs="+", default=None, help="mergear solo estos canonicos (por nombre sin extension)")
     ap.add_argument("--dry-run", action="store_true", help="mostrar que se haria sin escribir ni borrar")
+    ap.add_argument("--mapa-salida", default=None, metavar="RUTA",
+                    help="volcar a un JSON la tabla de renumeracion {id provisional: id global}; "
+                         "lo consume promote_card.py para reescribir tasks.json y los desvios del build")
     args = ap.parse_args(argv)
     folder = Path(args.carpeta)
     if not folder.is_dir():
         print("No existe la carpeta: %s" % folder)
         return 1
-    code, _ = apply(folder, args.solo, args.dry_run)
+    code, report = apply(folder, args.solo, args.dry_run)
+    if args.mapa_salida:
+        mapping = {}
+        for name in sorted(report):
+            mapping.update(report[name].get("renumbered") or {})
+        out = Path(args.mapa_salida)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(mapping, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print("mapa de renumeracion: %s (%d id(s))" % (out, len(mapping)))
     return code
 
 

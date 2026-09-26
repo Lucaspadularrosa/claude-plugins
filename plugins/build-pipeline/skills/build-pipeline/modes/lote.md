@@ -51,7 +51,10 @@ siempre contra `{raiz}`, con `--cwd <worktree>` cuando ejecutan comandos).
    `--note "BLOQUEADA: <motivo>"`, rama y worktree quedan en pie, y segui — un
    bloqueo no frena a las demas.
 7. **Cierre por feature** (review y gate en verde): commit de la guia si la hubo (o
-   `--note "SIN GUIA: <motivo>"`); `render_cr_input.py {raiz} --brief {b}`;
+   `--note "SIN GUIA: <motivo>"`); si la feature vino de una tarjeta
+   (`.dev/cards/FG-xx-*.json`), Edit de esa tarjeta con `status: "built"` y
+   `build_refs` (rama, commits `[T-xxx]`, `code_refs`), que es lo que consume
+   `/promover`; `render_cr_input.py {raiz} --brief {b}`;
    `validate_verdict.py {raiz} --compuerta --brief {b}` — si esta CERRADA, la
    feature no abre PR: `--note "BLOQUEADA: <salida del script>"`. Con la compuerta
    ABIERTA: push, PR contra la rama de integracion, `--note "PR #n"`, baja los

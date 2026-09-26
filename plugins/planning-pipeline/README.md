@@ -32,6 +32,9 @@ planning-pipeline/
     plan-inspection.md       sonnet: solo juicio (lo mecanico lo valida un script)
     feature-brief.md         haiku: completa resumen y superficie OWASP del brief
     execution-planning.md    sonnet: solo conflictos de replanificacion
+    card-authoring.md        opus: del documento a la tarjeta (camino rapido)
+    card-inspection.md       sonnet: contrasta la tarjeta contra su fuente antes de
+                             la pausa (procedencia, silencios, criterios, alcance)
   skills/
     planning-pipeline/
       SKILL.md               orquestacion del pipeline
@@ -43,9 +46,12 @@ planning-pipeline/
         slice_brief_context.py         tajada de contexto por feature para los briefs
         render_brief.py                brief completo desde la tajada (marcadores LLM)
         render_plan_docs.py            tasks.md, execution-plan.md, plan-inspection.md
+        validate_card.py               contrato mecanico de la tarjeta (camino rapido)
+        card_to_partial.py             tarjeta -> parcial de derivacion (camino rapido)
   commands/
     planificar.md            slash command de entrada
     replanificar.md          actualiza el plan cuando los requisitos cambian
+    tarjeta.md               camino rapido: una feature urgente sin ciclo de requisitos
   PIPELINE.md
   README.md
 ```
@@ -116,7 +122,13 @@ Esos los produce el plugin `requerimientos`. Si faltan, corre primero ese pipeli
 ```
 /planificar          (primera vez)
 /replanificar        (cuando los requisitos cambiaron despues de planificar)
+/tarjeta <doc>       (camino rapido: una feature urgente, sin ciclo de requisitos)
 ```
+
+El camino rapido invierte el orden: tarjeta, codigo y documentos despues. Sirve para
+UNA feature acotada que hay que sacar ya; la deuda queda registrada y se salda con
+`/requerimientos:promover`. Si el pedido trae varias features o toca el modelo de datos
+central, sale mas barato el ciclo formal.
 
 O en lenguaje natural:
 

@@ -1,6 +1,6 @@
 ---
 name: requirements-pipeline
-description: Pipeline iterativo de ingenieria de requisitos con el metodo LEL y Escenarios. Descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; y absorbe cambios sobre lo ya baselineado, todo trazable y auditable. Usar cuando el usuario quiere generar requisitos desde documentacion o una vision, agregar material nuevo, o profundizar features para planificar y construir.
+description: Para cuando tenes el documento que te paso el cliente, un mail, una carpeta de material, o solo la idea en la cabeza, y hace falta convertirlo en requisitos que un agente pueda construir sin inventar. Primero el mapa de lo que el producto tiene que hacer, barato y a lo ancho; despues profundidad solo en lo que se va a construir ahora; y los cambios que van llegando entran sin romper lo ya acordado. Todo trazable y con tu confirmacion antes de tocar nada acordado. Tambien documenta con /promover lo que se construyo rapido y quedo sin escribir. Usar cuando alguien llega con material del cliente, con una vision sin documento, con un cambio de alcance, o quiere elaborar features antes de planificar. Para sacar UNA feature urgente sin escribir requisitos, el camino es /tarjeta de planning-pipeline.
 ---
 
 # Pipeline de Ingenieria de Requisitos (LEL y Escenarios, iterativo)
@@ -10,6 +10,27 @@ metodo LEL y Escenarios de Leite, Hadad, Kaplan y Doorn, de forma **iterativa e
 incremental**: amplitud temprana y barata (el mapa del producto), profundidad recien
 cuando hace falta (un incremento por vez), y material nuevo que entra al mismo
 circuito sin romper lo construido.
+
+## Por donde empezar (triage)
+
+Antes de correr nada, mira **que esta pidiendo el usuario**, no solo que artefactos
+hay:
+
+| Señal en el pedido | Camino |
+|---|---|
+| Un producto entero, o varias features, o material nuevo | `/requerimientos:descubrir` |
+| Una feature acotada, sin urgencia, ya en el mapa | `/requerimientos:incremento` |
+| Un cambio puntual sobre algo ya baselineado | `/requerimientos:cambio` |
+| Una feature acotada y **urgente** ("hay que sacarlo ya") | `/tarjeta` (planning-pipeline): este no es el pipeline |
+| Hay features construidas por tarjeta, sin documentar | `/requerimientos:promover` (si no hay tarjeta en `.dev/cards/`, no se construyo por el atajo: es `/comprender`, o descubrir + incremento) |
+| Una app heredada sin documentacion | `/comprender` (recovery-pipeline) |
+| No sabes en que estado esta el proyecto | `/requerimientos:estado` primero: cuesta cero tokens y evita asumir |
+
+El camino rapido existe justamente para no hacer pasar una urgencia por el ciclo
+completo. Pero tiene contraindicaciones, y si se dan conviene el ciclo formal aunque
+el pedido venga con apuro: mas de una feature en el mismo pedido, cambios en el
+modelo de datos central, requisitos que hay que acordar con un tercero, o dominio sin
+vocabulario comun todavia. Sugeri, no lances: el usuario decide.
 
 Vos, el agente principal, sos el orquestador: corres los scripts, delegas cada etapa
 al subagente correspondiente con la herramienta Task, mantenes el changelog y manejas
@@ -69,6 +90,7 @@ skill. **Sin ningun Python disponible**: cada paso indica su fallback.
 | `validate_baseline.py` | Checks mecanicos de LEL/requisitos/diseno, con exit code | 3a de cada inspeccion, iterar hasta verde |
 | `check_closure.py` | Compuerta de cierre: layout, inspecciones en verde, versiones, vistas | Antes de cerrar la entrada del changelog |
 | `render_index.py` | El indice `.dev/README.md` | En el cierre |
+| `promote_card.py` | Aplica la tabla de renumeracion al plan, a los desvios del build y a la tarjeta | Modo PROMOVER, en el cierre: despues de `apply_delta.py --mapa-salida` y de que las inspecciones cierren |
 
 ## Version del pipeline (precondicion)
 
@@ -300,7 +322,11 @@ agrega al mapa y enriquece el vocabulario; nunca modifica lo baselineado.
 
 Cuando: el usuario decide que features elaborar y baselinear. La unidad es la
 **feature**. Si nombra features en lenguaje natural, resolvelas contra el mapa; si una
-no existe o esta `deprecated`, frena y aclaralo. Si pide el incremento **sin elegir**,
+no existe o esta `deprecated`, frena y aclaralo. Si una tiene tarjeta en
+`.dev/cards/FG-xx-*.json` con `status: "built"`, **no la elabores aca**: ya esta
+construida por el camino rapido y elaborarla de cero produciria requisitos globales en
+paralelo a los provisionales que su plan todavia cita. Frena y deriva a
+`/requerimientos:promover FG-xx`. Si pide el incremento **sin elegir**,
 presenta los `stub` ordenados por `value` con su `value_rationale`, `priority` y
 esfuerzo si existe; recomenda el que maximiza valor y deci que queda afuera. El
 usuario decide.
@@ -379,6 +405,82 @@ un documento corto).
    `CR-xxx` con verdicts (`confirmed_by_user`) y versiones. Si afecta features ya
    planificadas o construidas, decilo explicito: el pipeline de planificacion lo
    levanta del changelog.
+
+## Modo PROMOVER (`/requerimientos:promover <FG-xx ...>`)
+
+Cuando: una feature se construyo por el **camino rapido** (`/tarjeta` de
+planning-pipeline) y ahora hay que saldar la deuda, convirtiendo su tarjeta y el
+codigo ya escrito en linea de base formal. Es lo contrario de un incremento: los
+escenarios y requisitos no se elaboran desde cero, se **derivan de la tarjeta** y se
+verifican contra el diff construido. Por eso corre en `sonnet` y no en `opus`.
+
+Si el usuario no nombra features, lista las tarjetas `.dev/cards/*.json` con
+`status: "built"`, de la mas vieja a la mas nueva, y recomenda por cual empezar.
+
+1. **Entrada del changelog**: la `CR-xxx` que dejo `/tarjeta` en `deferred` pasa a
+   `in_progress`. Si no existe (proyecto que nunca corrio requisitos), abri una
+   `CR-xxx` nueva con `kind: "change_request"` y las features promovidas en
+   `feature_ids`, y bootstrapea el layout minimo de `.dev/requirements/`.
+2. **Contexto por feature**: la tarjeta (`.dev/cards/FG-xx-{slug}.json`) y el diff de
+   sus commits, que la propia tarjeta cita en `build_refs` (`git log --grep "\[T-"`
+   sobre su rama; pasales la lista de archivos y los hunks acotados, no el diff
+   entero). **El diff es para verificar, no para redactar**: lo que se documenta es lo
+   que la tarjeta decidio, corregido por lo que el codigo realmente hace.
+3. **Cuatro Tasks en modo actualizacion (`model: sonnet`), EN ORDEN**, todas
+   escribiendo deltas y **reusando los ids provisionales de la tarjeta** (`RF-FT07#1`,
+   `AC-FT07#2`, `LEL-FT07#3`), que es lo que despues permite renumerar todo de una:
+   1. `lel-authoring` <- `vocabulary` de la tarjeta (que ya trae sus ids);
+   2. `scenario-modeling` <- `acceptance` (mas los escenarios que el diff revele y la
+      tarjeta no tenga), citando los simbolos del LEL;
+   3. `requirements-specification` <- `rules`, `acceptance` y `security_surface`,
+      citando escenarios y simbolos;
+   4. `technical-design` <- `design_notes` y las entidades y modulos que muestre el
+      diff. **Este si puede ir en paralelo con el 3**, como en el incremento.
+   Cada requisito nace con `origin: "fast_track"` y `code_refs: ["archivo:linea"]`,
+   la misma convencion que usa `recovery-pipeline`.
+
+   > **Por que en orden y no los cuatro juntos**, si la regla de la casa es
+   > paralelizar: la regla vale para etapas que *no dependen entre si*, y estas
+   > dependen de los ids de la anterior (un requisito cita sus escenarios y sus
+   > simbolos). Lanzados juntos, cada agente adivina los ids del otro o deja la
+   > trazabilidad vacia. Como el merge es uno solo al final, cada agente lee los
+   > deltas ya escritos por los anteriores para tomar sus ids.
+   >
+   > **Tags distintos por agente para lo que cada uno inventa.** El tag de la tarjeta
+   > (`FT07`) es de los ids que la tarjeta ya definio. Todo id nuevo que mintea un
+   > agente va con su propio tag — `Q-FT07lel#1`, `Q-FT07scn#1`, `Q-FT07req#1`,
+   > `Q-FT07td#1` — porque `apply_delta.py` mapea por (prefijo, tag, numero): dos
+   > agentes que escriban `Q-FT07#1` en deltas distintos no colisionan con un error,
+   > **se fusionan en la misma pregunta**, y se pierde una.
+4. **Un solo merge**, que renumera todo a la secuencia global:
+   ```bash
+   python3 ".../scripts/apply_delta.py" .dev/requirements --mapa-salida .dev/cards/.map.json
+   ```
+5. **Inspecciones** como siempre: render, 3a `--solo requirements` (y `design` si el
+   diseno cambio) hasta verde, 3b de juicio con su lazo. Las `open_questions` de la
+   tarjeta van al cuestionario del stakeholder: **no las respondas vos**.
+6. **Cierre mecanico fuera de requisitos** (el plan y los desvios del build siguen
+   citando los ids provisionales; ningun agente los toca):
+   ```bash
+   python3 ".../scripts/promote_card.py" . --card FG-xx --mapa .dev/cards/.map.json --changelog-id CR-xxx
+   ```
+   **Va aca, despues de las inspecciones, no antes**: el script estampa en el plan la
+   version de `requirements.json`, y cada correccion de la inspeccion la sube. Si lo
+   corres antes, el plan queda citando una version vieja y `PLAN-CHECK-007` te manda a
+   `/replanificar` sin que haya cambiado nada del plan.
+   Si frena porque quedaron ids sin renumerar, falta el delta de alguno de los cuatro
+   agentes: re-invocalo con los ids que el script nombra. No lo saltees.
+   Despues, `render_plan_docs.py .dev/plan` (el `tasks.json` cambio de version y su
+   vista queda atras).
+7. **Cierre**: `apply_delta.py`, `--limpiar`, `render_baseline_docs.py`,
+   `render_index.py`, `check_closure.py --inspecciones requirements [design] --corrida
+   CR-xxx`; la feature pasa a `baselined` en el mapa (y pierde el `origin: fast_track`
+   solo si el usuario lo pide: es informacion historica util). Cerra la `CR-xxx` como
+   `applied`. Desde aca la feature es indistinguible de una que hizo el ciclo formal.
+
+Si el codigo hace algo que la tarjeta no dice, **gana el codigo**: se documenta lo
+construido y la diferencia se le informa al usuario, que decide si es un requisito
+nuevo o un bug para `/cambio`.
 
 ## Modo COMPLETO (`/requerimientos <documento>`)
 

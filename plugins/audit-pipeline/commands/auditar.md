@@ -1,5 +1,5 @@
 ---
-description: Audita el codebase en tres dimensiones, bugs, seguridad (defensiva) y mejoras, con verificacion adversarial de cada hallazgo antes de reportarlo.
+description: "Busca lo que esta mal en el codigo, en tres frentes, bugs, seguridad y mejoras que valen la pena. Cada hallazgo pasa por un verificador que intenta refutarlo antes de reportartelo, asi no te llega ruido. Funciona en cualquier repo."
 argument-hint: "[opcional: bugs | seguridad | mejoras | una ruta; por defecto, todo]"
 ---
 

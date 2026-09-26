@@ -1,6 +1,6 @@
 ---
 name: build-pipeline
-description: Ejecuta el plan de construccion generado por planning-pipeline, en cualquier lenguaje o framework. Construye una feature en su rama (con aprobacion del plan de implementacion) o un lote completo en paralelo con un subagente por feature en worktrees (autonomo). Verifica cada tarea contra sus criterios de aceptacion y mantiene progress.json al dia. Usar cuando el usuario quiere construir, implementar o desarrollar features planificadas en .dev/features/.
+description: Para cuando el plan ya esta y hay que escribir el codigo, en el lenguaje y el framework que sea. Detecta el stack por evidencia en vez de asumirlo, construye cada feature en su rama verificando sus criterios de aceptacion uno por uno, y aplica el piso de seguridad OWASP mientras construye en vez de auditarlo despues. Puede construir una feature con tu aprobacion del plan, o un lote entero en paralelo con un agente por feature en su propio worktree. Tambien escribe la guia de usuario de lo que construyo. Usar cuando alguien quiere construir, implementar o desarrollar features ya planificadas. Necesita un plan previo, no construye desde una idea suelta.
 ---
 
 # Pipeline de Build (ejecucion del plan, agnostico de stack)

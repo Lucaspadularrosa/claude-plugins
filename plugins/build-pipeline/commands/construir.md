@@ -1,5 +1,5 @@
 ---
-description: Construye una feature planificada (.dev/features/) en su propia rama, con aprobacion del plan de implementacion antes de codear. Agnostico de stack.
+description: "Escribe el codigo de una feature planificada, en su propia rama y en el lenguaje que sea, verificando cada criterio de aceptacion. Te muestra el plan de implementacion antes de tocar nada. Termina en un PR."
 argument-hint: <slug o nombre de la feature>
 ---
 

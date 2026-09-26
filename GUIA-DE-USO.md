@@ -22,6 +22,7 @@ Una sola vez por usuario:
 
 ```bash
 /plugin marketplace add Lucaspadularrosa/claude-plugins
+/plugin install suite@lpadularrosa-dev-plugins
 /plugin install requerimientos@lpadularrosa-dev-plugins
 /plugin install planning-pipeline@lpadularrosa-dev-plugins
 /plugin install build-pipeline@lpadularrosa-dev-plugins
@@ -30,6 +31,10 @@ Una sola vez por usuario:
 /plugin install audit-pipeline@lpadularrosa-dev-plugins
 /plugin install metrics-pipeline@lpadularrosa-dev-plugins
 ```
+
+`suite` es el más chico y el único que no hace trabajo: es la puerta de entrada, la que
+traduce tu situación en el comando que corresponde. Si instalás uno solo para probar,
+instalá ese y el que vayas a usar.
 
 (`lpadularrosa-dev-plugins` es el nombre del marketplace declarado en
 `.claude-plugin/marketplace.json`; verificalo con `/plugin` si los comandos varían en
@@ -67,23 +72,31 @@ deprecia) y **nada baselineado se modifica sin tu confirmación**.
 
 | Comando | Plugin | Para qué |
 |---|---|---|
+| `/por-donde-empiezo ["qué necesitás"]` | suite | **Si no sabés cuál usar, empezá acá.** Mira en qué estado está el proyecto, escucha qué necesitás y te recomienda el comando, con su alternativa. |
 | `/requerimientos:descubrir [rutas]` | requirements | Pasada panorámica: LEL + mapa del producto. Acepta documentos, carpetas o nada. Re-ejecutable cada vez que llega material. |
 | `/requerimientos:incremento <features>` | requirements | Elabora y baselinea las features elegidas. |
 | `/requerimientos:cambio <texto o doc>` | requirements | Cambio puntual sobre lo baselineado, con confirmación previa. |
+| `/requerimientos:promover <features>` | requirements | Convierte en línea de base formal una feature construida por el camino rápido. Salda la deuda de `/tarjeta`. |
 | `/requerimientos <rutas>` | requirements | Modo completo clásico: descubrir + elaborar todo en una corrida. |
 | `/planificar` | planning | Genera el plan de ejecución de lo baselineado: tareas, lotes paralelos, briefs. |
 | `/replanificar` | planning | Actualiza el plan cuando los requisitos cambiaron, sin tocar lo construido. |
+| `/tarjeta <doc o pedido>` | planning | **Camino rápido**: de un documento corto a UNA feature lista para construir, sin pasar por el ciclo de requisitos. Para cuando hay que sacarlo ya. |
 | `/construir <feature>` | build | Construye una feature en su rama, con tu aprobación del plan de implementación. Cualquier stack. |
 | `/construir-lote [BATCH-n]` | build | Construye un lote completo en paralelo (un agente por feature, en worktrees), sin pausas. |
 | `/comprender [ruta]` | recovery | Comprende una app existente: qué hace, en qué estado está, qué falta — con reporte compartible en HTML. Opt-in: reconstruye la línea de base con evidencia al código. |
 | `/auditar [alcance]` | audit | Bugs, seguridad y mejoras, con verificación adversarial de cada hallazgo. Funciona en cualquier repo. |
 | `/documentar` | build | Genera retroactivamente las guías de usuario de features ya construidas que quedaron sin documentar. Un PR con todas. |
 | `/publicar-manual` | manual-usuario | Publica `.dev/manual/` como sitio HTML estático navegable en `docs/manual/`. |
-| `/estado` | requirements | En qué estado está la suite en este proyecto: qué corrió, qué falta, qué bloquea y qué conviene hacer. Solo lectura, cero tokens de modelo. |
+| `/estado ["qué querés hacer"]` | requirements | En qué estado está la suite en este proyecto: qué corrió, qué falta, qué bloquea y qué conviene hacer. Si además le contás qué querés hacer, te dice por dónde ir. |
 | `/metricas [solo-datos]` | metrics | Cosecha las métricas de proceso de la suite (script, cero tokens) y opcionalmente las analiza para saber qué mejorar de los pipelines. |
 
 Todos funcionan también en lenguaje natural ("genera los requisitos a partir de estos
 documentos", "los requisitos cambiaron, actualiza el plan").
+
+Y no hace falta que te los aprendas: contale tu situación en tus palabras —"heredé este
+repo", "me pasaron el documento del cliente", "hay que sacar esto para el viernes"— y
+Claude elige, te dice por qué eligió eso y cuál es la alternativa por si lo entendió al
+revés.
 
 ---
 
@@ -205,6 +218,46 @@ está adentro de la suite:
 `high`/`medium` pasa por un **verificador adversarial** que intenta refutarlo leyendo
 el código antes de reportártelo — en la duda se descarta, así el reporte tiene señal y
 no ruido. Los descartados quedan listados con su razón, por transparencia.
+
+### Caso G — Hay que sacarlo ya (el camino rápido)
+
+Entra un pedido urgente y acotado: una feature, un documento corto o un mail, y no hay
+tiempo para descubrir + elaborar + planificar.
+
+```
+/tarjeta pedido-proveedores.md   →  (pausa: confirmás la tarjeta)  →  /construir FG-07
+```
+
+En vez de los seis artefactos del método, se escribe **una tarjeta**: para qué es, el
+vocabulario, las reglas, los criterios de aceptación en Gherkin, el corte en tareas, y
+—esto importa— lo que queda **afuera**, lo que se **asume** y lo que queda como
+**pregunta abierta**. Con eso el plan y el brief salen por script y el build corre igual
+que siempre. Una sola pausa: confirmás la tarjeta, y el resto del control queda en el PR.
+
+La documentación no se pierde, se posterga: la corrida deja registrada la deuda (una
+entrada `deferred` en el changelog, un `low` en la validación del plan y una línea en
+`/estado`). Cuando baje la urgencia:
+
+```
+/requerimientos:promover FG-07
+```
+
+La promoción **no relee el código desde cero**: parte de la tarjeta —que ya tiene el
+vocabulario, las reglas y los criterios— y la verifica contra el diff construido. Por eso
+corre en `sonnet` y sale barata. El resultado es indistinguible de una feature que hizo
+el ciclo formal.
+
+**Cuándo NO tomar el atajo.** Si el pedido trae más de una feature, toca el modelo de
+datos central, depende de decisiones que hay que acordar con un tercero, o usa dominio
+que el equipo todavía no tiene en vocabulario común: ahí la promoción posterior sale más
+cara que haber hecho el ciclo formal desde el principio. Claude te lo va a decir antes de
+arrancar; la decisión es tuya.
+
+Si no sabés cuál corresponde, contáselo a `/estado`:
+
+```
+/estado "necesito el alta de proveedores para el viernes"
+```
 
 ---
 

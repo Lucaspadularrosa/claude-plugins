@@ -21,6 +21,7 @@ unico que aparece en cada proyecto son las **salidas**, en `.dev/requirements/`.
 | `/requerimientos:descubrir [rutas]` | Pasada panoramica: LEL + mapa del producto (features y escenarios stub priorizados) | Al arrancar, y cada vez que llega material nuevo |
 | `/requerimientos:incremento <FG-xx ...>` | Elabora y baselinea las features elegidas: escenarios, requisitos, inspeccion, diseno | Cuando decidis que construir a continuacion |
 | `/requerimientos:cambio <descripcion-o-doc>` | Cambio puntual sobre lo baselineado, con veredictos y confirmacion previa | Un pedido del stakeholder, un mail, un ajuste |
+| `/requerimientos:promover <FG-xx ...>` | Convierte en linea de base una feature construida por el camino rapido (`/tarjeta`), derivandola de su tarjeta y verificandola contra el diff | Cuando bajo la urgencia y hay que saldar la deuda de documentacion |
 | `/requerimientos <rutas>` | Modo completo clasico: descubrir + un incremento con todo | Proyectos chicos o documentos cerrados |
 
 ## Como se usa: la vida de un proyecto
@@ -99,11 +100,13 @@ requirements-pipeline/
         render_baseline_docs.py  todos los .md derivados (artefactos, inspecciones, cuestionario)
         check_closure.py         compuerta de cierre (layout, inspecciones, versiones, vistas)
         render_index.py          indice .dev/README.md
+        promote_card.py          renumera plan, desvios y tarjeta al promover (camino rapido)
   commands/
     requerimientos.md            modo completo (clasico)
     descubrir.md                 modo descubrir
     incremento.md                modo incremento
     cambio.md                    modo cambio
+    promover.md                  modo promover (camino rapido -> linea de base)
   PIPELINE.md                    diagrama y reglas del flujo
   README.md                      este archivo
 ```
