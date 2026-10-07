@@ -15,7 +15,8 @@ Artefactos que renderiza (los que existan en la carpeta):
   data-model.json       -> data-model.md
   technical-design.json -> technical-design.md
   lel-inspection.json / requirements-inspection.json / design-inspection.json -> .md
-  stakeholder-questions.json -> stakeholder-questions.md (con espacio de respuesta)
+  stakeholder-questions.json -> stakeholder-questions.md (con espacio de respuesta por
+                               pregunta, parseable por parse_answers.py)
 
 Cada .md arranca con el encabezado de sincronia que verifican las inspecciones:
   > Derivado de `<archivo>.json` version N — no editar a mano.
@@ -627,8 +628,10 @@ def render_questionnaire(data):
         summary.get("total_questions", "?"), summary.get("blocking_questions", "?"),
         ", ".join(summary.get("target_roles") or []) or "—"))
     out.append("")
-    out.append("Responde debajo de cada pregunta (podes dejar en blanco las que no sepas). "
-               "Las marcadas **[bloqueante]** frenan la elaboracion hasta tener respuesta.")
+    out.append("Responde debajo de cada pregunta, en este mismo archivo: escribi debajo de "
+               "**Respuesta QST-xxx:** o marca una casilla con `[x]` (podes dejar en blanco las que "
+               "no sepas). Las marcadas **[bloqueante]** frenan la elaboracion hasta tener respuesta. "
+               "Despues `parse_answers.py` lee lo que escribiste.")
     out.append("")
     questions = {q.get("id"): q for q in data.get("questions", []) or []}
     placed = set()
@@ -680,9 +683,17 @@ def _render_question(out, q):
         out.append("")
         out.append("> Si no respondes, asumimos: %s" % q["default_assumption"])
     out.append("")
-    out.append("**Respuesta:**")
+    out.append("**Respuesta %s:**" % q.get("id", "?"))
     out.append("")
-    out.append("_(completar)_")
+    kind = q.get("expected_answer_type")
+    if kind == "yes_no":
+        out.append("- [ ] Si")
+        out.append("- [ ] No")
+    elif kind == "choice" and q.get("choices"):
+        for c in q["choices"]:
+            out.append("- [ ] %s" % c)
+    else:
+        out.append("_(completar)_")
     out.append("")
 
 
@@ -720,7 +731,7 @@ def self_test():
                          {"id": "SEC-002", "title": "No funcionales", "question_ids": ["QST-002"]}],
             "questions": [{"id": "QST-001", "question": "Que es un socio?", "priority": "high", "source_kind": "defect"},
                           {"id": "QST-002", "question": "Cuantos usuarios?", "priority": "medium", "source_kind": "nfr_checklist",
-                           "default_assumption": "menos de 100"}]}), encoding="utf-8")
+                           "expected_answer_type": "yes_no", "default_assumption": "menos de 100"}]}), encoding="utf-8")
         code = main([str(tmp), "--solo", "requirements-inspection", "stakeholder-questions"])
         insp = (tmp / "requirements-inspection.md").read_text(encoding="utf-8")
         qst = (tmp / "stakeholder-questions.md").read_text(encoding="utf-8")
@@ -729,7 +740,8 @@ def self_test():
             ("Derivado de `requirements-inspection.json` version 2" in insp, "encabezado de sincronia de la inspeccion"),
             ("NO PASA" in insp and "sin cubrir \\| pipe" in insp, "veredicto y celda escapada"),
             ("[bloqueante]" in qst and "Si no respondes, asumimos: menos de 100" in qst, "cuestionario con bloqueante y default"),
-            ("opcional" in qst and qst.count("**Respuesta:**") == 2, "seccion NFR opcional y espacio de respuesta por pregunta"),
+            ("opcional" in qst and qst.count("**Respuesta QST-0") == 2, "seccion NFR opcional y espacio de respuesta por pregunta"),
+            ("- [ ] Si" in qst and "- [ ] No" in qst, "casillas en pregunta yes_no"),
         ):
             print("self-test %s: %s" % ("ok" if cond else "FALLO", label))
             failures += 0 if cond else 1

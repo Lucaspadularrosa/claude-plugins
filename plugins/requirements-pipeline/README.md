@@ -99,6 +99,7 @@ requirements-pipeline/
         validate_baseline.py     checks mecanicos de LEL / requisitos / diseno
         render_baseline_docs.py  todos los .md derivados (artefactos, inspecciones, cuestionario)
         check_closure.py         compuerta de cierre (layout, inspecciones, versiones, vistas)
+        parse_answers.py         respuestas escritas en el cuestionario -> clasificadas, con repregunta de lo ambiguo
         render_index.py          indice .dev/README.md
         promote_card.py          renumera plan, desvios y tarjeta al promover (camino rapido)
   reference/

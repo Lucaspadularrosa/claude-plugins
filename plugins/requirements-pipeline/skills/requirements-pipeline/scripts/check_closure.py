@@ -46,7 +46,8 @@ DERIVED_HEADER = re.compile(r"Derivado de `?(?P<json>[\w.-]+)`? version (?P<vers
 LAYOUT = {
     "source-inventory.json", "lel-candidates.json", "supporting-context.json",
     "lel.json", "lel.md", "lel-inspection.json", "lel-inspection.md",
-    "stakeholder-questions.json", "stakeholder-questions.md", "stakeholder-answers.md",
+    "stakeholder-questions.json", "stakeholder-questions.md", "stakeholder-answers.json",
+    "stakeholder-answers.md",
     "product-map.json", "product-map.md", "changelog.json",
     "scenarios.json", "scenarios.md", "requirements.json", "requirements.md",
     "requirements-inspection.json", "requirements-inspection.md",

@@ -89,6 +89,7 @@ skill. **Sin ningun Python disponible**: cada paso indica su fallback.
 | `render_baseline_docs.py` | Los `.md` derivados (artefactos, inspecciones y cuestionario) | **Antes** de cada inspeccion y en el cierre |
 | `validate_baseline.py` | Checks mecanicos de LEL/requisitos/diseno, con exit code | 3a de cada inspeccion, iterar hasta verde |
 | `check_closure.py` | Compuerta de cierre: layout, inspecciones en verde, versiones, vistas | Antes de cerrar la entrada del changelog |
+| `parse_answers.py` | Lee las respuestas escritas en `stakeholder-questions.md`, clasifica cada una (contestada, sin responder, ambigua, con supuesto), redacta la repregunta de las ambiguas y deriva `stakeholder-answers.json/.md` | Despues de la pausa del cuestionario, y en cada ronda |
 | `render_index.py` | El indice `.dev/README.md` | En el cierre |
 | `promote_card.py` | Aplica la tabla de renumeracion al plan, a los desvios del build y a la tarjeta | Modo PROMOVER, en el cierre: despues de `apply_delta.py --mapa-salida` y de que las inspecciones cierren |
 
@@ -304,10 +305,22 @@ agrega al mapa y enriquece el vocabulario; nunca modifica lo baselineado.
    **Validacion del cuestionario**: debe contener al menos una pregunta
    `source_kind: "nfr_checklist"` con `default_assumption`; si no, re-invoca al agente
    señalando el faltante. Renderiza `stakeholder-questions.md` por script.
-5. **PAUSA OBLIGATORIA**: presenta `stakeholder-questions.md` y espera.
-   - Si responde: guarda las respuestas en `.dev/requirements/stakeholder-answers.md`
-     (una por `QST-xxx`) — es la **unica** ubicacion canonica; en `sources/` archiva
-     solo una referencia (`entrevista-NNN.txt` con una linea "ver
+5. **PAUSA OBLIGATORIA**: presenta `stakeholder-questions.md` y espera. Pedile que
+   responda **dentro del archivo** (debajo de cada `**Respuesta QST-xxx:**`, o
+   marcando una casilla con `[x]`); si contesta por chat, copia vos cada respuesta a
+   ese lugar, textual. Despues:
+   ```bash
+   python3 "${CLAUDE_PLUGIN_ROOT}/skills/requirements-pipeline/scripts/parse_answers.py" \
+     .dev/requirements --pipeline-version X.Y.Z --fecha AAAA-MM-DD
+   ```
+   Escribe `stakeholder-answers.json` y `stakeholder-answers.md` (la **unica**
+   ubicacion canonica de las respuestas: nunca los escribas vos) e imprime el
+   resumen. Con exit 2 hay bloqueantes sin responder o respuestas ambiguas: mostra
+   solo esas lineas (`falta QST-xxx` y `repreguntar QST-xxx: ...`, la repregunta ya
+   viene redactada), espera, y volve a correrlo. Lo que quede `unanswered` sigue como
+   pregunta abierta, nunca como supuesto inventado; lo `defaulted` produce el RNF con
+   su supuesto declarado.
+   - Con respuestas: en `sources/` archiva solo una referencia (`entrevista-NNN.txt` con una linea "ver
      stakeholder-answers.md, QST-001..QST-0NN") para que el inventario la registre
      como fuente sin duplicar el texto. Aplicalas al LEL con `lel-authoring`
      (`model: sonnet`, pasale solo los `QST-xxx` que tocan simbolos o preguntas del
@@ -548,7 +561,7 @@ incrementales).
   lel.json / lel.md             Lexico Extendido del Lenguaje (vivo)
   lel-inspection.json / .md     inspeccion del LEL
   stakeholder-questions.json/.md cuestionario
-  stakeholder-answers.md         respuestas del stakeholder (unica ubicacion)
+  stakeholder-answers.json/.md   respuestas del stakeholder clasificadas (las deriva parse_answers.py; unica ubicacion)
   product-map.json / .md        mapa del producto
   changelog.json                historia DSC / INC / CR / REC
   scenarios.json / .md          escenarios elaborados (acumulativo)
