@@ -101,6 +101,11 @@ simbolos existentes; en actualizacion, TODOS los defectos y respuestas indicados
 aplicados y ninguna pregunta resuelta sigue citada. Cada simbolo tiene al menos una
 nocion o una pregunta abierta que explique el faltante.
 
+**Fechas**: `created_at`/`updated_at` llevan la `fecha` que te pasa el orquestador
+(la imprime `suite-pipeline-version` junto a `pipeline_version`); si no te la paso,
+`null`. Nunca una fecha que recuerdes o deduzcas: la cosecha de metricas y el churn
+de la baseline se calculan con estas fechas.
+
 ## Respuesta al orquestador
 
 Solo el puntero: `status` (ok|blocked|error), `artifact_paths`, `summary` (3-5 lineas:

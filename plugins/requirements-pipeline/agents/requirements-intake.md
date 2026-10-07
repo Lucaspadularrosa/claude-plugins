@@ -61,6 +61,14 @@ valide. No copies secretos ni credenciales: registra un `gap` sin el valor.
   salvo que tambien sean lenguaje claro del dominio. No descartes informacion.
 - Consolida sinonimos antes de emitir; antes de crear un `gap`, verifica que la
   respuesta no este en otra seccion.
+- **Documentos con la forma de las guias** (`reference/guia-vision.md` y
+  `reference/guia-entorno-tecnico.md`): en una vision, cada "pregunta abierta" es un
+  `gap` propio (el cuestionario las hereda tal cual) y lo que esta en "que NO entra"
+  va a `supporting_context` con `category: process` y `downstream_use: "fuera de
+  alcance del MVP: product-mapping no lo propone como feature"`. En un entorno
+  tecnico, cada fila de prohibidos, cada convencion y el modulo de ejemplo son items
+  `category: stack` con razon y alternativa en `summary` y `downstream_use:
+  "restriccion para technical-design y stack-profiler"`.
 - Ids: `SRC-SEC-001`, `LEL-CAND-001`, `CTX-001`, `GAP-001` (o provisionales).
 - Valores legibles en espanol.
 

@@ -72,8 +72,10 @@ suite-pipeline-version --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/pl
 `version` de `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` y segui). Imprime la
 version cargada y, si corresponde, un aviso (plan previo generado con otra version;
 instalacion local mas nueva que la cargada — requiere reiniciar la sesion). Mostra el
-aviso tal cual; es informativo, no compuerta. Pasa `pipeline_version: X.Y.Z` a cada
-subagente y a cada script que lo acepte.
+aviso tal cual; es informativo, no compuerta. Pasa `pipeline_version: X.Y.Z` y
+`fecha: AAAA-MM-DD` (la segunda linea que imprime: la fecha del sistema) a cada
+subagente y a cada script que lo acepte; las fechas de los artefactos salen de ahi,
+nunca de la memoria del modelo.
 
 ## Etapas
 

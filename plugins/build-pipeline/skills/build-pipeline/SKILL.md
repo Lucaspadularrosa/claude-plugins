@@ -43,7 +43,9 @@ invocarlo** (`pipeline_version: X.Y.Z`): todo artefacto JSON la estampa. El avis
 artefactos previos generados con otra version o de instalacion desactualizada lo da
 el script de la suite (vive en el plugin hermano `requirements-pipeline`):
 `suite-pipeline-version --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/build/stack-profile.json`
-— imprime el aviso o nada; si el script no esta, segui sin bloquear (es informativo).
+— imprime `pipeline_version`, `fecha` (la del sistema) y el aviso si lo hay. Pasa las
+dos primeras a cada subagente: las fechas de los artefactos salen de ahi, nunca de la
+memoria del modelo. Si el script no esta, segui sin bloquear (es informativo).
 
 ## Scripts del plugin (`${CLAUDE_PLUGIN_ROOT}/skills/build-pipeline/scripts/`)
 

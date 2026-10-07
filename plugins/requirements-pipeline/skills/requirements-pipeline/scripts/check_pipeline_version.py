@@ -27,6 +27,7 @@ Uso:
 
 from __future__ import annotations
 
+from datetime import date
 import argparse
 import json
 import sys
@@ -105,6 +106,7 @@ def run(plugin_root, artifacts, known_path, quiet=False):
         avisos.append("el marketplace local tiene %s v%s y la sesion cargo v%s: el update requiere REINICIAR la sesion" % (name, mv, loaded))
     if not quiet:
         print("pipeline_version: %s" % loaded)
+        print("fecha: %s" % date.today().isoformat())
         for a in avisos:
             print("aviso: %s" % a)
     return 0, loaded, avisos

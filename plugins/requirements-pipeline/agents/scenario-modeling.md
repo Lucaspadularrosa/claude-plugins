@@ -110,6 +110,11 @@ JSON valido (delta o canonico); cada `lel_symbol_id`, `referenced_symbol_ids` y
 escenario del indice o de tu delta; en modo secuencial, el `summary` coincide con el
 contenido. Episodios cubren el flujo principal; excepciones, los desvios relevantes.
 
+**Fechas**: `created_at`/`updated_at` llevan la `fecha` que te pasa el orquestador
+(la imprime `suite-pipeline-version` junto a `pipeline_version`); si no te la paso,
+`null`. Nunca una fecha que recuerdes o deduzcas: la cosecha de metricas y el churn
+de la baseline se calculan con estas fechas.
+
 ## Respuesta al orquestador
 
 Solo el puntero: `status` (ok|blocked|error), `artifact_paths` (el delta o el

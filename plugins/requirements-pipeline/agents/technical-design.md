@@ -77,6 +77,26 @@ relevante, pregunta abierta. No copies secretos ni credenciales de los assets.
   gestion de secretos, proteccion de datos, validacion de entrada), citando los RNF
   `category: security` y la categoria OWASP en `context`; sin RNF que lo respalde,
   pregunta abierta. El piso generico lo garantiza el build: no lo diseñes.
+- **Decisiones que no tomas vos**: hay decisiones que son del usuario aunque el
+  contexto sugiera una respuesta. Si un requisito, un item de contexto o un ADR
+  `accepted` la resuelve con evidencia, citalo; si no, va como pregunta abierta con
+  la pregunta ya redactada (asi, no parafraseada), `target_role` y `blocking` segun
+  se indica; si hace falta avanzar, registra el supuesto en `assumptions` y disena
+  con el, pero la pregunta queda abierta igual:
+  - Identidad y autenticacion (`blocking: true`): "¿Los usuarios entran con cuenta
+    propia del sistema, con el inicio de sesion de la organizacion o con un
+    proveedor externo? ¿Cual?"
+  - Multi-tenancy (`blocking: true` si el incremento disena datos): "¿Una
+    instalacion sirve a una sola organizacion o a varias con datos separados?"
+  - Motor de persistencia: "¿Hay un motor de base de datos impuesto por la
+    organizacion o lo elegimos nosotros?"
+  - Retencion y borrado de datos personales: "¿Cuanto tiempo se conservan los datos
+    de {entidad} y quien puede pedir su borrado?"
+  - Integraciones con terceros que tienen costo o contrato: "¿El sistema debe
+    integrarse con {servicio}? ¿Quien provee credenciales y un entorno de prueba?"
+  - Disponibilidad y recuperacion: "Si el sistema se cae, ¿cuanto tiempo puede estar
+    fuera y cuantos datos se pueden perder?"
+  - Donde corre y quien lo opera: "¿Donde corre en produccion y quien lo opera?"
 - Ids `ENT-001`, `REL-001`, `MOD-001`, `API-001`, `SCR-001`, `ADR-001`, `Q-001`. Valores
   legibles en espanol.
 
@@ -135,6 +155,11 @@ apunta a un id de las tajadas o de tus propios cambios; cada entidad con `objeto
 equivalente lo cita; ningun ADR ni modulo sin `requirement_ids`; con assets de UI, cada
 pantalla con mockup tiene `design_source: mockup` y su archivo listado, y los
 desajustes quedaron como preguntas abiertas.
+
+**Fechas**: `created_at`/`updated_at` llevan la `fecha` que te pasa el orquestador
+(la imprime `suite-pipeline-version` junto a `pipeline_version`); si no te la paso,
+`null`. Nunca una fecha que recuerdes o deduzcas: la cosecha de metricas y el churn
+de la baseline se calculan con estas fechas.
 
 ## Respuesta al orquestador
 

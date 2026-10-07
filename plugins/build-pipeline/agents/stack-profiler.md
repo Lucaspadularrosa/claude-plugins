@@ -64,6 +64,19 @@ senalan por ubicacion, nunca por valor.
   tal cual. Es una pasada corta.
 - **Base de seguridad por evidencia, no checklist**: cada `control` cita el mecanismo
   nativo real; si no hay, `mechanism` vacio + `gaps` + `warnings`.
+- **Lo que no decidis vos**: lo deducido sin evidencia que cambia como se construye
+  o se verifica no es un supuesto silencioso. Va a `open_questions` con la pregunta
+  ya redactada y un `default_recomendado`, y el perfil se arma con ese default
+  marcado `validated: false`:
+  - Version del runtime sin pin ni lockfile: "¿Que version de {runtime} corre en
+    produccion?" (default: la detectada en el entorno).
+  - Mas de un gestor de paquetes o lockfile: "¿Cual es el gestor oficial del
+    proyecto?" (default: el del lockfile mas reciente).
+  - Sin herramienta de audit de dependencias: "¿Podemos agregar {herramienta} al
+    proyecto?" (default: si, la nativa del stack).
+  - Sin CI: "¿Bootstrapeamos un workflow minimo que corra test y lint?" (default:
+    si).
+  - Rama de integracion y comando de test: ya son `blocking: true` (abajo).
 - **Alcance por actor es mecanismo obligatorio**: si la superficie tiene actores con
   alcances distintos (roles, tenants, "campania", carteras), el control A01 DEBE
   nombrar el helper concreto que deriva el `where`/filtro del alcance de la sesion
@@ -175,6 +188,11 @@ audit de dependencias → `warnings`; `ci` completo por evidencia (si no hay, o 
 corre test/lint, `warnings`: el orquestador bootstrapea el workflow minimo);
 `domain_naming` por evidencia de los identificadores existentes (en greenfield, de la
 convencion del stack y las entidades del diseno).
+
+**Fechas**: `created_at`/`updated_at` llevan la `fecha` que te pasa el orquestador
+(la imprime `suite-pipeline-version` junto a `pipeline_version`); si no te la paso,
+`null`. Nunca una fecha que recuerdes o deduzcas: la cosecha de metricas y el churn
+de la baseline se calculan con estas fechas.
 
 ## Respuesta al orquestador
 

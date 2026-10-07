@@ -105,6 +105,11 @@ valido):
 
 `metadata.pipeline_version`: la que el orquestador te indica; si no te la indico, `null` — nunca la inventes.
 
+**Fechas**: `created_at`/`updated_at` llevan la `fecha` que te pasa el orquestador
+(la imprime `suite-pipeline-version` junto a `pipeline_version`); si no te la paso,
+`null`. Nunca una fecha que recuerdes o deduzcas: la cosecha de metricas y el churn
+de la baseline se calculan con estas fechas.
+
 ## Respuesta al orquestador
 
 Solo el puntero: `status` (ok | blocked | error), `artifact_paths`, `summary` de 3-5

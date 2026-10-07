@@ -103,7 +103,9 @@ python3 "${CLAUDE_PLUGIN_ROOT}/skills/requirements-pipeline/scripts/check_pipeli
 
 La primera linea (`pipeline_version: X.Y.Z`) es la version cargada: **pasasela a cada
 subagente** ("pipeline_version: X.Y.Z"); todo artefacto la estampa y las entradas del
-changelog tambien. Las lineas `aviso:` se le muestran al usuario tal cual (artefactos
+changelog tambien. La segunda linea (`fecha: AAAA-MM-DD`) es la fecha del sistema:
+pasasela igual a cada subagente ("fecha: AAAA-MM-DD"); es lo que va en
+`created_at`/`updated_at`, nunca una fecha que el modelo recuerde. Las lineas `aviso:` se le muestran al usuario tal cual (artefactos
 generados con otra version, marketplace local mas nuevo que requiere reiniciar la
 sesion); son informativas, no compuerta. Sin Python: lee la `version` de
 `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` y segui.
@@ -274,7 +276,11 @@ etapas seriales. Casos concretos en cada modo, marcados con **[paralelo]**.
 Cuando: al arrancar, y **cada vez que llega material nuevo**. Siempre seguro: solo
 agrega al mapa y enriquece el vocabulario; nunca modifica lo baselineado.
 
-1. Registra `DSC-xxx` (`in_progress`). Resolve y extrae las entradas.
+1. Registra `DSC-xxx` (`in_progress`). Resolve y extrae las entradas. Sin rutas,
+   ofrece las dos salidas: entrevista ahora (el cuestionario en modo elicitacion) o
+   escribir primero una vision con `reference/guia-vision.md` (mas
+   `guia-entorno-tecnico.md` si hay stack impuesto); lo que escriba se archiva en
+   `sources/` como cualquier fuente.
 2. **Intake [paralelo por fuente]**: con mas de una fuente, invoca un
    `requirements-intake` por fuente en un mismo mensaje, cada uno con su `.txt` (y su
    original en `raw/`/`ui/`), un `tag` corto y la instruccion de escribir deltas
