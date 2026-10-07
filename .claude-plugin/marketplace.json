@@ -33,7 +33,7 @@
     {
       "name": "audit-pipeline",
       "description": "Audita un codebase en tres dimensiones, bugs de correctitud, seguridad defensiva y mejoras de alto retorno, con verificacion adversarial de cada hallazgo antes de reportarlo. Funciona standalone o integrado con la suite: los confirmados se convierten en change requests planificables.",
-      "version": "1.5.0",
+      "version": "1.6.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"

@@ -17,3 +17,6 @@ __pycache__/
 
 # Estado local de sesiones de Claude Code (nunca se comitea)
 **/.claude/settings.local.json
+
+# Resultados locales de `claude plugin eval` (reportes y transcripts de cada corrida)
+plugins/*/evals/results/
