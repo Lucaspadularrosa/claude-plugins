@@ -13,7 +13,13 @@ Las convenciones, los scripts y las reglas son las de `SKILL.md`; `{b}` es el
    pendiente es un lote de ajuste (`adjustment: true`), construi solo esas tareas en
    `feature/{slug}-ajuste`.
 2. **Perfil de stack** (convenciones). Si el proyecto no tiene CI que corra test y
-   lint, bootstrapealo en esta rama.
+   lint, bootstrapealo en esta rama. **Extensiones, una vez por proyecto**: si no
+   existe `.dev/build/extensions.json`, corre `extensions_decide.py {raiz} --listar`,
+   mostra las preguntas de los opt-in tal cual (que es, que cuesta, default) y espera
+   la respuesta; registrala con `--set nombre=on|off ...` (siempre por script, nunca a
+   mano) y recien despues invoca al `stack-profiler`, que carga solo las habilitadas.
+   Si ya existe, no preguntes: para cambiarla, el usuario pide `extensiones` y corres
+   `--set`; con un cambio, re-invoca al profiler en regeneracion.
 3. **Plan de implementacion**: invoca `feature-implementer` en **modo plan** con
    `model: sonnet` (reordena el brief, no razona codigo: no necesita opus). Mostrale
    al usuario el plan (enfoque por tarea, archivos, verificacion) y **espera su

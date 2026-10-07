@@ -47,6 +47,18 @@ el script de la suite (vive en el plugin hermano `requirements-pipeline`):
 dos primeras a cada subagente: las fechas de los artefactos salen de ahi, nunca de la
 memoria del modelo. Si el script no esta, segui sin bloquear (es informativo).
 
+## Extensiones (`${CLAUDE_PLUGIN_ROOT}/reference/extensions/<nombre>/`)
+
+Cada extension es `reglas.md` (reglas con id, verificacion, cuando aplica, etapas y
+severidad) y, si es opt-in, `reglas.opt-in.md` (que es, que cuesta, la pregunta, el
+default). Sin opt-in es siempre-on: hoy `seguridad-owasp`. Opt-in: `resiliencia` y
+`tests-de-propiedades`. La decision es una por proyecto, en `.dev/build/extensions.json`,
+y la escribe `extensions_decide.py`; el `stack-profiler` carga solo las habilitadas y
+las vuelca al `security-baseline.json`, asi que el implementer y el gate nunca leen
+las reglas. El gate reporta `extension_compliance` por regla; un incumplimiento es un
+hallazgo normal (`medium`, o `high` si la regla lo declara) y entra al mismo lazo de
+correccion. Para sumar una extension: una carpeta nueva con los dos archivos; nada mas.
+
 ## Scripts del plugin (`${CLAUDE_PLUGIN_ROOT}/skills/build-pipeline/scripts/`)
 
 Todo lo que es derivado, determinista o mecanico lo hace un script, no vos ni un
@@ -63,6 +75,7 @@ proyecto, mostra su salida al usuario — no lo suplas a mano.
 | `render_cr_input.py <raiz> --brief {b}` | `cr-input-{b}.md` desde `desvios/{b}.json` del implementador, y `tech-debt.md` (TD-nnn con dedupe) desde los hallazgos `low` | Al cerrar cada feature (review y gate en verde) |
 | `render_manual_index.py <raiz> [--cobertura]` | `.dev/manual/README.md` desde el frontmatter de las guias; `--cobertura` lista features `done` sin guia | Primera rama de cada corrida y cierre; DOCUMENTAR paso 1 |
 | `render_batch_summary.py <raiz> [--lote BATCH-n \| --features FG-xx]` | Resumen final consolidado en Markdown desde los artefactos | Cierre de FEATURE y LOTE |
+| `extensions_decide.py <raiz> --listar \| --set nombre=on\|off ... \| --set-defaults \| --estado` | Que extensiones del build estan habilitadas (`.dev/build/extensions.json`); lee los opt-in de `reference/extensions/` | Antes del primer perfil de stack del proyecto; cuando el usuario quiere cambiarlas |
 
 Ademas, el indice de `.dev` (`.dev/README.md`) lo regenera el script de la suite:
 `suite-render-index .dev`
@@ -74,7 +87,7 @@ asi que saltealo y anotalo.
 
 | Subagente | Modelo | Rol |
 |---|---|---|
-| `stack-profiler` | sonnet | Perfil de stack + base de seguridad (`.dev/build/stack-profile.json`, `security-baseline.json`); modo regeneracion parcial `--solo-validar-comandos` |
+| `stack-profiler` | sonnet | Perfil de stack + base de seguridad (`.dev/build/stack-profile.json`, `security-baseline.json`, con `extensions.*` para las habilitadas); modo regeneracion parcial `--solo-validar-comandos` |
 | `feature-implementer` | opus (ejecucion y correccion); **sonnet en modo plan** (pasale `model: sonnet` en la Task) | Construye UNA feature; emite `desvios/{b}.json` |
 | `build-reviewer` | opus | Diff contra el brief; veredicto `reviews/{b}.json`. Consume `verification/{b}.json`, no corre tests |
 | `security-gate` | **sonnet**; escala a opus (`model: opus` en la Task) si el diff toca A01, A02 o A07 del baseline | Diff contra el piso OWASP; veredicto `security/{b}.json`. El audit lo lee de `verification/{b}.json` |
@@ -187,7 +200,8 @@ se publica por slug.
 ```
 .dev/build/
   stack-profile.json            perfil de stack (por evidencia)
-  security-baseline.json        base de seguridad del stack
+  security-baseline.json        base de seguridad del stack (+ extensions.* habilitadas)
+  extensions.json               que extensiones estan habilitadas (solo via extensions_decide.py)
   verification/{b}.json         resultado de test/lint/audit por feature (verify.py)
   reviews/{b}.json              veredicto de review (unica fuente de verdad)
   security/{b}.json             veredicto de seguridad (idem)

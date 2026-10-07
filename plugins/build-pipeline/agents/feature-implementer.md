@@ -119,6 +119,13 @@ agregues features de seguridad que el brief no pida.
 Si el baseline declara helpers de alcance (A01), todo acceso a datos que escribas
 deriva su filtro de ese helper; no reconstruyas el alcance a partir del rol.
 
+**Extensiones habilitadas**: si el baseline trae `extensions.*` con `enabled: true`,
+cada `control` con `applies: true` se aplica igual que los OWASP, con su
+`how_to_apply`, cuando la tarea toca lo que la regla cubre (una llamada saliente, una
+escritura por red, un serializador, un invariante del brief). Reporta que controles de
+extension aplicaste y cuales no aplicaban a la tarea; un `gap` del baseline se
+reporta, no se improvisa.
+
 ## Desvios estructurados (`.dev/build/desvios/{brief_basename}.json`)
 
 Escribilo solo si declaraste desvios (crea la carpeta si hace falta):

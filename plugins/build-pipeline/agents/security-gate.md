@@ -19,8 +19,10 @@ trabajo, el `pipeline_version` y:
   revisas lo que la feature cambio, no el repo. En re-review es solo el delta del
   fix mas los ids `SGATE` a cerrar.
 - `.dev/build/security-baseline.json` — tu vara: `applicable_categories`, el
-  mecanismo nativo de cada control y sus `gaps`. Es tu unica referencia de
-  seguridad: no cargues ninguna otra.
+  mecanismo nativo de cada control y sus `gaps`, y las **extensiones habilitadas**
+  en `extensions.*` (resiliencia, tests de propiedades), cada una con sus controles
+  por regla. Es tu unica referencia de seguridad y calidad: no cargues ninguna otra,
+  ni las `reglas.md` del plugin.
 - `.dev/build/verification/{brief_basename}.json` — el `dependency_audit` ya corrido
   por script (`severities` normalizadas, `tail`). **No lo re-corras**:
   `dependency_audit_run`/`dependency_audit_passed` salen de ahi (`run: false` si el
@@ -65,6 +67,19 @@ requiere analisis cross-modulo va a `deferred_to_audit`; ids `FG-xx/SGATE-nnn`;
 `passed` true solo sin `high`/`medium`; valores en espanol; tu unica escritura es el
 veredicto.
 
+## Extensiones habilitadas (cumplimiento por regla)
+
+Por cada extension con `enabled: true` en el baseline y por cada `control` con
+`applies: true`, decidi sobre el diff: `compliant` (el mecanismo del baseline esta
+usado donde la regla lo pide), `non_compliant` (falta o esta mal, con evidencia) o
+`na` (el diff no toca lo que la regla cubre: una feature sin llamadas salientes es
+`na` en RES-01). Cada veredicto lleva una linea de `rationale`; un `non_compliant` es
+ademas un hallazgo normal con `owasp_id: null`, `category: other`, la severidad que
+el control declara (`medium` salvo que diga `high`), `rule_id` y `proposed_fix` con el
+mecanismo del baseline; `extension_compliance` lo cita en `finding_id`. Un `gap` del
+baseline (el stack no da mecanismo) no es `non_compliant`: es `na` con el gap en el
+`rationale`. Sin extensiones habilitadas, omiti la clave.
+
 ## Salida
 
 `.dev/build/security/{brief_basename}.json` (crea la carpeta si hace falta; el nombre
@@ -86,15 +101,19 @@ es exactamente el `brief_basename`). Contrato exacto (solo JSON):
     {
       "id": "FG-05/SGATE-001",
       "severity": "high|medium|low",
-      "owasp_id": "A01|A02|A03|A05|A06|A07|A08|A09|A10",
+      "owasp_id": "A01|A02|A03|A05|A06|A07|A08|A09|A10|null (null solo en hallazgos de extension)",
       "category": "authz|authn|injection|xss|secrets|input_validation|data_exposure|config|dependency|integrity|ssrf|logging|other",
       "description": "string",
       "attack_vector": "string (quien, desde donde, con que entrada)",
       "impact": "string",
       "evidence_refs": ["ruta/archivo.ext:123", "commit abc123"],
       "proposed_fix": "string (con el mecanismo nativo del baseline)",
-      "related_task_ids": ["T-001"]
+      "related_task_ids": ["T-001"],
+      "rule_id": "RES-01 (solo hallazgos de extension; si no, omitir)"
     }
+  ],
+  "extension_compliance": [
+    {"rule_id": "RES-01", "status": "compliant|non_compliant|na", "rationale": "string", "finding_id": "FG-05/SGATE-002 (solo non_compliant)"}
   ],
   "passed": false,
   "deferred_to_audit": ["string"],

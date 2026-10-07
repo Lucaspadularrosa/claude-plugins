@@ -18,9 +18,11 @@ evidencia del repo.
 2. `.dev/build/security-baseline.json` — superficie de ataque, mecanismos nativos por
    categoria OWASP aplicable y comandos de audit. Es lo que permite al
    `feature-implementer` codear con piso de seguridad y al `security-gate`
-   verificarlo. La referencia canonica de categorias y defensas es
-   `${CLAUDE_PLUGIN_ROOT}/reference/owasp-baseline.md`: la lees **vos**, una vez por
-   proyecto; los demas agentes consumen tu baseline, no la referencia.
+   verificarlo. Las referencias canonicas son las **extensiones** del build en
+   `${CLAUDE_PLUGIN_ROOT}/reference/extensions/<nombre>/reglas.md`: la lees **vos**,
+   una vez por proyecto, y solo las habilitadas en `.dev/build/extensions.json`
+   (`seguridad-owasp` es siempre-on; las opt-in las decide el usuario y las registra
+   `extensions_decide.py`). Los demas agentes consumen tu baseline, no las reglas.
 
 ## Entradas
 
@@ -64,6 +66,15 @@ senalan por ubicacion, nunca por valor.
   tal cual. Es una pasada corta.
 - **Base de seguridad por evidencia, no checklist**: cada `control` cita el mecanismo
   nativo real; si no hay, `mechanism` vacio + `gaps` + `warnings`.
+- **Extensiones, carga diferida**: lee `.dev/build/extensions.json` (si no existe,
+  solo `seguridad-owasp`) y abri unicamente las `reglas.md` habilitadas. Por cada
+  regla emiti un control en `extensions.<nombre>.controls` con la misma forma que los
+  OWASP: `applies` segun el *Aplica si* de la regla y la superficie, el mecanismo
+  nativo que el stack da para cumplirla (el cliente HTTP con timeout, el logger con
+  correlacion, la libreria de propiedades), `how_to_apply` concreto, `evidence`,
+  `validated` y `gaps` si el stack no trae nada. Una regla que no aplica a la
+  superficie va con `applies: false`, no se omite. En modo regeneracion, si cambio
+  `extensions.json`, re-deriva solo esta clave.
 - **Lo que no decidis vos**: lo deducido sin evidencia que cambia como se construye
   o se verifica no es un supuesto silencioso. Va a `open_questions` con la pregunta
   ya redactada y un `default_recomendado`, y el perfil se arma con ese default
@@ -167,10 +178,18 @@ reescritura; `technical_design_version_ref` cita la `version` del diseno;
     "sast": {"command": "string|null", "validated": false, "evidence": "string"},
     "secret_scan": {"command": "string|null", "validated": false, "evidence": "string"}
   },
+  "extensions": {
+    "resiliencia": {"enabled": true, "controls": [
+      {"rule_id": "RES-01", "applies": true, "severity": "high", "mechanism": "string", "how_to_apply": "string", "evidence": "string", "validated": false, "gaps": "string"}
+    ]}
+  },
   "warnings": ["string"],
   "open_questions": ["string"]
 }
 ```
+
+`extensions` lleva una clave por extension habilitada distinta de `seguridad-owasp`
+(esa son los `controls` de arriba); `severity` copia la de la regla.
 
 `tooling.*` sin comando en el stack queda `null` con el hueco en `warnings`; el
 `dependency_audit` es el mas importante (lo corre `verify.py`). `how_to_apply` es lo

@@ -41,6 +41,7 @@ FINDING_KEYS = {
     "gate": ("id", "severity", "owasp_id", "category", "description", "attack_vector", "impact", "evidence_refs",
              "proposed_fix", "related_task_ids"),
 }
+EXT_STATUS = ("compliant", "non_compliant", "na")
 ID_RE = {"review": re.compile(r"^FG-\d+/FIND-\d{3,}$"), "gate": re.compile(r"^FG-\d+/SGATE-\d{3,}$")}
 
 
@@ -95,6 +96,22 @@ def validate(verdict, tipo):
         should = (counts["high"] + counts["medium"]) == 0
         if verdict["passed"] != should:
             errors.append("passed=%s incoherente con %d high / %d medium" % (verdict["passed"], counts["high"], counts["medium"]))
+    if tipo == "gate" and "extension_compliance" in verdict:
+        ec = verdict["extension_compliance"]
+        finding_ids = {str(f.get("id")) for f in findings if isinstance(f, dict)}
+        if not isinstance(ec, list):
+            errors.append("extension_compliance deberia ser list")
+        else:
+            for i, e in enumerate(ec):
+                if not isinstance(e, dict) or not e.get("rule_id"):
+                    errors.append("extension_compliance[%d] sin rule_id" % i)
+                    continue
+                if e.get("status") not in EXT_STATUS:
+                    errors.append("%s con status invalido: %s" % (e["rule_id"], e.get("status")))
+                if not e.get("rationale"):
+                    errors.append("%s sin rationale" % e["rule_id"])
+                if e.get("status") == "non_compliant" and str(e.get("finding_id")) not in finding_ids:
+                    errors.append("%s non_compliant sin finding_id que exista en findings" % e["rule_id"])
     if tipo == "review":
         for rc in verdict.get("requirements_closure") or []:
             if not isinstance(rc, dict) or not rc.get("requirement_id"):
@@ -199,6 +216,28 @@ def self_test():
         failures += 1
     else:
         print("self-test ok (gate incompleto detectado)")
+    ext_ok = _gate(False)
+    ext_ok["findings"] = [{"id": "FG-01/SGATE-001", "severity": "medium", "owasp_id": None, "category": "other",
+                           "description": "sin timeout", "attack_vector": "n/a", "impact": "cuelgue", "evidence_refs": ["src/a.py:3"],
+                           "proposed_fix": "usar el cliente con timeout", "related_task_ids": ["T-001"], "rule_id": "RES-01"}]
+    ext_ok["summary"].update(total_findings=1, medium=1)
+    ext_ok["extension_compliance"] = [
+        {"rule_id": "RES-01", "status": "non_compliant", "rationale": "ver hallazgo", "finding_id": "FG-01/SGATE-001"},
+        {"rule_id": "RES-05", "status": "na", "rationale": "no es un servicio"}]
+    if validate(ext_ok, "gate"):
+        print("SELF-TEST FALLO (extension_compliance valido rechazado): %s" % validate(ext_ok, "gate"))
+        failures += 1
+    else:
+        print("self-test ok (extension_compliance valido)")
+    ext_bad = json.loads(json.dumps(ext_ok))
+    ext_bad["extension_compliance"][0]["finding_id"] = "FG-01/SGATE-999"
+    ext_bad["extension_compliance"][1]["status"] = "ok"
+    errs = validate(ext_bad, "gate")
+    if not (any("finding_id" in e for e in errs) and any("status invalido" in e for e in errs)):
+        print("SELF-TEST FALLO (extension_compliance invalido aceptado): %s" % errs)
+        failures += 1
+    else:
+        print("self-test ok (extension_compliance invalido detectado)")
     tmp = Path(tempfile.mkdtemp(prefix="verdict-"))
     try:
         build = tmp / ".dev" / "build"
