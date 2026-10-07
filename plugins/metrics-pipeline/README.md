@@ -26,6 +26,13 @@ eventos**. Este plugin los cosecha a demanda:
   `metrics.json` ya digerido y redacta `analysis.md`: prioriza las señales
   disparadas, propone la correccion concreta en la suite, con honestidad sobre el
   tamaño de la muestra.
+- **Linea de base con direccion** (`--promover-baseline`): guarda el headline de una
+  cosecha como `baseline.json`; desde ahi cada cosecha compara metrica por metrica con
+  la direccion de cada una (tasa de refutados: menor es mejor; señal/ruido del audit:
+  mayor es mejor) y una tolerancia, y dice `mejoro | empeoro | igual`. Si la cosecha no
+  sirve para juzgar el proceso (artefactos ilegibles, run-log roto, un pipeline que esta
+  vez no corrio) lo marca `comparable: false` con los motivos: una corrida que fallo por
+  tooling no se lee como regresion del prompt.
 - **Export** (`--export ruta.jsonl`): apendea el registro compacto del proyecto a un
   JSONL central tuyo, fuera de los repos. Con varios proyectos acumulados, compara
   versiones del plugin: "¿bajo la tasa de refutados con recovery 2.0?".
@@ -55,6 +62,7 @@ eventos**. Este plugin los cosecha a demanda:
 /metricas                        cosecha + analisis
 /metricas solo-datos             solo la cosecha (cero tokens de modelo)
 /metricas export                 ademas apendea al JSONL central
+/metricas promover               ademas guarda esta cosecha como linea de base
 /metricas ruta/al/proyecto       sobre otro proyecto
 ```
 
@@ -80,6 +88,9 @@ explicita, nunca instrumentacion silenciosa.
 
 ## Cambios
 
+- **1.4.0**: linea de base con direccion (`--promover-baseline`, `comparison` en el
+  JSON y en el HTML, `vs_baseline` en el export) y `comparable: false` con motivos
+  cuando la cosecha no sirve para juzgar el proceso.
 - **1.1.0**: el script imprime siempre el resumen, la muestra y las señales por
   stdout (el modo `solo-datos` ya no requiere abrir el JSON); umbrales precalculados
   en `signals`; analista en haiku, solo redaccion y priorizacion.

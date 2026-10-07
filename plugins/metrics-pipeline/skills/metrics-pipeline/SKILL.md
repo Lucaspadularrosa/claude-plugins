@@ -9,7 +9,7 @@ Mide el **proceso** (los pipelines de la suite), no el proyecto ni el desarrolla
 Los pipelines no instrumentan nada: sus artefactos ya son el log de eventos y un
 script los cosecha a demanda (el por que esta en el README del plugin).
 
-## Procedimiento (`/metricas [ruta] [solo-datos] [export]`)
+## Procedimiento (`/metricas [ruta] [solo-datos] [export] [promover]`)
 
 ### Paso 1 - Cosecha (siempre, cero tokens)
 
@@ -29,19 +29,32 @@ Si el usuario pidio **export** (o pasa una ruta de JSONL central), agrega
 `--export <ruta>` — por defecto sugerile `~/.claude/suite-metrics/runs.jsonl` y
 confirma la ruta la primera vez.
 
+**Linea de base con direccion.** Si existe `.dev/metrics/baseline.json`, el script
+compara solo y agrega al stdout una linea `baseline:`, una `comparacion:` por metrica
+(`baseline -> actual veredicto`, con `mejoro | empeoro | igual` segun la direccion y
+la tolerancia de cada metrica, que son del script, no tuyas) y `señales nuevas:` /
+`señales despejadas:`. Si imprime `comparable: NO (...)`, la cosecha no sirve para
+juzgar el proceso (artefactos ilegibles, run-log roto, un pipeline que esta vez no
+corrio): mostra los motivos y **no leas ningun `empeoro` como regresion del prompt**.
+Si el usuario pidio **promover** (o es la primera cosecha que quiere guardar como
+referencia), agrega `--promover-baseline`: la comparacion de esa corrida se hace
+contra la baseline anterior y despues se reemplaza. No promuevas sin que lo pida.
+
 ### Paso 2 - Analisis (salvo `solo-datos`)
 
 Con `solo-datos`: mostra la ruta del `metrics.html`, el `resumen:` y las `señal:`
 que imprimio el script, y termina.
 
-Si no, invoca `metrics-analyst` (una sola vez) con la ruta de `metrics.json` y, si
-existe y el usuario quiere comparar, la del JSONL de export. Escribe
+Si no, invoca `metrics-analyst` (una sola vez) con la ruta de `metrics.json`, si hubo
+comparacion las lineas `comparable:`/`comparacion:` tal como salieron, y, si existe y
+el usuario quiere comparar entre proyectos, la ruta del JSONL de export. Escribe
 `.dev/metrics/analysis.md`. El agente no recalcula umbrales: redacta y prioriza
 sobre las `signals` que el script ya disparo.
 
 ### Paso 3 - Cierre
 
-Mostra: ruta de `metrics.html` (la vista) y `metrics.json` (el dato); el `summary`
+Mostra: ruta de `metrics.html` (la vista) y `metrics.json` (el dato); la comparacion
+contra la baseline si hubo (y si no era comparable, por que); el `summary`
 del analista si hubo analisis (diagnosticos priorizados con su correccion); cuantos
 registros acumula el JSONL si hubo export.
 
@@ -74,8 +87,9 @@ Task; si un dato no esta, se omite la clave. La cosecha lo agrega como `run_log`
 
 ```
 .dev/metrics/
-  metrics.json      la cosecha (determinista, con signals y sample_size)
+  metrics.json      la cosecha (determinista, con signals, sample_size y comparison)
   metrics.html      la vista compartible (autocontenida, offline)
+  baseline.json     la referencia promovida (headline + muestra + versiones), opt-in
   analysis.md       el diagnostico del analista (solo si se pidio)
 <jsonl central>     un registro compacto por proyecto/corrida (solo con export)
 ```

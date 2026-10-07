@@ -27,13 +27,24 @@ stdout: el orquestador NO necesita abrir metrics.json para ver los numeros.
 Solo stdlib, Python 3.8+. Solo lectura sobre .dev/ y git; escribe unicamente en
 .dev/metrics/.
 
+Linea de base con direccion: si existe `.dev/metrics/baseline.json` (promovida con
+`--promover-baseline`), compara el headline actual contra ella metrica por metrica,
+con la direccion de cada una (menor o mayor es mejor) y una tolerancia, y emite
+`comparison` (mejoro | empeoro | igual | sin_dato) mas `comparable: false` con
+motivos cuando la cosecha no sirve para juzgar el proceso (artefactos ilegibles,
+run-log roto, un pipeline que esta vez no corrio): una corrida que fallo por
+tooling no se lee como regresion del prompt.
+
 Uso:
   python metrics_harvest.py [raiz-del-proyecto] [--salida DIR] [--export ARCHIVO.jsonl]
+                            [--promover-baseline]
   python metrics_harvest.py --self-test
 
-  --salida   por defecto <raiz>/.dev/metrics/ (metrics.json + metrics.html)
-  --export   apendea el registro compacto del proyecto a un JSONL central (para
-             comparar versiones del plugin entre proyectos)
+  --salida             por defecto <raiz>/.dev/metrics/ (metrics.json + metrics.html)
+  --export             apendea el registro compacto del proyecto a un JSONL central
+                       (para comparar versiones del plugin entre proyectos)
+  --promover-baseline  guarda el headline de ESTA cosecha como baseline.json (la
+                       comparacion de esta corrida se hace contra la baseline anterior)
 
 Exit 1 solo ante errores de IO o self-test fallido.
 """
@@ -399,7 +410,78 @@ def collect(root):
     metrics["signals"] = signals(metrics)
     if WARNINGS:
         metrics["warnings"] = list(WARNINGS)
+    baseline = load(dev / "metrics" / "baseline.json") if (dev / "metrics" / "baseline.json").is_file() else None
+    if baseline:
+        metrics["comparison"] = compare(metrics, baseline)
     return metrics
+
+
+# Direccion y tolerancia de cada metrica del headline: (direccion, tolerancia absoluta,
+# tolerancia relativa sobre la baseline). Se aplica la mayor de las dos. Lo que no
+# esta aca se informa pero no se juzga (una invocacion mas no es ni mejor ni peor).
+DIRECTIONS = {
+    "refuted_rate": ("menor", 0.02, 0.0),
+    "review_findings_per_feature": ("menor", 0.25, 0.0),
+    "review_avg_rounds": ("menor", 0.1, 0.0),
+    "gate_findings_per_feature": ("menor", 0.1, 0.0),
+    "audit_signal_ratio": ("mayor", 0.05, 0.0),
+    "baseline_churn_rate": ("menor", 0.05, 0.0),
+    "inspection_defects": ("menor", 1.0, 0.1),
+    "run_tokens": ("menor", 0.0, 0.1),
+}
+
+
+def compare(metrics, baseline):
+    """Headline actual vs baseline.json: veredicto por metrica con direccion y tolerancia,
+    señales nuevas y despejadas, y `comparable` con motivos cuando la cosecha no sirve
+    para juzgar el proceso."""
+    base_hl = baseline.get("headline") or {}
+    cur_hl = headline(metrics)
+    verdicts = {}
+    for name, (direction, abs_tol, rel_tol) in DIRECTIONS.items():
+        b, c = base_hl.get(name), cur_hl.get(name)
+        if not isinstance(b, (int, float)) or not isinstance(c, (int, float)) \
+                or isinstance(b, bool) or isinstance(c, bool):
+            verdicts[name] = {"baseline": b, "actual": c, "veredicto": "sin_dato"}
+            continue
+        tol = max(abs_tol, rel_tol * abs(b))
+        delta = c - b
+        if abs(delta) <= tol:
+            v = "igual"
+        elif (delta < 0) == (direction == "menor"):
+            v = "mejoro"
+        else:
+            v = "empeoro"
+        verdicts[name] = {"baseline": b, "actual": c, "delta": round(delta, 4),
+                          "direccion": direction, "tolerancia": round(tol, 4), "veredicto": v}
+    base_sig, cur_sig = set(base_hl.get("signals_fired") or []), set(cur_hl.get("signals_fired") or [])
+    reasons = []
+    if metrics.get("warnings"):
+        reasons.append("artefactos ilegibles en la cosecha: %d aviso(s)" % len(metrics["warnings"]))
+    if (g(metrics, "run_log", "total", "bad_lines") or 0) > 0:
+        reasons.append("run-log con %d linea(s) rota(s)" % g(metrics, "run_log", "total", "bad_lines"))
+    base_n, cur_n = baseline.get("sample_size") or {}, metrics.get("sample_size") or {}
+    for k, v in base_n.items():
+        if v and not cur_n.get(k):
+            reasons.append("esta vez no hay %s (la baseline tenia %s)" % (k, v))
+    return {
+        "baseline_from": baseline.get("promoted_from"),
+        "baseline_pipeline_versions": baseline.get("pipeline_versions"),
+        "comparable": not reasons,
+        "motivos_no_comparable": reasons,
+        "metricas": verdicts,
+        "señales_nuevas": sorted(cur_sig - base_sig),
+        "señales_despejadas": sorted(base_sig - cur_sig),
+        "resumen": {v: sorted(k for k, x in verdicts.items() if x["veredicto"] == v)
+                    for v in ("mejoro", "empeoro", "igual", "sin_dato")},
+    }
+
+
+def baseline_record(metrics):
+    """Lo que se guarda al promover: el headline, la muestra y de donde salio."""
+    return {"version": 1, "promoted_from": metrics.get("generated_from"),
+            "pipeline_versions": metrics.get("pipeline_versions"),
+            "sample_size": metrics.get("sample_size"), "headline": headline(metrics)}
 
 
 # Umbrales fijos de la suite: metrica -> (comparador, umbral, pipeline sospechoso, lectura).
@@ -505,6 +587,17 @@ def headline(metrics):
     }
 
 
+def headline_export(metrics):
+    """El headline mas, si hubo comparacion, su resultado compacto."""
+    hl = headline(metrics)
+    comp = metrics.get("comparison")
+    if comp:
+        hl["vs_baseline"] = {"comparable": comp["comparable"],
+                             "mejoro": comp["resumen"]["mejoro"],
+                             "empeoro": comp["resumen"]["empeoro"]}
+    return hl
+
+
 CSS = ("body{margin:0;background:#f6f7f9;color:#1f2430;font:15px/1.5 -apple-system,"
        '"Segoe UI",Roboto,sans-serif}main{max-width:56rem;margin:0 auto;'
        "padding:2rem 1.25rem}h1{font-size:1.4rem}h2{font-size:1.05rem;margin:1.8rem 0 .5rem;"
@@ -543,6 +636,22 @@ def render_html(metrics):
             parts.append("<li><b>%s</b> = %s (umbral %s) → %s: %s</li>" % tuple(
                 html.escape(str(x[k])) for k in ("metrica", "valor", "umbral", "sospechoso", "lectura")))
         parts.append("</ul>")
+    comp = metrics.get("comparison")
+    if comp:
+        parts.append("<h2>contra la linea de base</h2>")
+        parts.append("<p>Baseline promovida de datos al %s.%s</p>" % (
+            html.escape(str(comp.get("baseline_from"))),
+            "" if comp["comparable"] else " <b>No comparable</b>: %s." % html.escape(
+                "; ".join(comp["motivos_no_comparable"]))))
+        rows = "".join("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>" % tuple(
+            html.escape(str(x)) for x in (k, v.get("baseline"), v.get("actual"), v["veredicto"]))
+            for k, v in comp["metricas"].items())
+        parts.append('<div class="wrap"><table><thead><tr><th>Metrica</th><th>Baseline</th>'
+                     "<th>Actual</th><th>Veredicto</th></tr></thead><tbody>%s</tbody></table></div>" % rows)
+        if comp["señales_nuevas"] or comp["señales_despejadas"]:
+            parts.append("<p>Señales nuevas: %s. Despejadas: %s.</p>" % (
+                html.escape(", ".join(comp["señales_nuevas"]) or "ninguna"),
+                html.escape(", ".join(comp["señales_despejadas"]) or "ninguna")))
     for section in ("requirements", "planning", "build", "recovery", "audit", "git",
                     "pipeline_versions"):
         data = metrics.get(section)
@@ -616,6 +725,39 @@ def self_test():
         ]
         empty = collect(root / "nada")
         checks.append("requirements" not in empty)             # degradacion
+
+        # Linea de base con direccion: promover, alterar, comparar.
+        mdir = root / ".dev" / "metrics"
+        mdir.mkdir(parents=True)
+        base = baseline_record(m)
+        base["headline"]["refuted_rate"] = 0.3            # actual 0.1 -> mejoro (menor es mejor)
+        base["headline"]["review_findings_per_feature"] = 1.0   # actual 3.0 -> empeoro
+        base["headline"]["review_avg_rounds"] = 2.05      # actual 2.0, dentro de tol 0.1 -> igual
+        base["headline"]["signals_fired"] = ["recovery.evidence_check.refuted_rate"]
+        (mdir / "baseline.json").write_text(json.dumps(base))
+        m2 = collect(root)
+        comp = m2["comparison"]
+        checks += [
+            comp["metricas"]["refuted_rate"]["veredicto"] == "mejoro",
+            comp["metricas"]["review_findings_per_feature"]["veredicto"] == "empeoro",
+            comp["metricas"]["review_avg_rounds"]["veredicto"] == "igual",
+            comp["metricas"]["audit_signal_ratio"]["veredicto"] == "sin_dato",
+            comp["señales_nuevas"] == ["build.reviews.avg_rounds_proxy",
+                                       "build.reviews.findings_per_feature",
+                                       "requirements.changelog.baseline_churn.churn_rate"],
+            comp["señales_despejadas"] == ["recovery.evidence_check.refuted_rate"],
+            comp["comparable"] is False                        # bad.json -> cosecha ilegible
+            and any("ilegibles" in r for r in comp["motivos_no_comparable"]),
+            headline_export(m2)["vs_baseline"]["empeoro"] == ["review_findings_per_feature"],
+            "contra la linea de base" in render_html(m2),
+        ]
+        (rev / "bad.json").unlink()
+        m3 = collect(root)
+        checks.append(m3["comparison"]["comparable"] is True)   # sin avisos, comparable
+        (rev / "fg-01.json").unlink()
+        m4 = collect(root)
+        checks.append(any("features_reviewed" in r             # pipeline que no corrio
+                          for r in m4["comparison"]["motivos_no_comparable"]))
     if not all(checks):
         print("self-test FALLO: %s" % checks)
         return 1
@@ -628,6 +770,7 @@ def main():
     ap.add_argument("raiz", nargs="?", default=".")
     ap.add_argument("--salida", default=None)
     ap.add_argument("--export", default=None)
+    ap.add_argument("--promover-baseline", action="store_true")
     ap.add_argument("--self-test", action="store_true")
     args = ap.parse_args()
     if args.self_test:
@@ -649,11 +792,29 @@ def main():
     for x in metrics.get("signals", []):
         if x["disparada"]:
             print("señal: %s=%s (umbral %s) -> %s" % (x["metrica"], x["valor"], x["umbral"], x["sospechoso"]))
+    comp = metrics.get("comparison")
+    if comp:
+        print("baseline: datos al %s, versiones %s" % (
+            comp.get("baseline_from"), json.dumps(comp.get("baseline_pipeline_versions"), ensure_ascii=False)))
+        if not comp["comparable"]:
+            print("comparable: NO (%s); los veredictos no juzgan el proceso"
+                  % "; ".join(comp["motivos_no_comparable"]))
+        for k, v in comp["metricas"].items():
+            if v["veredicto"] != "sin_dato":
+                print("comparacion: %s %s -> %s %s" % (k, v["baseline"], v["actual"], v["veredicto"]))
+        if comp["señales_nuevas"]:
+            print("señales nuevas: %s" % ", ".join(comp["señales_nuevas"]))
+        if comp["señales_despejadas"]:
+            print("señales despejadas: %s" % ", ".join(comp["señales_despejadas"]))
+    if args.promover_baseline:
+        (out_dir / "baseline.json").write_text(
+            json.dumps(baseline_record(metrics), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print("baseline promovida -> %s" % (out_dir / "baseline.json"))
     if args.export:
         exp = Path(args.export)
         exp.parent.mkdir(parents=True, exist_ok=True)
         with open(str(exp), "a", encoding="utf-8") as fh:
-            fh.write(json.dumps(headline(metrics), ensure_ascii=False) + "\n")
+            fh.write(json.dumps(headline_export(metrics), ensure_ascii=False) + "\n")
         print("export -> %s" % exp)
     for w in WARNINGS:
         print("aviso: %s" % w)
