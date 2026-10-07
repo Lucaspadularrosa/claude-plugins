@@ -17,6 +17,12 @@ Clasificacion por pregunta (`status`):
   defaulted   sin respuesta, pero la pregunta trae `default_assumption`
   unanswered  sin respuesta y sin default; `blocking` si la pregunta es `high`
 
+Retrocompatible entre corridas: una pregunta que conserva su id y aparece en blanco
+hereda la respuesta de la corrida anterior (`carried_from_version`); las preguntas que
+ya no estan en el cuestionario se conservan como retiradas (`retired_answers`), nunca
+se borran. Un `stakeholder-answers.md` escrito a mano por una version anterior (sin
+JSON al lado) se archiva en `sources/` como una fuente mas antes de regenerarlo.
+
 Escribe en la misma carpeta:
   stakeholder-answers.json   el dato (version +1 si ya existia)
   stakeholder-answers.md     la vista que leen lel-authoring y los agentes de
@@ -150,13 +156,39 @@ def classify(question, block):
     return entry
 
 
-def build(questions_doc, md_text, pipeline_version=None, fecha=None, prev_version=0):
+def build(questions_doc, md_text, pipeline_version=None, fecha=None, prev_version=0, previous=None):
+    """`previous` es el stakeholder-answers.json anterior (o None): las respuestas que
+    el archivo ya no trae se heredan, y las de preguntas retiradas se conservan."""
     blocks = parse_markdown(md_text)
-    answers = [classify(q, blocks.get(q.get("id"))) for q in questions_doc.get("questions", []) or []]
+    prev_answers = {}
+    for a in ((previous or {}).get("answers") or []) + ((previous or {}).get("retired_answers") or []):
+        if isinstance(a, dict) and a.get("id"):
+            prev_answers[a["id"]] = a
+    answers = []
+    current_ids = set()
+    for q in questions_doc.get("questions", []) or []:
+        qid = q.get("id")
+        current_ids.add(qid)
+        block = blocks.get(qid) or {}
+        entry = classify(q, block)
+        blank = not block.get("text") and not block.get("checked")
+        prev = prev_answers.get(qid)
+        if blank and prev and prev.get("status") in ("answered", "ambiguous"):
+            entry = {k: v for k, v in prev.items() if k not in ("retired", "carried_from_version")}
+            entry["carried_from_version"] = (previous or {}).get("version")
+        answers.append(entry)
+    retired = []
+    for qid, a in prev_answers.items():
+        if qid not in current_ids:
+            r = dict(a)
+            r["retired"] = True
+            retired.append(r)
     counts = {k: sum(1 for a in answers if a["status"] == k)
               for k in ("answered", "unanswered", "ambiguous", "defaulted")}
     counts["blocking_open"] = sum(1 for a in answers if a["status"] == "unanswered" and a.get("blocking"))
-    return {
+    counts["carried"] = sum(1 for a in answers if a.get("carried_from_version") is not None)
+    counts["retired"] = len(retired)
+    doc = {
         "version": prev_version + 1,
         "pipeline_version": pipeline_version,
         "fecha": fecha,
@@ -164,6 +196,9 @@ def build(questions_doc, md_text, pipeline_version=None, fecha=None, prev_versio
         "summary": counts,
         "answers": answers,
     }
+    if retired:
+        doc["retired_answers"] = retired
+    return doc
 
 
 def render(doc, questions_doc):
@@ -180,6 +215,8 @@ def render(doc, questions_doc):
     for a in doc.get("answers", []):
         q = qmap.get(a["id"], {})
         out.append("## %s — %s" % (a["id"], q.get("question", "")))
+        if a.get("carried_from_version") is not None:
+            out.append("_Heredada de la version %s de las respuestas._" % a["carried_from_version"])
         if a["status"] == "answered":
             if a.get("choice"):
                 out.append("Opcion: %s" % (a["choice"] if isinstance(a["choice"], str) else " / ".join(a["choice"])))
@@ -193,6 +230,14 @@ def render(doc, questions_doc):
             out.append("_Respuesta ambigua (%s):_ %s" % (", ".join(a.get("ambiguity_terms", [])), a.get("answer") or ""))
             out.append("")
             out.append("_Repregunta:_ %s" % a.get("follow_up", ""))
+        out.append("")
+    retired = doc.get("retired_answers") or []
+    if retired:
+        out.append("## Respuestas anteriores (preguntas que ya no estan en el cuestionario)")
+        out.append("")
+        for a in retired:
+            txt = a.get("answer") or (a.get("choice") if isinstance(a.get("choice"), str) else None) or "(sin respuesta)"
+            out.append("- **%s** (%s): %s" % (a["id"], a.get("status"), txt))
         out.append("")
     while out and out[-1] == "":
         out.pop()
@@ -212,19 +257,30 @@ def run(folder, pipeline_version=None, fecha=None):
     except (OSError, ValueError) as exc:
         print("ERROR: %s" % exc)
         return 1
-    prev = 0
-    ajson = folder / "stakeholder-answers.json"
+    prev, previous = 0, None
+    ajson, amd = folder / "stakeholder-answers.json", folder / "stakeholder-answers.md"
     if ajson.is_file():
         try:
-            prev = int(json.loads(ajson.read_text(encoding="utf-8")).get("version") or 0)
+            previous = json.loads(ajson.read_text(encoding="utf-8"))
+            prev = int(previous.get("version") or 0)
         except (OSError, ValueError, TypeError):
-            prev = 0
-    doc = build(questions_doc, md_text, pipeline_version, fecha, prev)
+            previous, prev = None, 0
+    elif amd.is_file():
+        # Version anterior del pipeline: el .md lo escribia el orquestador a mano. Se
+        # archiva como fuente antes de regenerarlo; el LEL ya absorbio esas respuestas.
+        legado = folder / "sources" / "stakeholder-answers-manual.txt"
+        legado.parent.mkdir(parents=True, exist_ok=True)
+        if not legado.is_file():
+            legado.write_text(amd.read_text(encoding="utf-8"), encoding="utf-8")
+        print("aviso: %s era un archivo manual de una version anterior; archivado en %s" % (amd, legado))
+    doc = build(questions_doc, md_text, pipeline_version, fecha, prev, previous)
     ajson.write_text(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (folder / "stakeholder-answers.md").write_text(render(doc, questions_doc), encoding="utf-8")
     s = doc["summary"]
     print("respuestas: contestadas %d, sin responder %d (bloqueantes %d), ambiguas %d, con supuesto %d"
           % (s["answered"], s["unanswered"], s["blocking_open"], s["ambiguous"], s["defaulted"]))
+    if s.get("carried") or s.get("retired"):
+        print("heredadas de la corrida anterior: %d; preguntas retiradas conservadas: %d" % (s.get("carried", 0), s.get("retired", 0)))
     qmap = {q.get("id"): q for q in questions_doc.get("questions", []) or []}
     for a in doc["answers"]:
         if a["status"] == "unanswered" and a.get("blocking"):
@@ -276,12 +332,49 @@ def self_test():
         (a["QST-006"]["status"] == "unanswered" and a["QST-006"]["blocking"] is True, "bloqueante sin responder"),
         (a["QST-007"]["status"] == "ambiguous" and a["QST-007"]["ambiguity_terms"] == ["segun"], "linea de respuesta sin id (formato viejo) y tilde"),
         (a["QST-008"]["status"] == "ambiguous", "texto 'ambas' en pregunta de opcion unica"),
-        (doc["summary"] == {"answered": 2, "unanswered": 1, "ambiguous": 4, "defaulted": 1, "blocking_open": 1}, "resumen"),
+        ({k: doc["summary"][k] for k in ("answered", "unanswered", "ambiguous", "defaulted", "blocking_open")}
+         == {"answered": 2, "unanswered": 1, "ambiguous": 4, "defaulted": 1, "blocking_open": 1}, "resumen"),
         (doc["version"] == 2 and doc["questions_version_ref"] == 3, "version y referencia"),
         ("## QST-006 — Quien aprueba?" in render(doc, qdoc) and "queda como pregunta abierta" in render(doc, qdoc), "render del md"),
         (build(qdoc, "# vacio\n", None, None)["summary"]["answered"] == 0, "md sin bloques: nada contestado"),
     ]
     failures = 0
+    for cond, label in checks:
+        print("self-test %s: %s" % ("ok" if cond else "FALLO", label))
+        failures += 0 if cond else 1
+    # Corrida siguiente: cuestionario re-renderizado en blanco, con una pregunta menos
+    # y una nueva. Lo contestado se hereda; lo retirado se conserva.
+    qdoc2 = {"version": 4, "questions": [q for q in qdoc["questions"] if q["id"] != "QST-002"]
+             + [{"id": "QST-009", "question": "Nueva?", "priority": "low", "expected_answer_type": "free_text"}]}
+    md2 = "\n".join(["# Cuestionario", ""] + sum(([
+        "### %s — x" % q["id"], "", "**Respuesta %s:**" % q["id"], "", PLACEHOLDER, ""]
+        for q in qdoc2["questions"]), []))
+    doc2 = build(qdoc2, md2, None, None, prev_version=doc["version"], previous=doc)
+    b = {x["id"]: x for x in doc2["answers"]}
+    checks = [
+        (b["QST-001"]["status"] == "answered" and b["QST-001"]["carried_from_version"] == 2, "respuesta heredada"),
+        (b["QST-004"]["status"] == "ambiguous", "ambigua heredada sigue ambigua (se repregunta)"),
+        (b["QST-006"]["status"] == "unanswered" and "carried_from_version" not in b["QST-006"], "sin responder no se hereda"),
+        (b["QST-009"]["status"] == "unanswered", "pregunta nueva en blanco"),
+        ([r["id"] for r in doc2["retired_answers"]] == ["QST-002"] and doc2["retired_answers"][0]["retired"] is True, "pregunta retirada conservada"),
+        (doc2["summary"]["carried"] == 5 and doc2["summary"]["retired"] == 1, "conteos de heredadas y retiradas"),
+        ("Respuestas anteriores" in render(doc2, qdoc2) and "Heredada de la version 2" in render(doc2, qdoc2), "render de heredadas y retiradas"),
+    ]
+    import shutil
+    import tempfile
+    tmp = Path(tempfile.mkdtemp(prefix="answers-"))
+    try:
+        (tmp / "stakeholder-questions.json").write_text(json.dumps(qdoc), encoding="utf-8")
+        (tmp / "stakeholder-questions.md").write_text(md, encoding="utf-8")
+        (tmp / "stakeholder-answers.md").write_text("# Respuestas\n\nQST-001: lo que dijo el cliente\n", encoding="utf-8")
+        code = run(tmp)
+        legado = tmp / "sources" / "stakeholder-answers-manual.txt"
+        checks += [
+            (legado.is_file() and "lo que dijo el cliente" in legado.read_text(encoding="utf-8"), "md manual heredado archivado en sources/"),
+            ((tmp / "stakeholder-answers.json").is_file() and code == 2, "regenerado (exit 2 por bloqueante y ambiguas)"),
+        ]
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
     for cond, label in checks:
         print("self-test %s: %s" % ("ok" if cond else "FALLO", label))
         failures += 0 if cond else 1
