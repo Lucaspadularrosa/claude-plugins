@@ -28,6 +28,10 @@ externas (usa pyyaml si esta instalado, si no aplica las reglas del escalar plan
    expresion de `scripts/check-artifacts.py`, o esta declarado como no verificado.
    Sin esto, renombrar un id en los prompts deja al verificador atras en silencio
    (fue el caso de SYM-nnn -> LEL-nnn).
+6. Todo ejecutable `suite-*` que un prompt invoca existe en el `bin/` de algun
+   plugin. Un nombre que no existe falla recien en runtime, en el proyecto de
+   alguien, con un "command not found" que el orquestador anota y sigue (fue el
+   caso de `suite-extract-document` en /tarjeta).
 
 `archive/` se ignora. Salida: lista de problemas y exit code 1 si hay alguno.
 Uso: python scripts/validate.py [raiz-del-repo]
@@ -386,6 +390,39 @@ def check_rutas_cruzadas():
                                "marketplace de directorio local. Expone lo compartido "
                                "como ejecutable en bin/ del plugin que lo provee".format(i))
 
+# Ejecutables compartidos de la suite: `suite-<nombre>` suelto o entre backticks.
+# Excluye lo que viene precedido o seguido por `/` (son rutas, como
+# `~/.claude/suite-metrics/`), y no corta nombres a medias.
+EJECUTABLE_SUITE = re.compile(r"(?<![\w/.-])suite-[a-z][a-z0-9-]*[a-z0-9](?![\w/-])")
+
+
+def ejecutables_invocados(texto):
+    """Nombres `suite-*` que un prompt invoca."""
+    return set(EJECUTABLE_SUITE.findall(texto))
+
+
+def check_ejecutables_bin():
+    """Todo `suite-*` que un prompt invoca lo provee algun plugin en bin/.
+
+    Los plugins se alcanzan entre si solo por estos ejecutables (ver
+    check_rutas_cruzadas). Un nombre que nadie provee no falla aca: falla en el
+    proyecto de quien corre el comando, y el orquestador lo anota y sigue.
+    """
+    provistos = {p.name for p in ROOT.glob("plugins/*/bin/*") if p.is_file()}
+    n = 0
+    for pat in ("plugins/*/skills/*/SKILL.md", "plugins/*/skills/*/modes/*.md",
+                "plugins/*/agents/*.md", "plugins/*/commands/*.md"):
+        for f in sorted(ROOT.glob(pat)):
+            for i, linea in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+                for nombre in sorted(ejecutables_invocados(linea)):
+                    n += 1
+                    if nombre not in provistos:
+                        problem(f, "linea {}: invoca `{}`, que ningun plugin provee en "
+                                   "bin/ (hay: {})".format(
+                                       i, nombre, ", ".join(sorted(provistos)) or "ninguno"))
+    return n
+
+
 # Señales de que un agente realmente ejecuta algo. Se chequea solo `Bash` porque
 # es la tool cuya ausencia los agentes declaran como parte de su contrato ("solo
 # lectura sobre el codigo"): declararla sin usarla convierte esa promesa en texto.
@@ -536,11 +573,17 @@ def self_test():
           bool(MODELO_LITERAL.search("el lazo de correccion va en opus")), False)
     check("prefijos de id", prefijos_de_id('{"id": "LEL-001", "x": 1} y "id": "RF-007"'),
           {"LEL", "RF"})
+    check("ejecutable entre backticks", ejecutables_invocados(
+          "corre `suite-stage-check` antes de cada etapa"), {"suite-stage-check"})
+    check("ejecutable suelto con argumentos", ejecutables_invocados(
+          "   suite-render-baseline-docs .dev/requirements"), {"suite-render-baseline-docs"})
+    check("una ruta no es un ejecutable", ejecutables_invocados(
+          "sugerile `~/.claude/suite-metrics/runs.jsonl`"), set())
 
     for f in fallos:
         print("SELF-TEST FALLO ({})".format(f))
     if not fallos:
-        print("self-test ok (10 casos: tablas, prosa de diseno y prefijos de id).")
+        print("self-test ok (13 casos: tablas, prosa de diseno, prefijos de id y ejecutables).")
     return 1 if fallos else 0
 
 
@@ -582,6 +625,7 @@ def main():
     n_prosa = check_prosa_modelos(mapa_declarado())
     check_modelo_fijado_en_diseno()
     check_rutas_cruzadas()
+    n_bin = check_ejecutables_bin()
     n_plug = check_nombres_de_plugin()
     check_tools_declaradas()
     check_lista_de_plugins_del_hook()
@@ -591,7 +635,8 @@ def main():
     print(f"Validados {n_entries} plugins del marketplace y {n_files} frontmatters ({mode}).")
     print(f"Invariantes: bloques obligatorios, {n_filas} fila(s) de tabla de modelos, "
           f"{n_pref} prefijo(s) de id, {n_plug} nombre(s) de plugin, "
-          f"{n_cmd} comando(s) en la tabla de enrutado.")
+          f"{n_cmd} comando(s) en la tabla de enrutado, {n_bin} invocacion(es) de "
+          f"ejecutables suite-*.")
     if warnings:
         print("")
         print(f"{len(warnings)} aviso(s) (no bloquean; revisalos antes de mergear):")

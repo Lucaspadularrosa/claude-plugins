@@ -60,3 +60,16 @@ jobs:
         with:
           python-version: "3.x"
       - run: python scripts/check-version-bump.py --base "origin/${{ github.base_ref }}"
+
+  # Corre una sola vez sobre la historia completa. Los fixtures adversariales traen
+  # secretos falsos a proposito; estan en la lista blanca de .gitleaks.toml.
+  secretos:
+    name: Sin secretos en el historial
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

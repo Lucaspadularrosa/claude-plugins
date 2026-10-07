@@ -77,7 +77,7 @@
     {
       "name": "requerimientos",
       "description": "Pipeline iterativo de ingenieria de requisitos (LEL y Escenarios): descubre el mapa del producto desde documentos, carpetas o una entrevista sin documento; elabora y baselinea features por incrementos; absorbe cambios con confirmacion y changelog; y con /promover convierte en linea de base las features construidas por el camino rapido. Todo trazable.",
-      "version": "2.8.0",
+      "version": "2.9.0",
       "author": {
         "name": "Lucas Micheli",
         "email": "lucas.t.micheli@gmail.com"
