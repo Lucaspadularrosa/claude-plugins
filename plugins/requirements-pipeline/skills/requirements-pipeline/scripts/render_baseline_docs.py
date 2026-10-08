@@ -624,9 +624,14 @@ def render_design_inspection(data):
 def render_questionnaire(data):
     out = header("Cuestionario para el stakeholder", data, "stakeholder-questions.json")
     summary = data.get("summary", {}) or {}
+    qs_all = data.get("questions", []) or []
+    n_block = sum(1 for q in qs_all if es_bloqueante(q))
     out.append("Preguntas: %s (bloqueantes: %s). Roles: %s." % (
-        summary.get("total_questions", "?"), summary.get("blocking_questions", "?"),
-        ", ".join(summary.get("target_roles") or []) or "—"))
+        len(qs_all), n_block, ", ".join(summary.get("target_roles") or []) or "—"))
+    if summary.get("blocking_questions") not in (None, n_block):
+        out.append("")
+        out.append("> aviso: el resumen del agente decia %s bloqueantes; el conteo real es %s (manda `blocking` por pregunta)."
+                   % (summary.get("blocking_questions"), n_block))
     out.append("")
     out.append("Responde debajo de cada pregunta, en este mismo archivo: escribi debajo de "
                "**Respuesta QST-xxx:** o marca una casilla con `[x]` (podes dejar en blanco las que "
@@ -665,10 +670,17 @@ def render_questionnaire(data):
     return out
 
 
+def es_bloqueante(q):
+    """`blocking` explicito manda; sin el campo (cuestionarios viejos), priority high."""
+    if "blocking" in q:
+        return bool(q.get("blocking"))
+    return q.get("priority") == "high"
+
+
 def _render_question(out, q, answers=None):
     """`answers`: {QST-xxx: entrada de stakeholder-answers.json}; si hay respuesta registrada,
     el bloque sale pre-llenado, asi re-renderizar el cuestionario no pierde lo contestado."""
-    flag = " **[bloqueante]**" if q.get("priority") == "high" else ""
+    flag = " **[bloqueante]**" if es_bloqueante(q) else ""
     out.append("### %s%s — %s" % (q.get("id", "?"), flag, q.get("question", "")))
     bits = []
     if q.get("priority"):
@@ -740,7 +752,7 @@ def self_test():
             "sections": [{"id": "SEC-001", "title": "Dominio", "target_role": "negocio", "question_ids": ["QST-001"]},
                          {"id": "SEC-002", "title": "No funcionales", "question_ids": ["QST-002"]}],
             "questions": [{"id": "QST-001", "question": "Que es un socio?", "priority": "high", "source_kind": "defect"},
-                          {"id": "QST-002", "question": "Cuantos usuarios?", "priority": "medium", "source_kind": "nfr_checklist",
+                          {"id": "QST-002", "question": "Cuantos usuarios?", "priority": "high", "blocking": False, "source_kind": "nfr_checklist",
                            "expected_answer_type": "yes_no", "default_assumption": "menos de 100"}]}), encoding="utf-8")
         code = main([str(tmp), "--solo", "requirements-inspection", "stakeholder-questions"])
         insp = (tmp / "requirements-inspection.md").read_text(encoding="utf-8")
@@ -755,6 +767,7 @@ def self_test():
             ("Derivado de `requirements-inspection.json` version 2" in insp, "encabezado de sincronia de la inspeccion"),
             ("NO PASA" in insp and "sin cubrir \\| pipe" in insp, "veredicto y celda escapada"),
             ("[bloqueante]" in qst and "Si no respondes, asumimos: menos de 100" in qst, "cuestionario con bloqueante y default"),
+            (qst.count("**[bloqueante]** —") == 1 and "(bloqueantes: 1)" in qst, "blocking explicito manda sobre priority high; conteo por script"),
             ("opcional" in qst and qst.count("**Respuesta QST-0") == 2, "seccion NFR opcional y espacio de respuesta por pregunta"),
             ("- [ ] Si" in qst and "- [ ] No" in qst, "casillas en pregunta yes_no"),
             ("Una persona con cuota al dia." in qst2 and "- [x] No" in qst2 and "_(completar)_" not in qst2,
