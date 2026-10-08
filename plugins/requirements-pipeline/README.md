@@ -181,7 +181,7 @@ pueden variar segun la version de Claude Code: verificalos con `/plugin`.
 | `lel.json` / `lel.md` | Lexico Extendido del Lenguaje (vivo) |
 | `lel-inspection.json` / `.md` | Checklist de defectos del LEL |
 | `stakeholder-questions.json` / `.md` | Cuestionario (defectos + elicitacion + checklist de no funcionales con supuestos por defecto) |
-| `stakeholder-answers.md` | Respuestas del stakeholder (una por QST-xxx), tambien archivadas en `sources/` |
+| `stakeholder-answers.json` / `.md` | Respuestas escritas dentro del cuestionario, clasificadas por `parse_answers.py` (contestada, ambigua con repregunta, con supuesto, sin responder); en `sources/` queda solo una referencia |
 | `product-map.json` / `.md` | Mapa del producto: features y stubs con estado, prioridad y valor de negocio |
 | `changelog.json` | Historia: DSC / INC / CR / REC con veredictos y versiones |
 | `scenarios.json` / `scenarios.md` | Escenarios elaborados (acumulativo) |

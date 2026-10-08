@@ -23,9 +23,9 @@ eventos**. Este plugin los cosecha a demanda:
   muestra y las señales disparadas salen por stdout: el orquestador nunca abre el
   JSON.
 - **Analisis** (`metrics-analyst`, haiku): agente opcional y explicito. Lee SOLO el
-  `metrics.json` ya digerido y redacta `analysis.md`: prioriza las señales
+  `metrics.json` ya digerido y escribe `analysis.json`: prioriza las señales
   disparadas, propone la correccion concreta en la suite, con honestidad sobre el
-  tamaño de la muestra.
+  tamaño de la muestra. `render_analysis.py` deriva `analysis.md`.
 - **Linea de base con direccion** (`--promover-baseline`): guarda el headline de una
   cosecha como `baseline.json`; desde ahi cada cosecha compara metrica por metrica con
   la direccion de cada una (tasa de refutados: menor es mejor; señal/ruido del audit:

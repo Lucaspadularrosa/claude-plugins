@@ -266,10 +266,14 @@ Si no sabés cuál corresponde, contáselo a `/estado`:
 El pipeline se detiene y te espera en estos puntos (nunca inventa tus respuestas):
 
 1. **Cuestionario al stakeholder** (en descubrir). Te muestra
-   `stakeholder-questions.md` con preguntas agrupadas por rol y prioridad. Responder
-   las `high` destraba las definiciones bloqueantes; podés contestar en el chat o
-   llevar el archivo al stakeholder y volver con las respuestas. También podés decir
-   "no hay dudas, seguí".
+   `stakeholder-questions.md` con preguntas agrupadas por rol. Respondé **dentro del
+   archivo**, debajo de cada `Respuesta QST-xxx:` o marcando una casilla; también
+   podés contestar en el chat y el orquestador lo copia ahí, o llevar el archivo al
+   stakeholder y volver con las respuestas. Un script lee lo que escribiste: las
+   marcadas `[bloqueante]` sin respuesta frenan, y una respuesta ambigua ("depende",
+   "más o menos", "no sé") vuelve con la repregunta ya redactada. Lo que dejás en
+   blanco en "No funcionales" toma el supuesto por defecto. También podés decir "no
+   hay dudas, seguí".
 2. **Mockups de UI** (en incremento, si hay pantallas). Si tenés HTML, CSS, wireframes
    o capturas, pasale la carpeta: las toma como diseño autoritativo. Si no, propone
    las pantallas de forma abstracta.
@@ -279,6 +283,11 @@ El pipeline se detiene y te espera en estos puntos (nunca inventa tus respuestas
 4. **Conflictos de replanificación**. Si un cambio afecta trabajo ya construido o en
    curso (ej.: se deprecó un requisito cuya tarea está `done`), te presenta el
    conflicto con una sugerencia y decidís vos.
+5. **Extensiones del build** (en construir, una sola vez por proyecto). Antes del
+   primer perfil de stack te pregunta si activás `resiliencia` y `tests-de-propiedades`
+   (qué es, qué cuesta, default apagado). La seguridad OWASP es siempre-on. En
+   `/construir-lote` no pregunta: asume apagadas, salvo que pases
+   `extensiones=resiliencia`.
 
 ---
 
@@ -350,7 +359,7 @@ autosuficientes: respetá el orden de lotes de `execution-plan.md` y mantené
 | Qué hace la app, con evidencia al código | `.dev/recovery/behavior-map.md` |
 | Las preguntas pendientes del dueño | `.dev/recovery/owner-questions.md` |
 | Los hallazgos de auditoría confirmados | `.dev/audit/audit-report.md` |
-| Las métricas de proceso de la suite | `.dev/metrics/metrics.html` (diagnóstico en `analysis.md`) |
+| Las métricas de proceso de la suite | `.dev/metrics/metrics.html` (diagnóstico en `analysis.json`, con `analysis.md` derivado; `baseline.json` si promoviste una línea de base) |
 
 La trazabilidad funciona en ambas direcciones: desde una tarea podés volver hasta la
 sección del documento que la originó (tarea → requisito → escenario → símbolo del LEL
