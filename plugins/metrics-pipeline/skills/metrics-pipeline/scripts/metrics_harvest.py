@@ -320,8 +320,10 @@ def harvest_recovery(dev):
     if isinstance(qlist, list):
         answered = sum(1 for q in qlist
                        if isinstance(q, dict) and q.get("status") == "answered")
+        qdate = parse_date(g(qs, "metadata", "created_at") or qs.get("created_at"))
         out["owner_questions"] = {"total": len(qlist), "answered": answered,
-                                  "answer_rate": rate(answered, len(qlist))}
+                                  "answer_rate": rate(answered, len(qlist)),
+                                  "created_at": qdate.isoformat() if qdate else None}
     return out or None
 
 
@@ -454,6 +456,22 @@ def compare(metrics, baseline):
             v = "empeoro"
         verdicts[name] = {"baseline": b, "actual": c, "delta": round(delta, 4),
                           "direccion": direction, "tolerancia": round(tol, 4), "veredicto": v}
+    # Tokens: el agregado solo se compara si corrieron los mismos pipelines (H-18); por
+    # pipeline, los que estan en los dos.
+    base_pp, cur_pp = base_hl.get("run_tokens_by_pipeline") or {}, cur_hl.get("run_tokens_by_pipeline") or {}
+    if "run_tokens" in verdicts and verdicts["run_tokens"]["veredicto"] != "sin_dato" and set(base_pp) != set(cur_pp):
+        verdicts["run_tokens"].update(veredicto="no_comparable",
+                                      nota="el conjunto de pipelines cambio (baseline: %s; ahora: %s)"
+                                           % (", ".join(sorted(base_pp)) or "ninguno", ", ".join(sorted(cur_pp)) or "ninguno"))
+    for pp in sorted(set(base_pp) & set(cur_pp)):
+        b, c = base_pp.get(pp), cur_pp.get(pp)
+        if not isinstance(b, (int, float)) or not isinstance(c, (int, float)):
+            continue
+        tol = 0.1 * abs(b)
+        delta = c - b
+        v = "igual" if abs(delta) <= tol else ("mejoro" if delta < 0 else "empeoro")
+        verdicts["run_tokens.%s" % pp] = {"baseline": b, "actual": c, "delta": round(delta, 4),
+                                          "direccion": "menor", "tolerancia": round(tol, 4), "veredicto": v}
     base_sig, cur_sig = set(base_hl.get("signals_fired") or []), set(cur_hl.get("signals_fired") or [])
     reasons = []
     if metrics.get("warnings"):
@@ -473,7 +491,7 @@ def compare(metrics, baseline):
         "señales_nuevas": sorted(cur_sig - base_sig),
         "señales_despejadas": sorted(base_sig - cur_sig),
         "resumen": {v: sorted(k for k, x in verdicts.items() if x["veredicto"] == v)
-                    for v in ("mejoro", "empeoro", "igual", "sin_dato")},
+                    for v in ("mejoro", "empeoro", "igual", "sin_dato", "no_comparable")},
     }
 
 
@@ -549,9 +567,17 @@ def signals(metrics):
         if not isinstance(value, (int, float)) or isinstance(value, bool):
             continue
         fired = value >= threshold if op == ">=" else value <= threshold
-        out.append({"metrica": path, "valor": value, "umbral": "%s %s" % (op, threshold),
-                    "disparada": fired, "sospechoso": suspect if fired else None,
-                    "lectura": reading if fired else None})
+        nota = None
+        if path == "recovery.owner_questions.answer_rate" and fired \
+                and not g(metrics, "recovery", "owner_questions", "answered") \
+                and g(metrics, "recovery", "owner_questions", "created_at") == metrics.get("generated_from"):
+            fired, nota = False, "cuestionario recien generado: nadie tuvo tiempo de responder (se evalua en la proxima cosecha)"
+        entry = {"metrica": path, "valor": value, "umbral": "%s %s" % (op, threshold),
+                 "disparada": fired, "sospechoso": suspect if fired else None,
+                 "lectura": reading if fired else None}
+        if nota:
+            entry["nota"] = nota
+        out.append(entry)
     return out
 
 
@@ -582,6 +608,7 @@ def headline(metrics):
             s.get("total_defects") or 0
             for s in (g(metrics, "requirements", "inspections") or {}).values()),
         "run_tokens": g(metrics, "run_log", "total", "tokens"),
+        "run_tokens_by_pipeline": {k: v.get("tokens") for k, v in (g(metrics, "run_log", "by_pipeline") or {}).items()},
         "run_invocations": g(metrics, "run_log", "total", "invocations"),
         "signals_fired": [s["metrica"] for s in metrics.get("signals", []) if s["disparada"]],
     }
@@ -758,6 +785,31 @@ def self_test():
         m4 = collect(root)
         checks.append(any("features_reviewed" in r             # pipeline que no corrio
                           for r in m4["comparison"]["motivos_no_comparable"]))
+
+        # H-18: tokens por pipeline; el agregado no se compara si cambio el conjunto.
+        (root / ".dev" / "metrics" / "run-log.jsonl").write_text(
+            '{"pipeline": "build", "tokens": 1000}\n{"pipeline": "audit", "tokens": 500}\n')
+        m5 = collect(root)
+        base5 = baseline_record(m5)
+        base5["headline"]["run_tokens"] = 1000
+        base5["headline"]["run_tokens_by_pipeline"] = {"build": 1000}
+        (root / ".dev" / "metrics" / "baseline.json").write_text(json.dumps(base5))
+        comp5 = collect(root)["comparison"]
+        checks += [
+            comp5["metricas"]["run_tokens"]["veredicto"] == "no_comparable",   # audit no estaba en la baseline
+            comp5["metricas"]["run_tokens.build"]["veredicto"] == "igual",
+            "run_tokens" in comp5["resumen"]["no_comparable"],
+        ]
+        # señal del cuestionario del dueño recien generado: no dispara
+        (rec / "owner-questions.json").write_text(json.dumps(
+            {"metadata": {"created_at": "2026-03-01"}, "questions": [{"id": "OWN-001", "status": "open"}]}))
+        m6 = collect(root)
+        sig = [x for x in m6["signals"] if x["metrica"] == "recovery.owner_questions.answer_rate"][0]
+        checks.append(sig["disparada"] is False and "recien generado" in sig.get("nota", ""))
+        (rec / "evidence-check.json").write_text(json.dumps(
+            {"metadata": {"pipeline_version": "2.0.0", "updated_at": "2026-04-01"}, "summary": {"checks": 10, "confirmed": 10, "refuted": 0}}))
+        m7 = collect(root)                                     # hubo actividad despues: dispara
+        checks.append([x for x in m7["signals"] if x["metrica"] == "recovery.owner_questions.answer_rate"][0]["disparada"] is True)
     if not all(checks):
         print("self-test FALLO: %s" % checks)
         return 1
@@ -801,7 +853,8 @@ def main():
                   % "; ".join(comp["motivos_no_comparable"]))
         for k, v in comp["metricas"].items():
             if v["veredicto"] != "sin_dato":
-                print("comparacion: %s %s -> %s %s" % (k, v["baseline"], v["actual"], v["veredicto"]))
+                print("comparacion: %s %s -> %s %s%s" % (k, v["baseline"], v["actual"], v["veredicto"],
+                                                        " (%s)" % v["nota"] if v.get("nota") else ""))
         if comp["señales_nuevas"]:
             print("señales nuevas: %s" % ", ".join(comp["señales_nuevas"]))
         if comp["señales_despejadas"]:
