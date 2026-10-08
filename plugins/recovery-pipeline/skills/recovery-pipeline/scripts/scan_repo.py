@@ -72,7 +72,7 @@ CODE_EXT = {".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs", ".py", ".php", ".rb", 
             ".cs", ".swift", ".dart", ".vue", ".svelte"}
 TEST_RE = re.compile(r"(^|/)(tests?|__tests__|spec|specs|e2e)(/|$)|\.(test|spec)\.[a-z]+$|_test\.(go|py|rb|php)$|test_[^/]+\.py$", re.I)
 ROUTE_PATTERNS = [
-    ("http_route", re.compile(r"\b(?:app|router|server|fastify|api)\.(get|post|put|patch|delete|all|route)\(\s*['\"`]([^'\"`]+)")),
+    ("http_route", re.compile(r"(?<!@)\b(?:app|router|server|fastify|api)\.(get|post|put|patch|delete|all|route)\(\s*['\"`]([^'\"`]+)")),
     ("http_route", re.compile(r"@(?:app|router|bp|blueprint|api)\.(?:route|get|post|put|patch|delete)\(\s*['\"]([^'\"]+)")),
     ("http_route", re.compile(r"\b(?:Route|\$router|\$app)::(get|post|put|patch|delete|any|resource|apiResource|match)\(\s*['\"]([^'\"]+)")),
     ("http_route", re.compile(r"^\s*(get|post|put|patch|delete|resources?|namespace|scope)\s+['\":]([^'\",\s]+)", re.M)),
@@ -283,6 +283,9 @@ def self_test():
     import tempfile
 
     checks = []
+    # H-14: un decorador Python matchea una sola vez (antes lo tomaban dos patrones con claves distintas)
+    checks.append((sum(1 for _, rx in ROUTE_PATTERNS for _ in rx.finditer('@router.get("/socios")\n')) == 1, "decorador Python matchea una sola vez (H-14)"))
+    checks.append((sum(1 for _, rx in ROUTE_PATTERNS for _ in rx.finditer("app.get('/users', h)\n")) == 1, "app.get JS matchea una sola vez"))
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         (root / "package.json").write_text(json.dumps({"dependencies": {"express": "^4.18.0", "mongoose": "7"}, "devDependencies": {"jest": "29"}}), encoding="utf-8")
