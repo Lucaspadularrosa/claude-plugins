@@ -52,7 +52,7 @@ from pathlib import Path
 LEXICON = [
     ("condicional", ["depende", "segun", "varia", "a veces", "en general"],
      "Dijiste '{t}': ¿de que depende y cual es la regla en cada caso?"),
-    ("duda", ["no se", "ni idea", "creo que", "supongo", "me parece", "quizas", "quiza",
+    ("duda", ["ni idea", "creo que", "supongo", "me parece", "quizas", "quiza",
               "tal vez", "puede ser"],
      "Dijiste '{t}': ¿quien lo sabe con certeza? Si nadie, ¿que asumimos y quien lo confirma?"),
     ("vaguedad", ["mas o menos", "algo asi", "lo tipico", "lo normal", "lo habitual",
@@ -77,6 +77,19 @@ def normalize(text):
     text = unicodedata.normalize("NFD", text or "")
     text = "".join(c for c in text if unicodedata.category(c) != "Mn")
     return re.sub(r"\s+", " ", text.lower()).strip()
+
+
+# "no se" es duda solo si es "no sé" con tilde, o "no se" cerrado por puntuacion, fin de
+# texto o un giro de duda ("no se si", "no se bien", "no se cuando"). "No se puede
+# reservar" es una regla, no una duda (falso positivo H-04 de la corrida de prueba).
+NO_SE_RAW = re.compile(r"\bno s[eé]\b", re.IGNORECASE)
+NO_SE_DUDA = re.compile(r"(?<![a-z0-9])no se(?=\s*(?:$|[.,;:!?)]|(?:si|bien|cuando|todavia|aun|muy|que|quien|cual|como|donde)(?![a-z])))")
+
+
+def es_no_se_duda(text):
+    if re.search(r"\bno sé\b", text or "", re.IGNORECASE):
+        return True
+    return bool(NO_SE_DUDA.search(normalize(text)))
 
 
 def find_terms(text, terms):
@@ -125,7 +138,7 @@ def classify(question, block):
     """Una entrada de `answers` para la pregunta."""
     qid = question.get("id")
     kind = question.get("expected_answer_type") or "free_text"
-    blocking = question.get("priority") == "high"
+    blocking = bool(question.get("blocking")) if "blocking" in question else question.get("priority") == "high"
     text = (block or {}).get("text", "")
     checked = (block or {}).get("checked", [])
     entry = {"id": qid, "status": None, "answer": text or None,
@@ -139,6 +152,10 @@ def classify(question, block):
     if kind in SINGLE_CHOICE and len(checked) > 1:
         entry.update(status="ambiguous", ambiguity_terms=["dos casillas marcadas"],
                      follow_up=BOTH[1])
+        return entry
+    if es_no_se_duda(text):
+        entry.update(status="ambiguous", ambiguity_terms=["no se"],
+                     follow_up=LEXICON[1][2].format(t="no se"), ambiguity_group="duda")
         return entry
     for group, terms, follow in LEXICON:
         hit = find_terms(text, terms)
@@ -337,6 +354,8 @@ def self_test():
         (doc["version"] == 2 and doc["questions_version_ref"] == 3, "version y referencia"),
         ("## QST-006 — Quien aprueba?" in render(doc, qdoc) and "queda como pregunta abierta" in render(doc, qdoc), "render del md"),
         (build(qdoc, "# vacio\n", None, None)["summary"]["answered"] == 0, "md sin bloques: nada contestado"),
+        (not es_no_se_duda("No se puede reservar dos turnos el mismo dia.") and not es_no_se_duda("no se cobra penalidad"), "'no se puede' es regla, no duda (H-04)"),
+        (es_no_se_duda("No sé, preguntale a Ana") and es_no_se_duda("no se.") and es_no_se_duda("La verdad no se") and es_no_se_duda("no se si conviene"), "'no sé' / 'no se.' / 'no se si' son duda"),
     ]
     failures = 0
     for cond, label in checks:
