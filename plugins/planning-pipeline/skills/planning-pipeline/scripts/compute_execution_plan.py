@@ -951,7 +951,7 @@ def main(argv):
         except (ValueError, OSError):
             print("aviso: execution-plan.json previo ilegible; se regenera desde version 1")
 
-    now = args.ahora or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    now = args.ahora or datetime.now(timezone.utc).date().isoformat()
     plan = compute_replan(doc, progress, prev, args.pipeline_version, now) if args.replan else compute(doc, args.pipeline_version, now, prev)
     out_path.write_text(json.dumps(plan, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     s = plan["summary"]

@@ -256,7 +256,10 @@ scripts, no de leer los artefactos.
    python3 "$S/slice_requirements_context.py" . --mapa --pipeline-version X.Y.Z
    ```
    `task-derivation` modo mapa solo si el delta agrega features o aristas nuevas
-   (si no, escribi vos un `skeleton.json` minimo `{"features": [], "contract_tasks": [], "metadata": {}}`).
+   (si no, escribi vos un `skeleton.json` minimo `{"features": [], "contract_tasks": [],
+   "metadata": {"requirements_version_ref": "<de source_versions del mapa.json>",
+   "technical_design_version_ref": "<idem>"}}`: sin esas refs el plan cita versiones
+   viejas y PLAN-CHECK-007 falla en falso).
    ```bash
    python3 "$S/slice_requirements_context.py" . --features FG-xx FG-yy --replan --delta INC-002 --pipeline-version X.Y.Z
    ```
