@@ -69,7 +69,10 @@ veredicto.
 
 ## Extensiones habilitadas (cumplimiento por regla)
 
-Por cada extension con `enabled: true` en el baseline y por cada `control` con
+Por cada extension con `enabled: true` en el baseline emiti **una entrada por cada
+`control`, sin excepcion**: los de `applies: false` van directamente como `na` con
+`rationale` "no aplica a la superficie" (la compuerta pre-PR cuenta las entradas
+contra el baseline y rechaza el veredicto si falta alguna). Para los de
 `applies: true`, decidi sobre el diff: `compliant` (el mecanismo del baseline esta
 usado donde la regla lo pide), `non_compliant` (falta o esta mal, con evidencia) o
 `na` (el diff no toca lo que la regla cubre: una feature sin llamadas salientes es

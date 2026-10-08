@@ -156,7 +156,32 @@ def compuerta(root, brief):
             problems.append("verification/%s.json es de la rama %s, los veredictos de %s" % (brief, vdata["branch"], ",".join(sorted(branches))))
     if len(branches) > 1:
         problems.append("los veredictos son de ramas distintas: %s" % ", ".join(sorted(branches)))
+    problems += extensiones_cubiertas(build, brief)
     return problems
+
+
+def extensiones_cubiertas(build, brief):
+    """Toda regla de cada extension habilitada en security-baseline.json tiene su entrada
+    en extension_compliance del gate (incluidas las `na`). H-07 de la corrida de prueba."""
+    base, _ = load(build / "security-baseline.json")
+    gate, _ = load(build / "security" / (brief + ".json"))
+    if base is None or gate is None:
+        return []
+    esperadas = set()
+    for name, ext in (base.get("extensions") or {}).items():
+        if not isinstance(ext, dict) or not ext.get("enabled"):
+            continue
+        for c in ext.get("controls") or []:
+            if isinstance(c, dict) and c.get("rule_id"):
+                esperadas.add(c["rule_id"])
+    if not esperadas:
+        return []
+    presentes = {e.get("rule_id") for e in (gate.get("extension_compliance") or []) if isinstance(e, dict)}
+    faltan = sorted(esperadas - presentes)
+    if faltan:
+        return ["security/%s.json: extension_compliance sin %d regla(s) del baseline: %s (las que no aplican van como na)"
+                % (brief, len(faltan), ", ".join(faltan))]
+    return []
 
 
 # ------------------------------------------------------------------ self-test
@@ -261,6 +286,23 @@ def self_test():
             failures += 1
         else:
             print("self-test ok (compuerta cerrada sin veredictos)")
+        (build / "security-baseline.json").write_text(json.dumps({"extensions": {"resiliencia": {"enabled": True, "controls": [
+            {"rule_id": "RES-01", "applies": True}, {"rule_id": "RES-02", "applies": False}]}}}), encoding="utf-8")
+        gate_ok = _gate(True); gate_ok["extension_compliance"] = [{"rule_id": "RES-01", "status": "compliant", "rationale": "x"}]
+        (build / "security" / "FG-01-demo.json").write_text(json.dumps(gate_ok), encoding="utf-8")
+        errs = compuerta(tmp, "FG-01-demo")
+        if not any("RES-02" in e for e in errs):
+            print("SELF-TEST FALLO (compuerta no exige la regla RES-02 del baseline): %s" % errs)
+            failures += 1
+        else:
+            print("self-test ok (compuerta exige una entrada por regla del baseline)")
+        gate_ok["extension_compliance"].append({"rule_id": "RES-02", "status": "na", "rationale": "no aplica"})
+        (build / "security" / "FG-01-demo.json").write_text(json.dumps(gate_ok), encoding="utf-8")
+        if compuerta(tmp, "FG-01-demo"):
+            print("SELF-TEST FALLO (compuerta cerrada con todas las reglas cubiertas): %s" % compuerta(tmp, "FG-01-demo"))
+            failures += 1
+        else:
+            print("self-test ok (compuerta abierta con todas las reglas cubiertas)")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     return 1 if failures else 0
