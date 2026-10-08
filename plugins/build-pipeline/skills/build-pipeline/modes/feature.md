@@ -16,8 +16,8 @@ Las convenciones, los scripts y las reglas son las de `SKILL.md`; `{b}` es el
    lint, bootstrapealo en esta rama. **Extensiones, una vez por proyecto**: si no
    existe `.dev/build/extensions.json`, corre `extensions_decide.py {raiz} --listar`,
    mostra las preguntas de los opt-in tal cual (que es, que cuesta, default) y espera
-   la respuesta; registrala con `--set nombre=on|off ...` (siempre por script, nunca a
-   mano) y recien despues invoca al `stack-profiler`, que carga solo las habilitadas.
+   la respuesta; registrala con `--set nombre=on|off ... --fecha <fecha>` (siempre por
+   script, nunca a mano; sin `--fecha` el script usa la del sistema) y recien despues invoca al `stack-profiler`, que carga solo las habilitadas.
    Si ya existe, no preguntes: para cambiarla, el usuario pide `extensiones` y corres
    `--set`; con un cambio, re-invoca al profiler en regeneracion.
 3. **Plan de implementacion**: invoca `feature-implementer` en **modo plan** con

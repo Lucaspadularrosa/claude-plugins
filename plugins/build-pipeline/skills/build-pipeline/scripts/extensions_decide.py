@@ -15,6 +15,7 @@ el profiler vuelca al security-baseline.json, no las reglas.
 Uso:
   python extensions_decide.py <raiz> --listar                 preguntas de los opt-in (para la pausa)
   python extensions_decide.py <raiz> --set resiliencia=on tests-de-propiedades=off [--fecha AAAA-MM-DD]
+                                                    (sin --fecha, la del sistema)
   python extensions_decide.py <raiz> --set-defaults           todo opt-in en off (modo lote sin decision)
   python extensions_decide.py <raiz> --estado                 que hay registrado
   python extensions_decide.py --self-test
@@ -31,6 +32,7 @@ import json
 import os
 import re
 import sys
+from datetime import date
 from pathlib import Path
 
 FIELD = re.compile(r"^(Que es|Que cuesta|Pregunta|Default):\s*(.+)$", re.IGNORECASE)
@@ -95,7 +97,8 @@ def write_decision(raiz, cat, choices, source, fecha=None, previous=None):
             ext[name] = prev[name]
         else:
             ext[name] = {"enabled": meta["default"] == "on", "source": "default"}
-    doc = {"version": (previous or {}).get("version", 0) + 1, "fecha": fecha, "extensions": ext}
+    doc = {"version": (previous or {}).get("version", 0) + 1,
+           "fecha": fecha or date.today().isoformat(), "extensions": ext}
     p = decision_path(raiz)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
