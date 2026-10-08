@@ -45,7 +45,8 @@ Uso:
 
   carpeta  por defecto .dev/requirements
 
-Exit 0 con las tajadas escritas; exit 1 si falta product-map.json o una feature.
+Exit 0 con las tajadas escritas; exit 1 si falta product-map.json (salvo con --indice
+solo, que funciona con el LEL) o una feature.
 """
 
 from __future__ import annotations
@@ -282,7 +283,9 @@ def build_index(docs, pipeline_version):
 
 
 def run(folder, features, corrida, pipeline_version, parallel, indice=False):
-    pmap = load(folder / "product-map.json", required=True)
+    # En el primer descubrimiento el mapa todavia no existe cuando se pide solo el indice (H-09).
+    solo_indice = bool(indice) and not features
+    pmap = load(folder / "product-map.json", required=not solo_indice) or {}
     docs = (
         pmap,
         load(folder / "lel.json"),
