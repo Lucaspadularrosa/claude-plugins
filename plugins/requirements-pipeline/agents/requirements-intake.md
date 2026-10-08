@@ -63,7 +63,9 @@ valide. No copies secretos ni credenciales: registra un `gap` sin el valor.
   respuesta no este en otra seccion.
 - **Documentos con la forma de las guias** (`reference/guia-vision.md` y
   `reference/guia-entorno-tecnico.md`): en una vision, cada "pregunta abierta" es un
-  `gap` propio (el cuestionario las hereda tal cual) y lo que esta en "que NO entra"
+  `gap` propio (el cuestionario las hereda tal cual), el glosario inicial son
+  candidatos LEL con la nocion en `rationale` (nunca un gap pidiendo definir lo que
+  el glosario ya define), y lo que esta en "que NO entra"
   va a `supporting_context` con `category: process` y `downstream_use: "fuera de
   alcance del MVP: product-mapping no lo propone como feature"`. En un entorno
   tecnico, cada fila de prohibidos, cada convencion y el modulo de ejemplo son items
