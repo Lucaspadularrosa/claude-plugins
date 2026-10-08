@@ -53,7 +53,8 @@ eventos**. Este plugin los cosecha a demanda:
 | Pieza | Que hace | Tokens |
 |---|---|---|
 | `scripts/metrics_harvest.py` | Cosecha `.dev/*` + git -> `metrics.json` + `.html`; imprime resumen y señales | Cero |
-| `metrics-analyst` (agente, haiku) | Lee SOLO `metrics.json` y escribe `analysis.md` | Acotado, a demanda |
+| `metrics-analyst` (agente, haiku) | Lee SOLO `metrics.json` y escribe `analysis.json` | Acotado, a demanda |
+| `scripts/render_analysis.py` | `analysis.json` -> `analysis.md` | Cero |
 | `--export` del script | Apendea el registro compacto al JSONL central | Cero |
 
 ## Uso
@@ -75,6 +76,7 @@ metrics-pipeline/
   skills/metrics-pipeline/
     SKILL.md
     scripts/metrics_harvest.py   la cosecha determinista (cero tokens; --self-test)
+    scripts/render_analysis.py   analysis.json -> analysis.md (cero tokens; --self-test)
   commands/metricas.md
   README.md
 ```
@@ -88,6 +90,10 @@ explicita, nunca instrumentacion silenciosa.
 
 ## Cambios
 
+- **1.5.0**: el analista escribe `analysis.json` y `render_analysis.py` deriva el
+  `.md` (el harness bloquea reportes Markdown escritos por subagentes); comparacion de
+  tokens por pipeline y `run_tokens` no comparable si cambio el conjunto de pipelines;
+  la señal del cuestionario del dueño no dispara en la corrida que lo genera.
 - **1.4.0**: linea de base con direccion (`--promover-baseline`, `comparison` en el
   JSON y en el HTML, `vs_baseline` en el export) y `comparable: false` con motivos
   cuando la cosecha no sirve para juzgar el proceso.

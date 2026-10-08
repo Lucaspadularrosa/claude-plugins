@@ -75,7 +75,7 @@ MODELOS = {"opus", "sonnet", "haiku"}
 # uno aca es una decision consciente; el chequeo existe para que renombrar un id
 # no pase inadvertido.
 PREFIJOS_NO_VERIFICADOS = {
-    "ACT", "ADR", "API", "BUG", "CAP", "CHK", "CTX", "DEF", "DESVIO", "ENT",
+    "ACT", "ADR", "API", "BUG", "CAP", "CHK", "CTX", "DEF", "DESVIO", "DX", "ENT",
     "ENTRY", "EP", "EXC", "GAP", "IMP", "K", "L", "MOD", "NOT", "OWN", "PBC",
     "PROP", "Q", "QST", "REL", "RENT", "RES", "RMOD", "SCR", "SEC", "SPQ", "SRC",
 }

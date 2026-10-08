@@ -45,11 +45,21 @@ contra la baseline anterior y despues se reemplaza. No promuevas sin que lo pida
 Con `solo-datos`: mostra la ruta del `metrics.html`, el `resumen:` y las `señal:`
 que imprimio el script, y termina.
 
-Si no, invoca `metrics-analyst` (una sola vez) con la ruta de `metrics.json`, si hubo
-comparacion las lineas `comparable:`/`comparacion:` tal como salieron, y, si existe y
-el usuario quiere comparar entre proyectos, la ruta del JSONL de export. Escribe
-`.dev/metrics/analysis.md`. El agente no recalcula umbrales: redacta y prioriza
-sobre las `signals` que el script ya disparo.
+Si no, invoca `metrics-analyst` (una sola vez) con la ruta de `metrics.json`, la
+`pipeline_version` y la `fecha`, si hubo comparacion las lineas
+`comparable:`/`comparacion:` tal como salieron, y, si existe y el usuario quiere
+comparar entre proyectos, la ruta del JSONL de export. Escribe
+`.dev/metrics/analysis.json` (solo JSON: el harness no deja que un subagente escriba
+reportes `.md`). El agente no recalcula umbrales: redacta y prioriza sobre las
+`signals` que el script ya disparo. Despues:
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/skills/metrics-pipeline/scripts/render_analysis.py" <raiz>
+```
+
+deriva `analysis.md`. Si el JSON no existe (el agente devolvio el analisis por texto
+en vez de escribirlo), re-invocalo una vez señalando que la salida es el archivo; si
+vuelve a fallar, informa y frena: no transcribas vos el analisis.
 
 ### Paso 3 - Cierre
 
@@ -90,6 +100,7 @@ Task; si un dato no esta, se omite la clave. La cosecha lo agrega como `run_log`
   metrics.json      la cosecha (determinista, con signals, sample_size y comparison)
   metrics.html      la vista compartible (autocontenida, offline)
   baseline.json     la referencia promovida (headline + muestra + versiones), opt-in
-  analysis.md       el diagnostico del analista (solo si se pidio)
+  analysis.json     el diagnostico del analista (solo si se pidio; dato)
+  analysis.md       su vista, derivada por render_analysis.py
 <jsonl central>     un registro compacto por proyecto/corrida (solo con export)
 ```
