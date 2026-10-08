@@ -29,6 +29,7 @@ tests y LOC. Exit 1 ante error de IO.
 
 from __future__ import annotations
 
+from datetime import date
 import argparse
 import json
 import re
@@ -238,7 +239,7 @@ def git_signals(root):
     return {"commits": int(commits) if commits.isdigit() else None, "first_commit": first, "last_commit": last, "branches": branches}
 
 
-def build(root):
+def build(root, fecha=None):
     stack, langs, frameworks, lockfiles = detect_stack(root)
     code = scan_code(root)
     primary = max(langs.items(), key=lambda kv: kv[1])[0] if langs else (max(code["ext_count"].items(), key=lambda kv: kv[1])[0].lstrip(".") if code["ext_count"] else "desconocido")
@@ -261,7 +262,7 @@ def build(root):
         health.append({"signal": "Git: %s commits, primero %s, ultimo %s, %s ramas" % (git["commits"], git.get("first_commit") or "?", git.get("last_commit") or "?", git.get("branches")), "severity": "info", "evidence": "git log"})
     return {
         "version": 0,
-        "metadata": {"created_at": None, "updated_at": None, "repo_root": str(root), "pipeline_version": None, "skeleton_by": "scan_repo"},
+        "metadata": {"created_at": fecha or date.today().isoformat(), "updated_at": fecha or date.today().isoformat(), "repo_root": str(root), "pipeline_version": None, "skeleton_by": "scan_repo"},
         "summary": {"primary_language": primary, "frameworks": frameworks, "loc_estimate": "~%d lineas en %d archivos de codigo" % (code["loc"], code["code_files"]),
                     "test_presence": test_presence, "docs_presence": "none" if not docs else "partial", "entry_point_count": len(code["entry_points"]),
                     "test_file_count": code["test_files"], "todo_count": code["todos"], "lockfiles": lockfiles},
@@ -314,6 +315,7 @@ def main(argv=None):
     ap.add_argument("raiz", nargs="?", default=".")
     ap.add_argument("--salida", default=None)
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--fecha", default=None, help="fecha para metadata (default: la del sistema)")
     ap.add_argument("--self-test", action="store_true")
     args = ap.parse_args(argv)
     if args.self_test:
@@ -322,7 +324,7 @@ def main(argv=None):
     if not root.is_dir():
         print("error: no existe %s" % root)
         return 1
-    inv = build(root)
+    inv = build(root, fecha=args.fecha)
     out = Path(args.salida) if args.salida else root / ".dev" / "recovery" / "code-inventory.skeleton.json"
     try:
         out.parent.mkdir(parents=True, exist_ok=True)
