@@ -63,7 +63,10 @@ senalan por ubicacion, nunca por valor.
   (normalmente pasa a `false`), valida ejecutando `commands.*` y
   `tooling.dependency_audit` marcando `validated`, completa `environment_detected` y
   `ci` por evidencia nueva, incrementa `version` y `updated_at`, y deja todo lo demas
-  tal cual. Es una pasada corta.
+  tal cual: **todas las claves del contrato siguen presentes** (`greenfield` como
+  booleano, `metadata.pipeline_version`, `layout`, `conventions`...); reescribir el
+  archivo sin una clave es un defecto que el verificador de contratos marca. Es una
+  pasada corta.
 - **Base de seguridad por evidencia, no checklist**: cada `control` cita el mecanismo
   nativo real; si no hay, `mechanism` vacio + `gaps` + `warnings`.
 - **Extensiones, carga diferida**: lee `.dev/build/extensions.json` (si no existe,
