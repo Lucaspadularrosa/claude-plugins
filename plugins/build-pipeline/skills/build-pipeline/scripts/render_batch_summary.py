@@ -146,7 +146,8 @@ def render(entries, lote=None):
         lines.append("_Sin features para resumir._")
         return "\n".join(lines) + "\n"
     ok = [e for e in entries if e["review"] and e["gate"] and e["review"]["passed"] and e["gate"]["passed"]]
-    blocked = [e for e in entries if "BLOQUEADA" in (e["notes"] or "") or e["tasks"]["blocked"]]
+    # Una feature done no esta bloqueada aunque conserve una nota BLOQUEADA ya resuelta (H-08).
+    blocked = [e for e in entries if e["status"] != "done" and ("BLOQUEADA" in (e["notes"] or "") or e["tasks"]["blocked"])]
     lines.append("- Features: %d | con review y gate en verde: %d | bloqueadas: %d" % (len(entries), len(ok), len(blocked)))
     lines.append("")
     for e in entries:
@@ -198,7 +199,7 @@ def render(entries, lote=None):
         else:
             m = re.search(r"SIN GUIA:\s*([^|]+)", e["notes"] or "")
             lines.append("- **Guia de usuario**: no generada%s" % ((" — " + m.group(1).strip()) if m else ""))
-        if "BLOQUEADA" in (e["notes"] or ""):
+        if e["status"] != "done" and "BLOQUEADA" in (e["notes"] or ""):
             m = re.search(r"BLOQUEADA:\s*([^|]+)", e["notes"])
             lines.append("- **BLOQUEADA**: %s (rama `%s`; retomar con /construir-lote)" % (m.group(1).strip() if m else "", e["branch"]))
         lines.append("")
