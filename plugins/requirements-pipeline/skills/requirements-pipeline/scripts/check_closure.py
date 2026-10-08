@@ -71,13 +71,43 @@ def load(path):
         return "ILEGIBLE"
 
 
-def run(folder, inspections, corrida, as_json=False, quiet=False):
+MAP_STATUSES = ("stub", "elaborated", "baselined", "deprecated")
+
+
+def recount_map_summary(pmap):
+    """El summary del mapa con semantica fija: *_count = features por status (stub_count son
+    FEATURES en stub, no escenarios), pending_proposal_count = propuestas pendientes."""
+    feats = [f for f in (pmap.get("features") or []) if isinstance(f, dict)]
+    s = {"feature_count": len(feats)}
+    for st in MAP_STATUSES:
+        s[st + "_count"] = sum(1 for f in feats if f.get("status") == st)
+    pp = pmap.get("pending_proposals")
+    s["pending_proposal_count"] = len(pp) if isinstance(pp, list) else (int(pp) if isinstance(pp, int) else 0)
+    return s
+
+
+def run(folder, inspections, corrida, as_json=False, quiet=False, recalcular_mapa=False):
     folder = Path(folder)
     problems = []
     warnings = []
 
     def bad(msg):
         problems.append(msg)
+
+    # 0. summary del mapa: nadie lo recalcula cuando el orquestador edita estados (H-16/H-20)
+    pmap_path = folder / "product-map.json"
+    pmap = load(pmap_path)
+    if isinstance(pmap, dict):
+        real = recount_map_summary(pmap)
+        actual = pmap.get("summary") or {}
+        diff = {k: (actual.get(k), v) for k, v in real.items() if actual.get(k) != v}
+        if diff and recalcular_mapa:
+            pmap["summary"] = dict(actual, **real)
+            pmap_path.write_text(json.dumps(pmap, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            warnings.append("product-map.json: summary recalculado (%s)" % ", ".join("%s %s->%s" % (k, a, b) for k, (a, b) in sorted(diff.items())))
+        elif diff:
+            bad("product-map.json: summary desactualizado (%s): correr check_closure.py --recalcular-mapa"
+                % ", ".join("%s=%s pero hay %s" % (k, a, b) for k, (a, b) in sorted(diff.items())))
 
     # 1. layout
     for sub in (folder, folder.parent / "plan"):
@@ -178,6 +208,19 @@ def self_test():
 
     tmp = Path(tempfile.mkdtemp(prefix="check-closure-")) / ".dev" / "requirements"
     tmp.mkdir(parents=True)
+    # summary del mapa (H-16/H-20): desactualizado bloquea; --recalcular-mapa lo arregla
+    mapa = {"version": 2, "features": [{"id": "FG-01", "status": "baselined"}, {"id": "FG-02", "status": "stub"}],
+            "summary": {"feature_count": 2, "stub_count": 25, "elaborated_count": 0, "baselined_count": 0, "deprecated_count": 0, "pending_proposal_count": 0},
+            "pending_proposals": []}
+    (tmp / "product-map.json").write_text(json.dumps(mapa), encoding="utf-8")
+    code_m, out_m = run(tmp, [], None, as_json=True, quiet=True)
+    check(any("summary desactualizado" in p for p in (out_m.get("problems") if isinstance(out_m, dict) else out_m or [])) or code_m != 0,
+          "summary del mapa desactualizado bloquea")
+    run(tmp, [], None, as_json=True, quiet=True, recalcular_mapa=True)
+    fixed = json.loads((tmp / "product-map.json").read_text(encoding="utf-8"))
+    check(fixed["summary"]["stub_count"] == 1 and fixed["summary"]["baselined_count"] == 1 and fixed["version"] == 2,
+          "--recalcular-mapa corrige el summary sin subir version")
+    (tmp / "product-map.json").unlink()
     try:
         w = lambda name, doc: (tmp / name).write_text(json.dumps(doc), encoding="utf-8")
         md = lambda name, v: (tmp / ("%s.md" % name)).write_text("# x\n\n> Derivado de `%s.json` version %s — no editar a mano.\n" % (name, v), encoding="utf-8")
@@ -213,12 +256,13 @@ def main(argv):
     ap.add_argument("--inspecciones", nargs="*", choices=sorted(INSPECTIONS), default=[], help="inspecciones que deben estar en verde")
     ap.add_argument("--corrida", default=None, help="id de la corrida en curso (se permite in_progress)")
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--recalcular-mapa", action="store_true", help="recalcular product-map.json.summary a partir de las features (sin subir version)")
     args = ap.parse_args(argv)
     folder = Path(args.carpeta)
     if not folder.is_dir():
         print("No existe la carpeta: %s" % folder)
         return 1
-    code, _ = run(folder, args.inspecciones, args.corrida, args.json)
+    code, _ = run(folder, args.inspecciones, args.corrida, args.json, recalcular_mapa=args.recalcular_mapa)
     return code
 
 

@@ -88,7 +88,7 @@ skill. **Sin ningun Python disponible**: cada paso indica su fallback.
 | `slice_increment_context.py` | Una tajada `.inc-context/FG-xx.json` por feature con lo que sus agentes necesitan; con `--indice`, el indice compacto `index.json` de toda la linea de base | Antes de cada etapa de elaboracion; el indice, antes del mapa en actualizacion y de cada inspeccion de juicio |
 | `render_baseline_docs.py` | Los `.md` derivados (artefactos, inspecciones y cuestionario) | **Antes** de cada inspeccion y en el cierre |
 | `validate_baseline.py` | Checks mecanicos de LEL/requisitos/diseno, con exit code | 3a de cada inspeccion, iterar hasta verde |
-| `check_closure.py` | Compuerta de cierre: layout, inspecciones en verde, versiones, vistas | Antes de cerrar la entrada del changelog |
+| `check_closure.py` | Compuerta de cierre: layout, inspecciones en verde, versiones, vistas; con `--recalcular-mapa` recalcula el summary del mapa (los estados se editan con Edit y nadie lo recontaba) | Antes de cerrar la entrada del changelog |
 | `parse_answers.py` | Lee las respuestas escritas en `stakeholder-questions.md`, clasifica cada una (contestada, sin responder, ambigua, con supuesto), redacta la repregunta de las ambiguas y deriva `stakeholder-answers.json/.md` | Despues de la pausa del cuestionario, y en cada ronda |
 | `render_index.py` | El indice `.dev/README.md` | En el cierre |
 | `promote_card.py` | Aplica la tabla de renumeracion al plan, a los desvios del build y a la tarjeta | Modo PROMOVER, en el cierre: despues de `apply_delta.py --mapa-salida` y de que las inspecciones cierren |
@@ -333,7 +333,7 @@ agrega al mapa y enriquece el vocabulario; nunca modifica lo baselineado.
 6. Si el mapa trae `pending_proposals`, mostraselas al usuario: las acepta (quedan
    para un `/requerimientos:cambio` o el proximo incremento) o las rechaza.
 7. Cierre: `apply_delta.py` (por si quedo algo), `render_baseline_docs.py`,
-   `render_index.py`, `check_closure.py --inspecciones lel --corrida DSC-xxx`. Con el
+   `render_index.py`, `check_closure.py --recalcular-mapa --inspecciones lel --corrida DSC-xxx`. Con el
    cierre en verde, cerra la entrada `DSC-xxx` (versiones, features descubiertas).
    Mostrale el mapa (`product-map.md`) y sugeri `/requerimientos:incremento <features>`.
 
@@ -386,7 +386,7 @@ usuario decide.
 8. Cierre: `apply_delta.py`; `slice_increment_context.py --limpiar`; marca las
    features y escenarios del incremento como `baselined` (Edit);
    `render_baseline_docs.py`; `render_index.py`;
-   `check_closure.py --inspecciones requirements design --corrida INC-xxx`. Si bloquea,
+   `check_closure.py --recalcular-mapa --inspecciones requirements design --corrida INC-xxx`. Si bloquea,
    resolve lo que dice (nunca cierres declarando que la inspeccion paso si el JSON dice
    otra cosa; si el usuario acepto defectos anotados, registralo en `notes`). Con el
    cierre en verde, cerra `INC-xxx` (`applied`, verdicts, versiones). Sugeri
@@ -420,7 +420,7 @@ un documento corto).
    nunca se borra. `apply_delta.py` si dejaron deltas.
 5. Render, 3a + 3b de requisitos (y de diseno si el diseno cambio), con sus lazos.
 6. Cierre: `apply_delta.py`, `--limpiar`, `render_baseline_docs.py`, `render_index.py`,
-   `check_closure.py --inspecciones requirements [design] --corrida CR-xxx`; cerra
+   `check_closure.py --recalcular-mapa --inspecciones requirements [design] --corrida CR-xxx`; cerra
    `CR-xxx` con verdicts (`confirmed_by_user`) y versiones. Si afecta features ya
    planificadas o construidas, decilo explicito: el pipeline de planificacion lo
    levanta del changelog.
@@ -492,7 +492,7 @@ Si el usuario no nombra features, lista las tarjetas `.dev/cards/*.json` con
    Despues, `render_plan_docs.py .dev/plan` (el `tasks.json` cambio de version y su
    vista queda atras).
 7. **Cierre**: `apply_delta.py`, `--limpiar`, `render_baseline_docs.py`,
-   `render_index.py`, `check_closure.py --inspecciones requirements [design] --corrida
+   `render_index.py`, `check_closure.py --recalcular-mapa --inspecciones requirements [design] --corrida
    CR-xxx`; la feature pasa a `baselined` en el mapa (y pierde el `origin: fast_track`
    solo si el usuario lo pide: es informacion historica util). Cerra la `CR-xxx` como
    `applied`. Desde aca la feature es indistinguible de una que hizo el ciclo formal.
