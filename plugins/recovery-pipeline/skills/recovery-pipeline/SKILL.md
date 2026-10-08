@@ -56,6 +56,9 @@ plugin desactualizado lo da el script de la suite (plugin hermano
 suite-pipeline-version --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/recovery/code-inventory.json
 ```
 
+Imprime `pipeline_version` y `fecha` (la del sistema): pasa las dos a cada subagente;
+las fechas de los artefactos salen de ahi, nunca de la memoria del modelo.
+
 Retomes de corridas anteriores, en este orden:
 
 - Si `.dev/requirements/` ya tiene artefactos, avisale al usuario que la comprension

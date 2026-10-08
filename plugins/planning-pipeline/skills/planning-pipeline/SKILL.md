@@ -72,8 +72,10 @@ suite-pipeline-version --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/pl
 `version` de `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` y segui). Imprime la
 version cargada y, si corresponde, un aviso (plan previo generado con otra version;
 instalacion local mas nueva que la cargada — requiere reiniciar la sesion). Mostra el
-aviso tal cual; es informativo, no compuerta. Pasa `pipeline_version: X.Y.Z` a cada
-subagente y a cada script que lo acepte.
+aviso tal cual; es informativo, no compuerta. Pasa `pipeline_version: X.Y.Z` y
+`fecha: AAAA-MM-DD` (la segunda linea que imprime: la fecha del sistema) a cada
+subagente y a cada script que lo acepte; las fechas de los artefactos salen de ahi,
+nunca de la memoria del modelo.
 
 ## Etapas
 
@@ -254,7 +256,10 @@ scripts, no de leer los artefactos.
    python3 "$S/slice_requirements_context.py" . --mapa --pipeline-version X.Y.Z
    ```
    `task-derivation` modo mapa solo si el delta agrega features o aristas nuevas
-   (si no, escribi vos un `skeleton.json` minimo `{"features": [], "contract_tasks": [], "metadata": {}}`).
+   (si no, escribi vos un `skeleton.json` minimo `{"features": [], "contract_tasks": [],
+   "metadata": {"requirements_version_ref": "<de source_versions del mapa.json>",
+   "technical_design_version_ref": "<idem>"}}`: sin esas refs el plan cita versiones
+   viejas y PLAN-CHECK-007 falla en falso).
    ```bash
    python3 "$S/slice_requirements_context.py" . --features FG-xx FG-yy --replan --delta INC-002 --pipeline-version X.Y.Z
    ```

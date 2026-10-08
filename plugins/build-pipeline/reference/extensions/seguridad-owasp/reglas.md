@@ -1,5 +1,9 @@
 # Base de seguridad OWASP (referencia canónica del build)
 
+> Extension **siempre-on** del build (no tiene `reglas.opt-in.md`): el piso OWASP que
+> el `stack-profiler` vuelca al `security-baseline.json`. Las demas extensiones
+> viven al lado, en `reference/extensions/<nombre>/`, con el mismo formato.
+
 Este documento es la **fuente única** de la base de seguridad que el pipeline de build
 aplica al codificar. Las etapas del build lo consumen para hablar el mismo idioma:
 

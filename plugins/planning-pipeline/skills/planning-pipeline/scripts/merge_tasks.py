@@ -173,6 +173,28 @@ def merge(skeleton, partials, previous, replan, affected, delta, deferred, pipel
         if t.get("adjusts_task_id"):
             t["adjusts_task_id"] = resolve_ref(scope, t["adjusts_task_id"])[0]
 
+    # 3b) ids locales que sobreviven en texto libre (H-01): descripciones, supuestos,
+    # criterios y preguntas citan L-nnn / K-nnn; se reescriben con el mismo mapa.
+    TEXT_ID_RE = re.compile(r"\b([KL])-(\d{3})\b")
+
+    def rewrite_text(scope, value):
+        if isinstance(value, str):
+            def repl(m):
+                key = ("K", m.group(0)) if m.group(1) == "K" else (scope, m.group(0))
+                return idmap.get(key, m.group(0))
+            return TEXT_ID_RE.sub(repl, value)
+        if isinstance(value, list):
+            return [rewrite_text(scope, v) for v in value]
+        if isinstance(value, dict):
+            return {k: rewrite_text(scope, v) for k, v in value.items()}
+        return value
+
+    for t in merged:
+        scope = t["feature_group"] if t["feature_group"] in partials else "K"
+        for k, v in list(t.items()):
+            if k not in ("id", "feature_group", "depends_on", "adjusts_task_id", "status", "type"):
+                t[k] = rewrite_text(scope, v)
+
     # 4) features, preguntas, trazabilidad
     features = []
     sk_feats = {f.get("id"): f for f in skeleton.get("features") or []}
@@ -196,6 +218,7 @@ def merge(skeleton, partials, previous, replan, affected, delta, deferred, pipel
         for q in src.get("open_questions") or []:
             q = dict(q)
             q["related_task_ids"] = rewrite_list(scope, q.get("related_task_ids"))
+            q = {k: (rewrite_text(scope, v) if k != "related_task_ids" else v) for k, v in q.items()}
             q["id"] = "Q-%03d" % qnum
             qnum += 1
             questions.append(q)
@@ -228,6 +251,9 @@ def merge(skeleton, partials, previous, replan, affected, delta, deferred, pipel
             deferred_ids.append(d)
     if not replan:
         deferred_ids = list(meta_sk.get("deferred_changelog_ids") or []) + [d for d in deferred or []]
+    if replan and not meta_sk.get("requirements_version_ref") and meta_prev.get("requirements_version_ref"):
+        warnings.append("requirements_version_ref heredada del plan anterior (%s): si la linea de base subio de version, "
+                        "copia source_versions del mapa.json a skeleton.json.metadata" % meta_prev.get("requirements_version_ref"))
     all_sorted = sorted(all_tasks, key=lambda t: tnum(t["id"]))
     return {
         "version": int((previous or {}).get("version", 0)) + 1,
@@ -317,7 +343,7 @@ def self_test():
         (ctx / "tasks.FG-01.json").write_text(json.dumps({
             "feature": {"id": "FG-01", "description": "desc A"},
             "tasks": [{"id": "L-001", "title": "a1", "complexity": "medium", "priority": "high", "depends_on": [{"task_id": "K-001", "kind": "contract"}], "requirement_ids": ["RF-001"]},
-                      {"id": "L-002", "title": "a2", "complexity": "low", "priority": "high", "depends_on": [{"task_id": "L-001", "kind": "hard"}], "requirement_ids": ["RF-001"]}],
+                      {"id": "L-002", "title": "a2", "description": "usa el contrato K-001 y lo que deja L-001", "complexity": "low", "priority": "high", "depends_on": [{"task_id": "L-001", "kind": "hard"}], "requirement_ids": ["RF-001"]}],
             "open_questions": [{"id": "Q-001", "question": "q", "related_task_ids": ["L-002"]}],
             "traceability_links": [{"source": {"kind": "task", "id": "L-001"}, "target": {"kind": "requirement", "id": "RF-001"}, "relationship": "covers"}],
         }), encoding="utf-8")
@@ -333,6 +359,8 @@ def self_test():
         a2 = next(t for t in doc["tasks"] if t["title"] == "a2")
         b1 = next(t for t in doc["tasks"] if t["title"] == "b1")
         check(a2["depends_on"] == [{"task_id": "T-002", "kind": "hard"}], "L-nnn local reescrito por feature")
+        check("L-001" not in a2.get("description", "") and "K-001" not in a2.get("description", "")
+              and "T-002" in a2.get("description", ""), "ids locales reescritos en texto libre (H-01)")
         check({"task_id": "T-001", "kind": "contract"} in b1["depends_on"], "K-nnn reescrito")
         check({"task_id": "T-002", "kind": "hard"} in b1["depends_on"] and {"task_id": "T-003", "kind": "hard"} in b1["depends_on"],
               "dependencia a nivel requisito resuelta a las tareas productoras")
@@ -379,7 +407,7 @@ def main(argv):
     ap.add_argument("--pipeline-version", default=None)
     ap.add_argument("--ahora", default=None)
     args = ap.parse_args(argv)
-    now = args.ahora or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    now = args.ahora or datetime.now(timezone.utc).date().isoformat()
     return run(Path(args.raiz).resolve(), args.replan, args.features, args.delta, args.deferred, args.pipeline_version, now)
 
 

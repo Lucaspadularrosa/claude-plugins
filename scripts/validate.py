@@ -28,6 +28,15 @@ externas (usa pyyaml si esta instalado, si no aplica las reglas del escalar plan
    expresion de `scripts/check-artifacts.py`, o esta declarado como no verificado.
    Sin esto, renombrar un id en los prompts deja al verificador atras en silencio
    (fue el caso de SYM-nnn -> LEL-nnn).
+6. Todo ejecutable `suite-*` que un prompt invoca existe en el `bin/` de algun
+   plugin. Un nombre que no existe falla recien en runtime, en el proyecto de
+   alguien, con un "command not found" que el orquestador anota y sigue (fue el
+   caso de `suite-extract-document` en /tarjeta).
+
+7. Cada extension en `plugins/*/reference/extensions/<nombre>/` tiene `reglas.md` con
+   ids `PREFIJO-NN` unicos y un solo prefijo; si trae `reglas.opt-in.md`, ese archivo
+   declara `Pregunta:` y `Default:`. Es lo que `extensions_decide.py` y el profiler
+   dan por sentado.
 
 `archive/` se ignora. Salida: lista de problemas y exit code 1 si hay alguno.
 Uso: python scripts/validate.py [raiz-del-repo]
@@ -66,7 +75,7 @@ MODELOS = {"opus", "sonnet", "haiku"}
 # uno aca es una decision consciente; el chequeo existe para que renombrar un id
 # no pase inadvertido.
 PREFIJOS_NO_VERIFICADOS = {
-    "ACT", "ADR", "API", "BUG", "CAP", "CHK", "CTX", "DEF", "DESVIO", "ENT",
+    "ACT", "ADR", "API", "BUG", "CAP", "CHK", "CTX", "DEF", "DESVIO", "DX", "ENT",
     "ENTRY", "EP", "EXC", "GAP", "IMP", "K", "L", "MOD", "NOT", "OWN", "PBC",
     "PROP", "Q", "QST", "REL", "RENT", "RES", "RMOD", "SCR", "SEC", "SPQ", "SRC",
 }
@@ -386,6 +395,81 @@ def check_rutas_cruzadas():
                                "marketplace de directorio local. Expone lo compartido "
                                "como ejecutable en bin/ del plugin que lo provee".format(i))
 
+# Ejecutables compartidos de la suite: `suite-<nombre>` suelto o entre backticks.
+# Excluye lo que viene precedido o seguido por `/` (son rutas, como
+# `~/.claude/suite-metrics/`), y no corta nombres a medias.
+EJECUTABLE_SUITE = re.compile(r"(?<![\w/.-])suite-[a-z][a-z0-9-]*[a-z0-9](?![\w/-])")
+
+
+def ejecutables_invocados(texto):
+    """Nombres `suite-*` que un prompt invoca."""
+    return set(EJECUTABLE_SUITE.findall(texto))
+
+
+def check_ejecutables_bin():
+    """Todo `suite-*` que un prompt invoca lo provee algun plugin en bin/.
+
+    Los plugins se alcanzan entre si solo por estos ejecutables (ver
+    check_rutas_cruzadas). Un nombre que nadie provee no falla aca: falla en el
+    proyecto de quien corre el comando, y el orquestador lo anota y sigue.
+    """
+    provistos = {p.name for p in ROOT.glob("plugins/*/bin/*") if p.is_file()}
+    n = 0
+    for pat in ("plugins/*/skills/*/SKILL.md", "plugins/*/skills/*/modes/*.md",
+                "plugins/*/agents/*.md", "plugins/*/commands/*.md"):
+        for f in sorted(ROOT.glob(pat)):
+            for i, linea in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+                for nombre in sorted(ejecutables_invocados(linea)):
+                    n += 1
+                    if nombre not in provistos:
+                        problem(f, "linea {}: invoca `{}`, que ningun plugin provee en "
+                                   "bin/ (hay: {})".format(
+                                       i, nombre, ", ".join(sorted(provistos)) or "ninguno"))
+    return n
+
+
+REGLA_ID = re.compile(r"^## ([A-Z]{2,6})-(\d{2})\b", re.M)
+
+
+def ids_de_reglas(texto):
+    """[(prefijo, numero)] de los encabezados `## RES-01 · ...` de una extension."""
+    return REGLA_ID.findall(texto)
+
+
+def check_extensiones():
+    n = 0
+    for d in sorted(ROOT.glob("plugins/*/reference/extensions/*")):
+        if not d.is_dir():
+            continue
+        n += 1
+        reglas = d / "reglas.md"
+        if not reglas.is_file():
+            problem(d, "extension sin reglas.md")
+            continue
+        ids = ids_de_reglas(reglas.read_text(encoding="utf-8"))
+        if ids:
+            prefijos = {p for p, _ in ids}
+            if len(prefijos) > 1:
+                problem(reglas, "mas de un prefijo de id: {}".format(", ".join(sorted(prefijos))))
+            vistos = set()
+            for p, num in ids:
+                if (p, num) in vistos:
+                    problem(reglas, "id repetido: {}-{}".format(p, num))
+                vistos.add((p, num))
+        elif d.name != "seguridad-owasp":
+            problem(reglas, "sin reglas con id (`## PREFIJO-NN · titulo`)")
+        opt = d / "reglas.opt-in.md"
+        if opt.is_file():
+            texto = opt.read_text(encoding="utf-8")
+            for campo in ("Pregunta:", "Default:"):
+                if not re.search(r"^" + campo, texto, re.M):
+                    problem(opt, "opt-in sin la linea `{}`".format(campo))
+        for extra in d.iterdir():
+            if extra.name not in ("reglas.md", "reglas.opt-in.md"):
+                problem(extra, "archivo inesperado en una extension (solo reglas.md y reglas.opt-in.md)")
+    return n
+
+
 # Señales de que un agente realmente ejecuta algo. Se chequea solo `Bash` porque
 # es la tool cuya ausencia los agentes declaran como parte de su contrato ("solo
 # lectura sobre el codigo"): declararla sin usarla convierte esa promesa en texto.
@@ -536,11 +620,20 @@ def self_test():
           bool(MODELO_LITERAL.search("el lazo de correccion va en opus")), False)
     check("prefijos de id", prefijos_de_id('{"id": "LEL-001", "x": 1} y "id": "RF-007"'),
           {"LEL", "RF"})
+    check("ejecutable entre backticks", ejecutables_invocados(
+          "corre `suite-stage-check` antes de cada etapa"), {"suite-stage-check"})
+    check("ejecutable suelto con argumentos", ejecutables_invocados(
+          "   suite-render-baseline-docs .dev/requirements"), {"suite-render-baseline-docs"})
+    check("una ruta no es un ejecutable", ejecutables_invocados(
+          "sugerile `~/.claude/suite-metrics/runs.jsonl`"), set())
+    check("ids de reglas de una extension", ids_de_reglas(
+          "## RES-01 · Timeout\ntexto\n## RES-02 · Reintentos\n### A01 · no es regla"),
+          [("RES", "01"), ("RES", "02")])
 
     for f in fallos:
         print("SELF-TEST FALLO ({})".format(f))
     if not fallos:
-        print("self-test ok (10 casos: tablas, prosa de diseno y prefijos de id).")
+        print("self-test ok (14 casos: tablas, prosa de diseno, prefijos de id, ejecutables y extensiones).")
     return 1 if fallos else 0
 
 
@@ -582,6 +675,8 @@ def main():
     n_prosa = check_prosa_modelos(mapa_declarado())
     check_modelo_fijado_en_diseno()
     check_rutas_cruzadas()
+    n_bin = check_ejecutables_bin()
+    n_ext = check_extensiones()
     n_plug = check_nombres_de_plugin()
     check_tools_declaradas()
     check_lista_de_plugins_del_hook()
@@ -591,7 +686,8 @@ def main():
     print(f"Validados {n_entries} plugins del marketplace y {n_files} frontmatters ({mode}).")
     print(f"Invariantes: bloques obligatorios, {n_filas} fila(s) de tabla de modelos, "
           f"{n_pref} prefijo(s) de id, {n_plug} nombre(s) de plugin, "
-          f"{n_cmd} comando(s) en la tabla de enrutado.")
+          f"{n_cmd} comando(s) en la tabla de enrutado, {n_bin} invocacion(es) de "
+          f"ejecutables suite-*, {n_ext} extension(es) del build.")
     if warnings:
         print("")
         print(f"{len(warnings)} aviso(s) (no bloquean; revisalos antes de mergear):")

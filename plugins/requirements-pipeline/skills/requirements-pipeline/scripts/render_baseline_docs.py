@@ -15,7 +15,8 @@ Artefactos que renderiza (los que existan en la carpeta):
   data-model.json       -> data-model.md
   technical-design.json -> technical-design.md
   lel-inspection.json / requirements-inspection.json / design-inspection.json -> .md
-  stakeholder-questions.json -> stakeholder-questions.md (con espacio de respuesta)
+  stakeholder-questions.json -> stakeholder-questions.md (con espacio de respuesta por
+                               pregunta, parseable por parse_answers.py)
 
 Cada .md arranca con el encabezado de sincronia que verifican las inspecciones:
   > Derivado de `<archivo>.json` version N — no editar a mano.
@@ -623,14 +624,22 @@ def render_design_inspection(data):
 def render_questionnaire(data):
     out = header("Cuestionario para el stakeholder", data, "stakeholder-questions.json")
     summary = data.get("summary", {}) or {}
+    qs_all = data.get("questions", []) or []
+    n_block = sum(1 for q in qs_all if es_bloqueante(q))
     out.append("Preguntas: %s (bloqueantes: %s). Roles: %s." % (
-        summary.get("total_questions", "?"), summary.get("blocking_questions", "?"),
-        ", ".join(summary.get("target_roles") or []) or "—"))
+        len(qs_all), n_block, ", ".join(summary.get("target_roles") or []) or "—"))
+    if summary.get("blocking_questions") not in (None, n_block):
+        out.append("")
+        out.append("> aviso: el resumen del agente decia %s bloqueantes; el conteo real es %s (manda `blocking` por pregunta)."
+                   % (summary.get("blocking_questions"), n_block))
     out.append("")
-    out.append("Responde debajo de cada pregunta (podes dejar en blanco las que no sepas). "
-               "Las marcadas **[bloqueante]** frenan la elaboracion hasta tener respuesta.")
+    out.append("Responde debajo de cada pregunta, en este mismo archivo: escribi debajo de "
+               "**Respuesta QST-xxx:** o marca una casilla con `[x]` (podes dejar en blanco las que "
+               "no sepas). Las marcadas **[bloqueante]** frenan la elaboracion hasta tener respuesta. "
+               "Despues `parse_answers.py` lee lo que escribiste.")
     out.append("")
     questions = {q.get("id"): q for q in data.get("questions", []) or []}
+    answers = {a.get("id"): a for a in (data.get("_answers") or {}).get("answers", []) or [] if isinstance(a, dict)}
     placed = set()
     sections = data.get("sections", []) or []
     for sec in sections:
@@ -648,21 +657,30 @@ def render_questionnaire(data):
             out.append("> Esta seccion es **opcional**: si no respondes, se asume lo indicado debajo de cada pregunta.")
         out.append("")
         for qid in qids:
-            _render_question(out, questions[qid])
+            _render_question(out, questions[qid], answers)
             placed.add(qid)
     rest = [q for qid, q in questions.items() if qid not in placed]
     if rest:
         out.append("## Otras preguntas")
         out.append("")
         for q in rest:
-            _render_question(out, q)
+            _render_question(out, q, answers)
     section_strings(out, "Suposiciones", data.get("assumptions"))
     section_strings(out, "Avisos", data.get("warnings"))
     return out
 
 
-def _render_question(out, q):
-    flag = " **[bloqueante]**" if q.get("priority") == "high" else ""
+def es_bloqueante(q):
+    """`blocking` explicito manda; sin el campo (cuestionarios viejos), priority high."""
+    if "blocking" in q:
+        return bool(q.get("blocking"))
+    return q.get("priority") == "high"
+
+
+def _render_question(out, q, answers=None):
+    """`answers`: {QST-xxx: entrada de stakeholder-answers.json}; si hay respuesta registrada,
+    el bloque sale pre-llenado, asi re-renderizar el cuestionario no pierde lo contestado."""
+    flag = " **[bloqueante]**" if es_bloqueante(q) else ""
     out.append("### %s%s — %s" % (q.get("id", "?"), flag, q.get("question", "")))
     bits = []
     if q.get("priority"):
@@ -680,9 +698,24 @@ def _render_question(out, q):
         out.append("")
         out.append("> Si no respondes, asumimos: %s" % q["default_assumption"])
     out.append("")
-    out.append("**Respuesta:**")
+    out.append("**Respuesta %s:**" % q.get("id", "?"))
     out.append("")
-    out.append("_(completar)_")
+    prev = (answers or {}).get(q.get("id")) or {}
+    filled = prev.get("status") in ("answered", "ambiguous")
+    chosen = prev.get("choice") if filled else None
+    chosen = set(chosen if isinstance(chosen, list) else ([chosen] if chosen else []))
+    kind = q.get("expected_answer_type")
+    if kind == "yes_no":
+        for opt in ("Si", "No"):
+            out.append("- [%s] %s" % ("x" if opt in chosen else " ", opt))
+    elif kind == "choice" and q.get("choices"):
+        for c in q["choices"]:
+            out.append("- [%s] %s" % ("x" if str(c) in chosen else " ", c))
+    is_choice = kind == "yes_no" or (kind == "choice" and bool(q.get("choices")))
+    if filled and prev.get("answer"):
+        out.append(prev["answer"])
+    elif not is_choice and not filled:
+        out.append("_(completar)_")
     out.append("")
 
 
@@ -719,17 +752,26 @@ def self_test():
             "sections": [{"id": "SEC-001", "title": "Dominio", "target_role": "negocio", "question_ids": ["QST-001"]},
                          {"id": "SEC-002", "title": "No funcionales", "question_ids": ["QST-002"]}],
             "questions": [{"id": "QST-001", "question": "Que es un socio?", "priority": "high", "source_kind": "defect"},
-                          {"id": "QST-002", "question": "Cuantos usuarios?", "priority": "medium", "source_kind": "nfr_checklist",
-                           "default_assumption": "menos de 100"}]}), encoding="utf-8")
+                          {"id": "QST-002", "question": "Cuantos usuarios?", "priority": "high", "blocking": False, "source_kind": "nfr_checklist",
+                           "expected_answer_type": "yes_no", "default_assumption": "menos de 100"}]}), encoding="utf-8")
         code = main([str(tmp), "--solo", "requirements-inspection", "stakeholder-questions"])
         insp = (tmp / "requirements-inspection.md").read_text(encoding="utf-8")
         qst = (tmp / "stakeholder-questions.md").read_text(encoding="utf-8")
+        (tmp / "stakeholder-answers.json").write_text(json.dumps({"version": 1, "answers": [
+            {"id": "QST-001", "status": "answered", "answer": "Una persona con cuota al dia."},
+            {"id": "QST-002", "status": "answered", "choice": "No"}]}), encoding="utf-8")
+        main([str(tmp), "--solo", "stakeholder-questions"])
+        qst2 = (tmp / "stakeholder-questions.md").read_text(encoding="utf-8")
         for cond, label in (
             (code == 0, "render de inspeccion y cuestionario (exit 0)"),
             ("Derivado de `requirements-inspection.json` version 2" in insp, "encabezado de sincronia de la inspeccion"),
             ("NO PASA" in insp and "sin cubrir \\| pipe" in insp, "veredicto y celda escapada"),
             ("[bloqueante]" in qst and "Si no respondes, asumimos: menos de 100" in qst, "cuestionario con bloqueante y default"),
-            ("opcional" in qst and qst.count("**Respuesta:**") == 2, "seccion NFR opcional y espacio de respuesta por pregunta"),
+            (qst.count("**[bloqueante]** —") == 1 and "(bloqueantes: 1)" in qst, "blocking explicito manda sobre priority high; conteo por script"),
+            ("opcional" in qst and qst.count("**Respuesta QST-0") == 2, "seccion NFR opcional y espacio de respuesta por pregunta"),
+            ("- [ ] Si" in qst and "- [ ] No" in qst, "casillas en pregunta yes_no"),
+            ("Una persona con cuota al dia." in qst2 and "- [x] No" in qst2 and "_(completar)_" not in qst2,
+             "re-render pre-llena las respuestas registradas"),
         ):
             print("self-test %s: %s" % ("ok" if cond else "FALLO", label))
             failures += 0 if cond else 1
@@ -770,6 +812,11 @@ def main(argv):
             print("ERROR: %s ilegible: %s" % (json_path, exc))
             failed += 1
             continue
+        if name == "stakeholder-questions" and (src / "stakeholder-answers.json").is_file():
+            try:
+                data["_answers"] = json.loads((src / "stakeholder-answers.json").read_text(encoding="utf-8"))
+            except (ValueError, OSError):
+                data["_answers"] = None
         lines = renderer(data)
         while lines and lines[-1] == "":
             lines.pop()

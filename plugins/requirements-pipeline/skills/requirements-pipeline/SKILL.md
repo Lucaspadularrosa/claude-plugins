@@ -88,7 +88,8 @@ skill. **Sin ningun Python disponible**: cada paso indica su fallback.
 | `slice_increment_context.py` | Una tajada `.inc-context/FG-xx.json` por feature con lo que sus agentes necesitan; con `--indice`, el indice compacto `index.json` de toda la linea de base | Antes de cada etapa de elaboracion; el indice, antes del mapa en actualizacion y de cada inspeccion de juicio |
 | `render_baseline_docs.py` | Los `.md` derivados (artefactos, inspecciones y cuestionario) | **Antes** de cada inspeccion y en el cierre |
 | `validate_baseline.py` | Checks mecanicos de LEL/requisitos/diseno, con exit code | 3a de cada inspeccion, iterar hasta verde |
-| `check_closure.py` | Compuerta de cierre: layout, inspecciones en verde, versiones, vistas | Antes de cerrar la entrada del changelog |
+| `check_closure.py` | Compuerta de cierre: layout, inspecciones en verde, versiones, vistas; con `--recalcular-mapa` recalcula el summary del mapa (los estados se editan con Edit y nadie lo recontaba) | Antes de cerrar la entrada del changelog |
+| `parse_answers.py` | Lee las respuestas escritas en `stakeholder-questions.md`, clasifica cada una (contestada, sin responder, ambigua, con supuesto), redacta la repregunta de las ambiguas y deriva `stakeholder-answers.json/.md` | Despues de la pausa del cuestionario, y en cada ronda |
 | `render_index.py` | El indice `.dev/README.md` | En el cierre |
 | `promote_card.py` | Aplica la tabla de renumeracion al plan, a los desvios del build y a la tarjeta | Modo PROMOVER, en el cierre: despues de `apply_delta.py --mapa-salida` y de que las inspecciones cierren |
 
@@ -103,7 +104,9 @@ python3 "${CLAUDE_PLUGIN_ROOT}/skills/requirements-pipeline/scripts/check_pipeli
 
 La primera linea (`pipeline_version: X.Y.Z`) es la version cargada: **pasasela a cada
 subagente** ("pipeline_version: X.Y.Z"); todo artefacto la estampa y las entradas del
-changelog tambien. Las lineas `aviso:` se le muestran al usuario tal cual (artefactos
+changelog tambien. La segunda linea (`fecha: AAAA-MM-DD`) es la fecha del sistema:
+pasasela igual a cada subagente ("fecha: AAAA-MM-DD"); es lo que va en
+`created_at`/`updated_at`, nunca una fecha que el modelo recuerde. Las lineas `aviso:` se le muestran al usuario tal cual (artefactos
 generados con otra version, marketplace local mas nuevo que requiere reiniciar la
 sesion); son informativas, no compuerta. Sin Python: lee la `version` de
 `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` y segui.
@@ -274,7 +277,11 @@ etapas seriales. Casos concretos en cada modo, marcados con **[paralelo]**.
 Cuando: al arrancar, y **cada vez que llega material nuevo**. Siempre seguro: solo
 agrega al mapa y enriquece el vocabulario; nunca modifica lo baselineado.
 
-1. Registra `DSC-xxx` (`in_progress`). Resolve y extrae las entradas.
+1. Registra `DSC-xxx` (`in_progress`). Resolve y extrae las entradas. Sin rutas,
+   ofrece las dos salidas: entrevista ahora (el cuestionario en modo elicitacion) o
+   escribir primero una vision con `reference/guia-vision.md` (mas
+   `guia-entorno-tecnico.md` si hay stack impuesto); lo que escriba se archiva en
+   `sources/` como cualquier fuente.
 2. **Intake [paralelo por fuente]**: con mas de una fuente, invoca un
    `requirements-intake` por fuente en un mismo mensaje, cada uno con su `.txt` (y su
    original en `raw/`/`ui/`), un `tag` corto y la instruccion de escribir deltas
@@ -298,10 +305,22 @@ agrega al mapa y enriquece el vocabulario; nunca modifica lo baselineado.
    **Validacion del cuestionario**: debe contener al menos una pregunta
    `source_kind: "nfr_checklist"` con `default_assumption`; si no, re-invoca al agente
    señalando el faltante. Renderiza `stakeholder-questions.md` por script.
-5. **PAUSA OBLIGATORIA**: presenta `stakeholder-questions.md` y espera.
-   - Si responde: guarda las respuestas en `.dev/requirements/stakeholder-answers.md`
-     (una por `QST-xxx`) — es la **unica** ubicacion canonica; en `sources/` archiva
-     solo una referencia (`entrevista-NNN.txt` con una linea "ver
+5. **PAUSA OBLIGATORIA**: presenta `stakeholder-questions.md` y espera. Pedile que
+   responda **dentro del archivo** (debajo de cada `**Respuesta QST-xxx:**`, o
+   marcando una casilla con `[x]`); si contesta por chat, copia vos cada respuesta a
+   ese lugar, textual. Despues:
+   ```bash
+   python3 "${CLAUDE_PLUGIN_ROOT}/skills/requirements-pipeline/scripts/parse_answers.py" \
+     .dev/requirements --pipeline-version X.Y.Z --fecha AAAA-MM-DD
+   ```
+   Escribe `stakeholder-answers.json` y `stakeholder-answers.md` (la **unica**
+   ubicacion canonica de las respuestas: nunca los escribas vos) e imprime el
+   resumen. Con exit 2 hay bloqueantes sin responder o respuestas ambiguas: mostra
+   solo esas lineas (`falta QST-xxx` y `repreguntar QST-xxx: ...`, la repregunta ya
+   viene redactada), espera, y volve a correrlo. Lo que quede `unanswered` sigue como
+   pregunta abierta, nunca como supuesto inventado; lo `defaulted` produce el RNF con
+   su supuesto declarado.
+   - Con respuestas: en `sources/` archiva solo una referencia (`entrevista-NNN.txt` con una linea "ver
      stakeholder-answers.md, QST-001..QST-0NN") para que el inventario la registre
      como fuente sin duplicar el texto. Aplicalas al LEL con `lel-authoring`
      (`model: sonnet`, pasale solo los `QST-xxx` que tocan simbolos o preguntas del
@@ -314,7 +333,7 @@ agrega al mapa y enriquece el vocabulario; nunca modifica lo baselineado.
 6. Si el mapa trae `pending_proposals`, mostraselas al usuario: las acepta (quedan
    para un `/requerimientos:cambio` o el proximo incremento) o las rechaza.
 7. Cierre: `apply_delta.py` (por si quedo algo), `render_baseline_docs.py`,
-   `render_index.py`, `check_closure.py --inspecciones lel --corrida DSC-xxx`. Con el
+   `render_index.py`, `check_closure.py --recalcular-mapa --inspecciones lel --corrida DSC-xxx`. Con el
    cierre en verde, cerra la entrada `DSC-xxx` (versiones, features descubiertas).
    Mostrale el mapa (`product-map.md`) y sugeri `/requerimientos:incremento <features>`.
 
@@ -367,7 +386,7 @@ usuario decide.
 8. Cierre: `apply_delta.py`; `slice_increment_context.py --limpiar`; marca las
    features y escenarios del incremento como `baselined` (Edit);
    `render_baseline_docs.py`; `render_index.py`;
-   `check_closure.py --inspecciones requirements design --corrida INC-xxx`. Si bloquea,
+   `check_closure.py --recalcular-mapa --inspecciones requirements design --corrida INC-xxx`. Si bloquea,
    resolve lo que dice (nunca cierres declarando que la inspeccion paso si el JSON dice
    otra cosa; si el usuario acepto defectos anotados, registralo en `notes`). Con el
    cierre en verde, cerra `INC-xxx` (`applied`, verdicts, versiones). Sugeri
@@ -401,7 +420,7 @@ un documento corto).
    nunca se borra. `apply_delta.py` si dejaron deltas.
 5. Render, 3a + 3b de requisitos (y de diseno si el diseno cambio), con sus lazos.
 6. Cierre: `apply_delta.py`, `--limpiar`, `render_baseline_docs.py`, `render_index.py`,
-   `check_closure.py --inspecciones requirements [design] --corrida CR-xxx`; cerra
+   `check_closure.py --recalcular-mapa --inspecciones requirements [design] --corrida CR-xxx`; cerra
    `CR-xxx` con verdicts (`confirmed_by_user`) y versiones. Si afecta features ya
    planificadas o construidas, decilo explicito: el pipeline de planificacion lo
    levanta del changelog.
@@ -473,7 +492,7 @@ Si el usuario no nombra features, lista las tarjetas `.dev/cards/*.json` con
    Despues, `render_plan_docs.py .dev/plan` (el `tasks.json` cambio de version y su
    vista queda atras).
 7. **Cierre**: `apply_delta.py`, `--limpiar`, `render_baseline_docs.py`,
-   `render_index.py`, `check_closure.py --inspecciones requirements [design] --corrida
+   `render_index.py`, `check_closure.py --recalcular-mapa --inspecciones requirements [design] --corrida
    CR-xxx`; la feature pasa a `baselined` en el mapa (y pierde el `origin: fast_track`
    solo si el usuario lo pide: es informacion historica util). Cerra la `CR-xxx` como
    `applied`. Desde aca la feature es indistinguible de una que hizo el ciclo formal.
@@ -542,7 +561,7 @@ incrementales).
   lel.json / lel.md             Lexico Extendido del Lenguaje (vivo)
   lel-inspection.json / .md     inspeccion del LEL
   stakeholder-questions.json/.md cuestionario
-  stakeholder-answers.md         respuestas del stakeholder (unica ubicacion)
+  stakeholder-answers.json/.md   respuestas del stakeholder clasificadas (las deriva parse_answers.py; unica ubicacion)
   product-map.json / .md        mapa del producto
   changelog.json                historia DSC / INC / CR / REC
   scenarios.json / .md          escenarios elaborados (acumulativo)

@@ -96,6 +96,11 @@ evidencia existente; conteos del `summary` reales; nada aplicado sobre
 `elaborated`/`baselined` (todo eso esta en `pending_proposals`). El mapa cubre todo el
 material en amplitud y ningun stub gasta profundidad.
 
+**Fechas**: `created_at`/`updated_at` llevan la `fecha` que te pasa el orquestador
+(la imprime `suite-pipeline-version` junto a `pipeline_version`); si no te la paso,
+`null`. Nunca una fecha que recuerdes o deduzcas: la cosecha de metricas y el churn
+de la baseline se calculan con estas fechas.
+
 ## Respuesta al orquestador
 
 Solo el puntero: `status` (ok|blocked|error), `artifact_paths`, `summary` (3-5 lineas:

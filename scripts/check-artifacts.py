@@ -304,6 +304,13 @@ def check_plan_stage(dev, ctx):
         dupes = {t for t in placed if placed.count(t) > 1}
         for t in sorted(dupes):
             problem("execution-plan.json", "la tarea {} aparece en mas de un lote".format(t))
+        # El progreso del build vive en progress.json: una tarea done o cancelled ahi no
+        # necesita lote aunque tasks.json la siga mostrando pending (H-19 de la corrida de prueba).
+        if (plandir / "progress.json").is_file():
+            pdoc = load_json(plandir / "progress.json") or {}
+            terminadas = {t.get("task_id") for t in pdoc.get("tasks", [])
+                          if isinstance(t, dict) and t.get("status") in ("done", "cancelled")}
+            active_task_ids = active_task_ids - terminadas
         if active_task_ids:
             missing = active_task_ids - set(placed)
             for t in sorted(missing):
@@ -345,6 +352,10 @@ def check_build_stage(dev):
             warn("stack-profile.json", "sin rama de integracion")
         if "ci" not in profile:
             warn("stack-profile.json", "sin campo ci (perfil anterior a los checks independientes)")
+        if not isinstance(profile.get("greenfield"), bool):
+            problem("stack-profile.json", "greenfield ausente o no booleano: {!r} (el modo parcial del profiler debe conservar las claves del contrato)".format(profile.get("greenfield")))
+        if "pipeline_version" not in profile and "pipeline_version" not in (profile.get("metadata") or {}):
+            warn("stack-profile.json", "sin pipeline_version (ni al nivel raiz ni en metadata)")
 
     baseline = load_json(builddir / "security-baseline.json")
     if baseline is not None:

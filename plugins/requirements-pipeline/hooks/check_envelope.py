@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Hook SubagentStop: verifica que un subagente de la suite devolvio su sobre.
 
-Los 31 agentes prometen cerrar con el mismo puntero — `status`, `artifact_paths`,
+Todos los agentes de la suite prometen cerrar con el mismo puntero — `status`, `artifact_paths`,
 `summary` y `blocking_items` si los hay — pero eso era convencion de prompt: ningun
 script lo miraba. Un subagente que termina sin reporte (429, corte, o un Task cuyo
 ultimo mensaje es el resultado de una herramienta en vez de texto) se ve igual que

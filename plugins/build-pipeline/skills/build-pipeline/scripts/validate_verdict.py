@@ -41,6 +41,7 @@ FINDING_KEYS = {
     "gate": ("id", "severity", "owasp_id", "category", "description", "attack_vector", "impact", "evidence_refs",
              "proposed_fix", "related_task_ids"),
 }
+EXT_STATUS = ("compliant", "non_compliant", "na")
 ID_RE = {"review": re.compile(r"^FG-\d+/FIND-\d{3,}$"), "gate": re.compile(r"^FG-\d+/SGATE-\d{3,}$")}
 
 
@@ -95,6 +96,22 @@ def validate(verdict, tipo):
         should = (counts["high"] + counts["medium"]) == 0
         if verdict["passed"] != should:
             errors.append("passed=%s incoherente con %d high / %d medium" % (verdict["passed"], counts["high"], counts["medium"]))
+    if tipo == "gate" and "extension_compliance" in verdict:
+        ec = verdict["extension_compliance"]
+        finding_ids = {str(f.get("id")) for f in findings if isinstance(f, dict)}
+        if not isinstance(ec, list):
+            errors.append("extension_compliance deberia ser list")
+        else:
+            for i, e in enumerate(ec):
+                if not isinstance(e, dict) or not e.get("rule_id"):
+                    errors.append("extension_compliance[%d] sin rule_id" % i)
+                    continue
+                if e.get("status") not in EXT_STATUS:
+                    errors.append("%s con status invalido: %s" % (e["rule_id"], e.get("status")))
+                if not e.get("rationale"):
+                    errors.append("%s sin rationale" % e["rule_id"])
+                if e.get("status") == "non_compliant" and str(e.get("finding_id")) not in finding_ids:
+                    errors.append("%s non_compliant sin finding_id que exista en findings" % e["rule_id"])
     if tipo == "review":
         for rc in verdict.get("requirements_closure") or []:
             if not isinstance(rc, dict) or not rc.get("requirement_id"):
@@ -139,7 +156,32 @@ def compuerta(root, brief):
             problems.append("verification/%s.json es de la rama %s, los veredictos de %s" % (brief, vdata["branch"], ",".join(sorted(branches))))
     if len(branches) > 1:
         problems.append("los veredictos son de ramas distintas: %s" % ", ".join(sorted(branches)))
+    problems += extensiones_cubiertas(build, brief)
     return problems
+
+
+def extensiones_cubiertas(build, brief):
+    """Toda regla de cada extension habilitada en security-baseline.json tiene su entrada
+    en extension_compliance del gate (incluidas las `na`). H-07 de la corrida de prueba."""
+    base, _ = load(build / "security-baseline.json")
+    gate, _ = load(build / "security" / (brief + ".json"))
+    if base is None or gate is None:
+        return []
+    esperadas = set()
+    for name, ext in (base.get("extensions") or {}).items():
+        if not isinstance(ext, dict) or not ext.get("enabled"):
+            continue
+        for c in ext.get("controls") or []:
+            if isinstance(c, dict) and c.get("rule_id"):
+                esperadas.add(c["rule_id"])
+    if not esperadas:
+        return []
+    presentes = {e.get("rule_id") for e in (gate.get("extension_compliance") or []) if isinstance(e, dict)}
+    faltan = sorted(esperadas - presentes)
+    if faltan:
+        return ["security/%s.json: extension_compliance sin %d regla(s) del baseline: %s (las que no aplican van como na)"
+                % (brief, len(faltan), ", ".join(faltan))]
+    return []
 
 
 # ------------------------------------------------------------------ self-test
@@ -199,6 +241,28 @@ def self_test():
         failures += 1
     else:
         print("self-test ok (gate incompleto detectado)")
+    ext_ok = _gate(False)
+    ext_ok["findings"] = [{"id": "FG-01/SGATE-001", "severity": "medium", "owasp_id": None, "category": "other",
+                           "description": "sin timeout", "attack_vector": "n/a", "impact": "cuelgue", "evidence_refs": ["src/a.py:3"],
+                           "proposed_fix": "usar el cliente con timeout", "related_task_ids": ["T-001"], "rule_id": "RES-01"}]
+    ext_ok["summary"].update(total_findings=1, medium=1)
+    ext_ok["extension_compliance"] = [
+        {"rule_id": "RES-01", "status": "non_compliant", "rationale": "ver hallazgo", "finding_id": "FG-01/SGATE-001"},
+        {"rule_id": "RES-05", "status": "na", "rationale": "no es un servicio"}]
+    if validate(ext_ok, "gate"):
+        print("SELF-TEST FALLO (extension_compliance valido rechazado): %s" % validate(ext_ok, "gate"))
+        failures += 1
+    else:
+        print("self-test ok (extension_compliance valido)")
+    ext_bad = json.loads(json.dumps(ext_ok))
+    ext_bad["extension_compliance"][0]["finding_id"] = "FG-01/SGATE-999"
+    ext_bad["extension_compliance"][1]["status"] = "ok"
+    errs = validate(ext_bad, "gate")
+    if not (any("finding_id" in e for e in errs) and any("status invalido" in e for e in errs)):
+        print("SELF-TEST FALLO (extension_compliance invalido aceptado): %s" % errs)
+        failures += 1
+    else:
+        print("self-test ok (extension_compliance invalido detectado)")
     tmp = Path(tempfile.mkdtemp(prefix="verdict-"))
     try:
         build = tmp / ".dev" / "build"
@@ -222,6 +286,23 @@ def self_test():
             failures += 1
         else:
             print("self-test ok (compuerta cerrada sin veredictos)")
+        (build / "security-baseline.json").write_text(json.dumps({"extensions": {"resiliencia": {"enabled": True, "controls": [
+            {"rule_id": "RES-01", "applies": True}, {"rule_id": "RES-02", "applies": False}]}}}), encoding="utf-8")
+        gate_ok = _gate(True); gate_ok["extension_compliance"] = [{"rule_id": "RES-01", "status": "compliant", "rationale": "x"}]
+        (build / "security" / "FG-01-demo.json").write_text(json.dumps(gate_ok), encoding="utf-8")
+        errs = compuerta(tmp, "FG-01-demo")
+        if not any("RES-02" in e for e in errs):
+            print("SELF-TEST FALLO (compuerta no exige la regla RES-02 del baseline): %s" % errs)
+            failures += 1
+        else:
+            print("self-test ok (compuerta exige una entrada por regla del baseline)")
+        gate_ok["extension_compliance"].append({"rule_id": "RES-02", "status": "na", "rationale": "no aplica"})
+        (build / "security" / "FG-01-demo.json").write_text(json.dumps(gate_ok), encoding="utf-8")
+        if compuerta(tmp, "FG-01-demo"):
+            print("SELF-TEST FALLO (compuerta cerrada con todas las reglas cubiertas): %s" % compuerta(tmp, "FG-01-demo"))
+            failures += 1
+        else:
+            print("self-test ok (compuerta abierta con todas las reglas cubiertas)")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     return 1 if failures else 0

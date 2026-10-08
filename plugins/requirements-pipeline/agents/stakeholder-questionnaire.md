@@ -57,6 +57,11 @@ cita en `rationale` por que aplica.
 - Fuera de elicitacion, cada pregunta deriva de un defecto con `stakeholder_question`
   o de una pregunta abierta del LEL; no conviertas en pregunta un defecto sin
   `stakeholder_question` ni preguntes lo que el LEL ya responde.
+- `blocking: true` **solo** en la pregunta sin cuya respuesta no se puede elaborar
+  (un defecto confirmado del LEL o un gap bloqueante del intake); nunca en
+  elicitacion ni en la checklist de no funcionales. `priority` es urgencia, no bloqueo:
+  una `high` puede no ser bloqueante. `summary.blocking_questions` lo recalcula el
+  script al renderizar; si no coincide con tus `blocking`, gana el conteo real.
 - Agrupa por rol destino en secciones; `priority` `high` para lo que bloquea defectos
   `high` o decisiones de escenarios. Preguntas concretas que un no tecnico pueda
   responder, en espanol. Ids `QST-001`, `SEC-001`.
@@ -74,7 +79,7 @@ cita en `rationale` por que aplica.
   "summary": {"total_questions": 0, "blocking_questions": 0, "source_defects": 0, "source_open_questions": 0, "target_roles": ["string"]},
   "sections": [{"id": "SEC-001", "title": "string", "target_role": "string", "objective": "string", "question_ids": ["QST-001"]}],
   "questions": [
-    {"id": "QST-001", "question": "string", "target_role": "string", "priority": "high|medium|low",
+    {"id": "QST-001", "question": "string", "target_role": "string", "priority": "high|medium|low", "blocking": false,
      "source_kind": "defect|open_question|elicitation|nfr_checklist", "expected_answer_type": "free_text|yes_no|choice|list",
      "choices": ["string"], "default_assumption": "string (solo nfr_checklist)", "rationale": "string",
      "source_defect_ids": ["DEF-001"], "source_open_question_ids": ["Q-001"], "source_gap_ids": ["GAP-001"], "related_symbol_ids": ["LEL-001"]}

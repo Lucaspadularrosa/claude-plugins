@@ -48,6 +48,10 @@ por ubicacion, nunca por valor.
 6. **Convenciones**: estilo y layout del perfil y de CLAUDE.md; **vocabulario del
    dominio** (terminos del LEL segun `domain_naming`; dos nombres para un simbolo, o
    un termino que el LEL no conoce, es hallazgo).
+7. **Higiene del codigo generado**: archivos `_modified`/`_new`/`_v2` o una
+   implementacion paralela de algo que ya existia es `high` (brownfield se modifica
+   en el lugar); UI nueva sin `data-testid` (o su equivalente del perfil) con la
+   convencion `{componente}-{rol}` es `medium`.
 
 La seguridad no la revisas vos (la cubre `security-gate`); algo flagrante va como
 `warning`, no como hallazgo.

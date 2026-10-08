@@ -92,15 +92,19 @@ requirements-pipeline/
     requirements-pipeline/
       SKILL.md                   orquestacion de los 4 modos
       scripts/                   deterministas, solo stdlib, cero tokens
-        check_pipeline_version.py version cargada y avisos de desfase (transversal a la suite)
+        check_pipeline_version.py version cargada, fecha del sistema y avisos de desfase (transversal a la suite)
         extract_document.py      extrae texto de .docx / .pdf / .md / .txt
         slice_increment_context.py una tajada de contexto por feature (+ indice compacto)
         apply_delta.py           merge de deltas paralelos, renumeracion de ids, summary
         validate_baseline.py     checks mecanicos de LEL / requisitos / diseno
         render_baseline_docs.py  todos los .md derivados (artefactos, inspecciones, cuestionario)
         check_closure.py         compuerta de cierre (layout, inspecciones, versiones, vistas)
+        parse_answers.py         respuestas escritas en el cuestionario -> clasificadas, con repregunta de lo ambiguo
         render_index.py          indice .dev/README.md
         promote_card.py          renumera plan, desvios y tarjeta al promover (camino rapido)
+  reference/
+    guia-vision.md               que escribir en una pagina para arrancar sin documento
+    guia-entorno-tecnico.md      stack impuesto, prohibidos con razon y alternativa, modulo de ejemplo
   commands/
     requerimientos.md            modo completo (clasico)
     descubrir.md                 modo descubrir
@@ -177,7 +181,7 @@ pueden variar segun la version de Claude Code: verificalos con `/plugin`.
 | `lel.json` / `lel.md` | Lexico Extendido del Lenguaje (vivo) |
 | `lel-inspection.json` / `.md` | Checklist de defectos del LEL |
 | `stakeholder-questions.json` / `.md` | Cuestionario (defectos + elicitacion + checklist de no funcionales con supuestos por defecto) |
-| `stakeholder-answers.md` | Respuestas del stakeholder (una por QST-xxx), tambien archivadas en `sources/` |
+| `stakeholder-answers.json` / `.md` | Respuestas escritas dentro del cuestionario, clasificadas por `parse_answers.py` (contestada, ambigua con repregunta, con supuesto, sin responder); en `sources/` queda solo una referencia |
 | `product-map.json` / `.md` | Mapa del producto: features y stubs con estado, prioridad y valor de negocio |
 | `changelog.json` | Historia: DSC / INC / CR / REC con veredictos y versiones |
 | `scenarios.json` / `scenarios.md` | Escenarios elaborados (acumulativo) |

@@ -1,0 +1,11 @@
+# Config de gitleaks para el CI (job "secretos" en .github/workflows/validate.yml).
+# Extiende las reglas por defecto; solo agrega la lista blanca de los fixtures.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fixtures adversariales y evals: traen secretos FALSOS a proposito, para probar que los agentes no los filtran ni los ejecutan"
+paths = [
+  '''tests/adversarial/fixtures/.*''',
+  '''plugins/[^/]+/evals/.*''',
+]

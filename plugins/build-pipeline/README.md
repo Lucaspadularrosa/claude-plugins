@@ -23,7 +23,9 @@ En la misma pasada, `stack-profiler` deriva la **base de seguridad** del stack e
 aplicables, el mecanismo **nativo** del stack para cada una y el comando de audit de
 dependencias. Es el unico artefacto de seguridad que leen el `feature-implementer`
 (codea con ese piso) y el `security-gate` (lo verifica antes del PR): la referencia
-larga `reference/owasp-baseline.md` la lee solo el profiler, una vez por proyecto.
+larga `reference/extensions/seguridad-owasp/reglas.md` la lee solo el profiler, una vez por
+proyecto, junto con las extensiones opt-in habilitadas (`resiliencia`,
+`tests-de-propiedades`), que se deciden una vez por proyecto por script.
 El gate es **prevencion**, no auditoria: corre en sonnet y el orquestador lo escala a
 opus solo cuando el diff toca control de acceso, criptografia o autenticacion. La
 auditoria profunda sigue siendo `audit-pipeline` (`/auditar`).
@@ -111,7 +113,10 @@ build-pipeline/
     scripts/*.py             verify, progress_update, validate_verdict, render_*
   commands/                  /construir, /construir-lote, /documentar
   reference/
-    owasp-baseline.md        referencia OWASP (la lee solo stack-profiler)
+    extensions/              una carpeta por extension: reglas.md (+ reglas.opt-in.md si es opt-in)
+      seguridad-owasp/       siempre-on: la referencia OWASP (la lee solo stack-profiler)
+      resiliencia/           opt-in: timeouts, reintentos, idempotencia, salud, logs
+      tests-de-propiedades/  opt-in: un test de propiedad por invariante, ida y vuelta
     tono.md                  registro de la gastada (solo modos interactivos)
   PIPELINE.md  README.md
 ```

@@ -55,7 +55,9 @@ Los scripts viven en `${CLAUDE_PLUGIN_ROOT}/skills/audit-pipeline/scripts/`. Si
   suite-pipeline-version --plugin-root "${CLAUDE_PLUGIN_ROOT}" --artefacto .dev/audit/audit-report.json
   ```
 
-  Si el script no esta, segui sin bloquear: el aviso es informativo.
+  Imprime `pipeline_version` y `fecha` (la del sistema): pasa las dos a cada
+  subagente; las fechas de los artefactos salen de ahi, nunca de la memoria del
+  modelo. Si el script no esta, segui sin bloquear: el aviso es informativo.
 - Alcance: `bugs`, `seguridad`, `mejoras`, una ruta/modulo, o nada (= las tres
   dimensiones sobre todo el repo).
 - **Mapa de arranque**: si existe `.dev/recovery/code-inventory.json`, pasaselo a los

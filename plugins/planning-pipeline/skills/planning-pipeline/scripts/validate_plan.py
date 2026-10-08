@@ -459,6 +459,31 @@ def slug_matches(fid, path_name):
     return re.match(r"^%s-[a-z0-9][a-z0-9-]*\.md$" % fid, path_name) is not None
 
 
+OWASP_2021 = {
+    "A01": ("Broken Access Control", ("access control", "control de acceso")),
+    "A02": ("Cryptographic Failures", ("cryptograph", "criptogr")),
+    "A03": ("Injection", ("injection", "inyecci")),
+    "A04": ("Insecure Design", ("insecure design", "diseño inseguro", "diseno inseguro")),
+    "A05": ("Security Misconfiguration", ("misconfiguration", "configuraci")),
+    "A06": ("Vulnerable and Outdated Components", ("vulnerable", "outdated", "componentes")),
+    "A07": ("Identification and Authentication Failures", ("identification", "authentication", "autenticaci", "identificaci")),
+    "A08": ("Software and Data Integrity Failures", ("integrity", "integridad")),
+    "A09": ("Security Logging and Monitoring Failures", ("logging", "monitoring", "registro", "monitoreo")),
+    "A10": ("Server-Side Request Forgery", ("ssrf", "server-side request", "request forgery")),
+}
+OWASP_LABEL = re.compile(r"\b(A(?:0[1-9]|10))(?::20\d\d)?\s*[·:\-–—]\s*([^\n|,;)]{4,70})")
+
+
+def owasp_label_defects(body):
+    """Etiquetas `A07 – Cross-Site Scripting` con nombre de otra categoria (H-12)."""
+    out = []
+    for code, name in OWASP_LABEL.findall(body):
+        canon, keys = OWASP_2021[code]
+        if not any(k in name.lower() for k in keys):
+            out.append("%s etiquetada como '%s'; en OWASP Top 10 2021 %s es %s" % (code, name.strip(), code, canon))
+    return out
+
+
 def check_briefs(root, tasks_doc, reqs_doc):
     featdir = root / ".dev" / "features"
     features = tasks_doc.get("features") or []
@@ -489,6 +514,8 @@ def check_briefs(root, tasks_doc, reqs_doc):
             if head not in plain:
                 defect("BRIEF-LINT", "high", "%s (%s)" % (fid, candidates[0].name),
                        "falta el encabezado obligatorio '%s'" % head, "feature-brief")
+        for msg in owasp_label_defects(body):
+            defect("BRIEF-LINT", "medium", "%s (%s)" % (fid, candidates[0].name), msg, "feature-brief")
         for t in ftasks:
             if t.get("id") not in body:
                 defect("BRIEF-LINT", "high", "%s (%s)" % (fid, candidates[0].name),
@@ -570,6 +597,12 @@ def self_test():
         (feat / "FG-01-demo.md").write_text(body, encoding="utf-8")
 
     failures = 0
+    _ow = owasp_label_defects("A07:2021 – Cross-Site Scripting; A03 · Inyeccion SQL; A01 - Broken Access Control")
+    if len(_ow) == 1 and "A07" in _ow[0]:
+        print("self-test ok (etiqueta OWASP equivocada detectada, las correctas no)")
+    else:
+        print("SELF-TEST FALLO (etiquetas OWASP): %s" % _ow)
+        failures += 1
     for break_it, expect_fail in ((False, False), (True, True)):
         tmp = Path(tempfile.mkdtemp(prefix="validate-plan-"))
         try:

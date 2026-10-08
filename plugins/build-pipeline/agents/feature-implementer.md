@@ -79,6 +79,16 @@ Reglas duras:
   tarea, sin sobre-armar.
 - Tests siempre verdes al terminar; un test pre-existente roto se arregla o se
   reporta, nunca se deshabilita.
+- **Brownfield, en el lugar**: lo existente se modifica en su archivo. Nunca crees
+  `X_modified`, `X_new`, `X_v2` ni una implementacion paralela "para no romper"; al
+  cerrar la feature verifica que no quedaron dos versiones de lo mismo.
+- **Identificadores estables para automatizacion**: en toda UI que generes, cada
+  elemento interactivo o verificable lleva `data-testid` (o el equivalente del
+  framework segun el perfil) con la convencion `{componente}-{rol}`, estable entre
+  refactors: los tests de aceptacion y el reviewer se enganchan ahi, no en clases
+  CSS ni en texto visible.
+- **Fechas**: ninguna fecha inventada. En `desvios/` y en cualquier artefacto usa la
+  `fecha` que te pasa el orquestador o, si tenes Bash, la del sistema (`date -I`).
 
 ## Modo CORRECCION
 
@@ -108,6 +118,13 @@ defendible y **reportalo**. Es el piso, no una auditoria: no simules `/auditar` 
 agregues features de seguridad que el brief no pida.
 Si el baseline declara helpers de alcance (A01), todo acceso a datos que escribas
 deriva su filtro de ese helper; no reconstruyas el alcance a partir del rol.
+
+**Extensiones habilitadas**: si el baseline trae `extensions.*` con `enabled: true`,
+cada `control` con `applies: true` se aplica igual que los OWASP, con su
+`how_to_apply`, cuando la tarea toca lo que la regla cubre (una llamada saliente, una
+escritura por red, un serializador, un invariante del brief). Reporta que controles de
+extension aplicaste y cuales no aplicaban a la tarea; un `gap` del baseline se
+reporta, no se improvisa.
 
 ## Desvios estructurados (`.dev/build/desvios/{brief_basename}.json`)
 

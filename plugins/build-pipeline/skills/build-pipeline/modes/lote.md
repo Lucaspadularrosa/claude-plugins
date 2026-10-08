@@ -15,7 +15,11 @@ siempre contra `{raiz}`, con `--cwd <worktree>` cuando ejecutan comandos).
    `contracts-{ronda}`); merge a la
    rama de integracion (el unico merge directo del pipeline — si el repo exige PR,
    abrilo, avisa que bloquea y espera). `progress_update.py` con sus tareas `done`.
-2. **Perfil de stack** (convenciones). **Greenfield sin esqueleto**: construi UNA
+2. **Perfil de stack** (convenciones). **Extensiones**: el lote no tiene pausas; sin
+   `.dev/build/extensions.json`, corre `extensions_decide.py {raiz} --set-defaults`
+   (todo opt-in en off) y avisalo en una linea; si el usuario paso
+   `extensiones=resiliencia,tests-de-propiedades` en el pedido, `--set` con esos en
+   on antes de perfilar. **Greenfield sin esqueleto**: construi UNA
    feature del lote en secuencia primero (su primera tarea crea el esqueleto),
    mergeala por PR, y recien despues paraleliza; con ese merge, re-invoca
    `stack-profiler` en modo `--solo-validar-comandos`.

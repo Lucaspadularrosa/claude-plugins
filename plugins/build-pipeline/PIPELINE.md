@@ -83,8 +83,8 @@ deterministas; los modelos se reservan para construir, revisar y documentar.
 | `render_batch_summary.py` | resumen final de lote o feature |
 
 La orquestacion comun vive en `skills/build-pipeline/SKILL.md`; cada modo en
-`skills/build-pipeline/modes/`. Referencias: `reference/owasp-baseline.md` (solo la
-lee el profiler) y `reference/tono.md` (solo modos interactivos).
+`skills/build-pipeline/modes/`. Referencias: `reference/extensions/<nombre>/reglas.md` (solo
+las lee el profiler, y solo las habilitadas) y `reference/tono.md` (solo modos interactivos).
 
 ---
 

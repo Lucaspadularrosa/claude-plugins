@@ -38,9 +38,9 @@ cómo ejecutar el plan con agentes en paralelo.
 
 Requisitos: Python 3.8+ (extracción de documentos); para PDF, `pip install pypdf`.
 
-**Dependencia entre plugins**: `planning`, `build`, `recovery` y `audit` usan cinco
+**Dependencia entre plugins**: `planning`, `build`, `recovery` y `audit` usan seis
 ejecutables que provee `requerimientos` (`suite-status`, `suite-pipeline-version`,
-`suite-stage-check`, `suite-render-index` y `suite-render-baseline-docs`), que Claude
+`suite-stage-check`, `suite-render-index`, `suite-render-baseline-docs` y `suite-extract-document`), que Claude
 Code pone en el `PATH` mientras ese plugin
 esté instalado y habilitado. Sin él, esos pasos se saltean y quedan anotados; el resto
 funciona igual. No se alcanzan por ruta relativa: en una instalación normal cada plugin
@@ -94,3 +94,10 @@ plugin para el detalle técnico.
 - Un hook `SubagentStop` avisa cuando un subagente de la suite cierra sin su sobre de
   retorno (`status`, `artifact_paths`, `summary`) — el caso de la Task que termina sin
   reporte, que antes pasaba inadvertido.
+- `claude plugin eval plugins/<plugin> --ablation none --scaffold --allow-tools Write --no-publish`
+  — los prompts **resisten**: cinco casos adversariales (inyecciones en código, fuentes,
+  briefs, diffs y pedidos) corren como evals nativos, uno por plugin, con graders
+  deterministas sobre el artefacto que el agente escribe. Índice y línea de base en
+  `tests/adversarial/README.md`. No corre en CI: gasta la credencial de quien lo lanza.
+- Un job de **gitleaks** en CI sobre la historia completa; los secretos falsos de los
+  evals están en la lista blanca de `.gitleaks.toml`.

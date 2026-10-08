@@ -5,6 +5,9 @@ argument-hint: "[opcional: BATCH-n; por defecto, el proximo lote desbloqueado]"
 
 Construi el lote en paralelo: `$ARGUMENTS`
 
+(Si en los argumentos viene `extensiones=<nombres>`, son las extensiones opt-in del
+build a activar antes de perfilar, por ejemplo `extensiones=resiliencia`.)
+
 Segui el modo LOTE de la skill `build-pipeline` (lee
 `${CLAUDE_PLUGIN_ROOT}/skills/build-pipeline/modes/lote.md`). Resumen del contrato:
 ronda de contratos primero si esta pendiente; un worktree por feature;

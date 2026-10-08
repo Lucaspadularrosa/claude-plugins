@@ -8,5 +8,7 @@ Ejecuta el modo DESCUBRIR de la skill `requirements-pipeline` sobre: `$ARGUMENTS
 Segui la skill tal cual (version del pipeline por script, extraccion, intake en
 paralelo por fuente, LEL, inspeccion por script + juicio, cuestionario y mapa en
 paralelo, PAUSA obligatoria con mis respuestas, cierre por script). Si no di ninguna
-ruta, arrancamos sin documento: pedime la vision y guardala como fuente. Al cerrar,
+ruta, arrancamos sin documento: pedime la vision y guardala como fuente; si prefiero
+escribirla antes, mostrame `${CLAUDE_PLUGIN_ROOT}/reference/guia-vision.md` (y
+`guia-entorno-tecnico.md` si el stack viene impuesto) y espera el documento. Al cerrar,
 mostrame `product-map.md` y tu sugerencia de que elaborar primero.

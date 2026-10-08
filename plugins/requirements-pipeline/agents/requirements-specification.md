@@ -141,6 +141,11 @@ criterio completo y `estimated_effort`; ningun `AC` repetido; cada `depends_on`,
 `enforced_by` cita criterios reales; ninguna regla evidente en excepciones o
 condiciones quedo sin capturar.
 
+**Fechas**: `created_at`/`updated_at` llevan la `fecha` que te pasa el orquestador
+(la imprime `suite-pipeline-version` junto a `pipeline_version`); si no te la paso,
+`null`. Nunca una fecha que recuerdes o deduzcas: la cosecha de metricas y el churn
+de la baseline se calculan con estas fechas.
+
 ## Respuesta al orquestador
 
 Solo el puntero: `status` (ok|blocked|error), `artifact_paths` (el delta o el
